@@ -1,4 +1,6 @@
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
+import "../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
 import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from "expo-audio";
@@ -135,6 +137,7 @@ function EnvironmentChoice({
   /** Called instead of a local grant when the environment only offers cloud transcription. */
   onCloudOnly: () => void;
 }) {
+  const gt = useGT();
   const local = useAtomValue(voiceConnectionAtom(environment.environmentId)) !== null;
   const cloud = useAtomValue(cloudVoiceConnectionAtom(environment.environmentId)) !== null;
   const usable = local || cloud;
@@ -145,19 +148,22 @@ function EnvironmentChoice({
       disabled={!usable}
       description={
         environment.connection.phase !== "connected"
-          ? "Not connected"
+          ? gt("Not connected")
           : !usable
-            ? "Transcription unavailable"
-            : (environment.displayUrl ?? "Send finished recordings to this environment.")
+            ? gt("Transcription unavailable")
+            : (environment.displayUrl ?? gt("Send finished recordings to this environment."))
       }
       separated
       onPress={() => {
         if (selected) return;
         if (!local) return onCloudOnly();
         Dialog.confirm({
-          title: `Send microphone audio to ${environment.label}?`,
-          message: `Finished recordings will be sent to ${environment.displayUrl ?? environment.label} for transcription. You can switch back to This device at any time.`,
-          confirmText: "Use environment",
+          title: gt("Send microphone audio to {environment}?", { environment: environment.label }),
+          message: gt(
+            "Finished recordings will be sent to {destination} for transcription. You can switch back to This device at any time.",
+            { destination: environment.displayUrl ?? environment.label },
+          ),
+          confirmText: gt("Use environment"),
           onConfirm: () => saveDestination(environment.environmentId),
         });
       }}
@@ -177,13 +183,14 @@ function EnvironmentMethodSection({
   cloudOpen: boolean;
   onCloudOpenChange: (open: boolean) => void;
 }) {
+  const gt = useGT();
   const id = environment.environmentId;
   const destination = grant?.destination.environmentId === id ? grant.destination : null;
   const cloudCapable =
     environment.serverConfig?.environment.capabilities.cloudVoiceTranscription === true ||
     destination?.kind === "cloud";
   return (
-    <SettingsSection title={`Method on ${environment.label}`}>
+    <SettingsSection title={gt("Method on {environment}", { environment: environment.label })}>
       <LocalModelChoice
         environmentId={id}
         label={environment.label}
@@ -204,6 +211,7 @@ function EnvironmentMethodSection({
 }
 
 export function SettingsVoiceRouteScreen() {
+  const gt = useGT();
   const transcriber = useAtomValue(localVoiceTranscriberAtom);
   const grant = useAtomValue(voiceGrantAtom);
   const { environments, isReady } = useEnvironments();
@@ -268,7 +276,7 @@ export function SettingsVoiceRouteScreen() {
   const dragTo = drag === null ? -1 : dragFrom + dropSteps(dragFrom, drag.translation);
 
   return (
-    <SettingsScreen title="Voice">
+    <SettingsScreen title={gt("Voice")}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
@@ -276,10 +284,10 @@ export function SettingsVoiceRouteScreen() {
         contentContainerClassName="gap-3 px-5 pt-4"
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 18) + 18 }}
       >
-        <SettingsSection title="Transcribe on">
+        <SettingsSection title={gt("Transcribe on")}>
           <ListChoiceRow
-            label="This device"
-            description="Audio stays on this device and is transcribed here."
+            label={gt("This device")}
+            description={gt("Audio stays on this device and is transcribed here.")}
             selected={!grant && !sheetEnvironment}
             onPress={() => {
               setCloudSheet(null);
@@ -301,8 +309,8 @@ export function SettingsVoiceRouteScreen() {
             ))}
           {isReady && grant && !grantEnvironment ? (
             <ListChoiceRow
-              label="Previously selected environment"
-              description="No longer paired"
+              label={gt("Previously selected environment")}
+              description={gt("No longer paired")}
               separated
               selected
               disabled
@@ -325,10 +333,10 @@ export function SettingsVoiceRouteScreen() {
         ) : null}
         {permission === "ask" || permission === "denied" ? (
           <>
-            <SettingsSection title="Microphone access">
+            <SettingsSection title={gt("Microphone access")}>
               <SettingsActionRow
                 icon="mic"
-                label={permission === "ask" ? "Allow microphone access" : "Open Settings"}
+                label={permission === "ask" ? gt("Allow microphone access") : gt("Open Settings")}
                 onPress={
                   permission === "ask" ? requestPermission : () => void Linking.openSettings()
                 }
@@ -336,12 +344,12 @@ export function SettingsVoiceRouteScreen() {
             </SettingsSection>
             <Text className="px-2 text-sm text-foreground-muted">
               {permission === "ask"
-                ? "Allow microphone access to record and to see your microphones."
-                : "Turn on microphone access for T3 Code in Settings to use voice input."}
+                ? gt("Allow microphone access to record and to see your microphones.")
+                : gt("Turn on microphone access for T3 Code in Settings to use voice input.")}
             </Text>
           </>
         ) : null}
-        <SettingsSection title="Preferred order">
+        <SettingsSection title={gt("Preferred order")}>
           {entries.map((entry, index) => {
             const key = microphoneEntryKey(entry);
             const shift =
@@ -376,11 +384,13 @@ export function SettingsVoiceRouteScreen() {
           })}
         </SettingsSection>
         <Text className="px-2 text-sm text-foreground-muted">
-          Voice input uses the first connected microphone in this list. A wired or Bluetooth
-          microphone is added by name the first time you dictate with it connected; until then it
-          falls under Other. Swipe left on a named microphone to forget it.
+          {gt(
+            "Voice input uses the first connected microphone in this list. A wired or Bluetooth microphone is added by name the first time you dictate with it connected; until then it falls under Other. Swipe left on a named microphone to forget it.",
+          )}
           {Platform.OS === "android"
-            ? " Android may still use a different microphone if the preferred one can’t be routed."
+            ? gt(
+                " Android may still use a different microphone if the preferred one can’t be routed.",
+              )
             : null}
         </Text>
       </ScrollView>
