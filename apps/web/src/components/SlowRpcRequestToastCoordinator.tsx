@@ -1,16 +1,25 @@
+import { useGT } from "gt-react";
+
+import { localized, type Translate } from "./Localized";
 import { type SlowRpcAckRequest, subscribeSlowRpcAckRequests } from "../rpc/requestLatencyState";
 import { toastManager } from "./ui/toast";
 
-function describeSlowRequests(requests: ReadonlyArray<SlowRpcAckRequest>): string {
+function describeSlowRequests(requests: ReadonlyArray<SlowRpcAckRequest>, gt: Translate): string {
   const count = requests.length;
   const thresholdSeconds = Math.round(
     Math.min(...requests.map((request) => request.thresholdMs)) / 1000,
   );
 
-  return `${count} request${count === 1 ? "" : "s"} waiting longer than ${thresholdSeconds}s.`;
+  return count === 1
+    ? gt("1 request waiting longer than {seconds}s.", { seconds: thresholdSeconds })
+    : gt("{count} requests waiting longer than {seconds}s.", {
+        count,
+        seconds: thresholdSeconds,
+      });
 }
 
 function SlowRequestDetails({ requests }: { requests: ReadonlyArray<SlowRpcAckRequest> }) {
+  const gt = useGT();
   return (
     <ul className="space-y-2.5 text-xs text-muted-foreground">
       {requests.map((request) => (
@@ -20,7 +29,7 @@ function SlowRequestDetails({ requests }: { requests: ReadonlyArray<SlowRpcAckRe
         >
           <div className="wrap-break-word font-medium text-foreground">{request.tag}</div>
           <div className="mt-0.5 text-3xs opacity-75">
-            Started {new Date(request.startedAt).toLocaleTimeString()}
+            {gt("Started {time}", { time: new Date(request.startedAt).toLocaleTimeString() })}
           </div>
         </li>
       ))}
@@ -47,9 +56,9 @@ export function startSlowRpcRequestToasts(): () => void {
         expandableDescriptionTrigger: true,
         expandableLabels: { collapse: "Hide requests", expand: "Show requests" },
       },
-      description: describeSlowRequests(slowRequests),
+      description: localized((gt) => describeSlowRequests(slowRequests, gt)),
       timeout: 0,
-      title: "Some requests are slow",
+      title: localized((gt) => gt("Some requests are slow")),
       type: "warning" as const,
     };
 

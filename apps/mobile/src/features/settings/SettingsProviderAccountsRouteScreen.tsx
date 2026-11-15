@@ -88,6 +88,7 @@ function EnvironmentProviders({
   readonly environment: SettingsTarget;
   readonly providers: ReadonlyArray<ServerProvider>;
 }) {
+  const gt = useGT();
   const accounts = providers.filter(canManageProvider);
   // Claude has no in-app sign-in; each account is its own instance on a signed-in config folder.
   const claudeAccounts = providers.filter(
@@ -109,7 +110,7 @@ function EnvironmentProviders({
       ))}
       {accounts.length === 0 ? (
         <Text className="p-4 text-foreground-muted">
-          Configure a provider with in-app sign-in in web or desktop Settings.
+          {gt("Configure a provider with in-app sign-in in web or desktop Settings.")}
         </Text>
       ) : null}
       {claudeAccounts.map((provider) => (
@@ -360,7 +361,7 @@ function ProviderAccount({
   ) : needsExternalSetup && provider.setup?.documentationUrl ? (
     <ControlPill
       variant="pill"
-      label="Docs"
+      label={gt("Docs")}
       onPress={() => {
         void Linking.openURL(provider.setup!.documentationUrl!).catch(() =>
           setError(gt("Could not open the provider docs.")),
@@ -371,7 +372,7 @@ function ProviderAccount({
     <ControlPill
       variant="pill"
       label={gt("Cancel")}
-      accessibilityLabel={`Cancel ${name} sign-in`}
+      accessibilityLabel={gt("Cancel {name} sign-in", { name })}
       disabled={disabled}
       onPress={() => {
         void run(() => cancel({ environmentId, input: { instanceId, flowId: state.flowId! } }));
@@ -381,18 +382,18 @@ function ProviderAccount({
     <Menu
       accessible
       accessibilityRole="button"
-      accessibilityLabel={`${name} account options`}
+      accessibilityLabel={gt("{name} account options", { name })}
       title={name}
       actions={accountActions}
       onPressAction={({ nativeEvent }) => onMenuAction(nativeEvent.event)}
     >
-      <ControlPill icon="ellipsis" accessibilityLabel={`${name} account options`} />
+      <ControlPill icon="ellipsis" accessibilityLabel={gt("{name} account options", { name })} />
     </Menu>
   ) : canSignIn && !signedIn && methodActions.length > 1 && !signInDisabled ? (
     <Menu
       accessible
       accessibilityRole="button"
-      accessibilityLabel={`Sign in to ${name}`}
+      accessibilityLabel={gt("Sign in to {name}", { name })}
       title={gt("Sign in with")}
       actions={[...methodActions, ...removeActions]}
       onPressAction={({ nativeEvent }) => onMenuAction(nativeEvent.event)}
@@ -400,14 +401,16 @@ function ProviderAccount({
       <ControlPill
         variant="primary"
         label={gt("Sign in")}
-        accessibilityLabel={`Sign in to ${name}`}
+        accessibilityLabel={gt("Sign in to {name}", { name })}
       />
     </Menu>
   ) : canSignIn && !signedIn ? (
     <ControlPill
       variant="primary"
       label={usesCredentials ? gt("Connect") : gt("Sign in")}
-      accessibilityLabel={usesCredentials ? `Connect to ${name}` : `Sign in to ${name}`}
+      accessibilityLabel={
+        usesCredentials ? gt("Connect to {name}", { name }) : gt("Sign in to {name}", { name })
+      }
       disabled={signInDisabled}
       onPress={() => startSignIn()}
     />
@@ -433,7 +436,7 @@ function ProviderAccount({
         <View className="gap-2 px-4 pb-3">
           {interaction?.type === "deviceCode" ? (
             <Text selectable className="text-foreground">
-              Enter code {interaction.userCode} on the sign-in page.
+              {gt("Enter code {code} on the sign-in page.", { code: interaction.userCode })}
             </Text>
           ) : null}
           {interaction?.type === "terminal" ? (
@@ -532,6 +535,7 @@ function ProviderAccountSummary({
   readonly status: string | null | undefined;
   readonly email: string | undefined;
 }) {
+  const gt = useGT();
   const [revealed, setRevealed] = useState(false);
   const content = (
     <>
@@ -558,7 +562,7 @@ function ProviderAccountSummary({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={[name, status, revealed ? email : null].filter(Boolean).join(", ")}
-      accessibilityHint={revealed ? "Hides the account email" : "Reveals the account email"}
+      accessibilityHint={revealed ? gt("Hides the account email") : gt("Reveals the account email")}
       onPress={() => setRevealed((value) => !value)}
       className="min-w-0 shrink grow gap-0.5"
     >

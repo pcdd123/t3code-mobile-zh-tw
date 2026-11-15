@@ -41,6 +41,7 @@ import {
   startFanoutThread,
 } from "./chatViewSend";
 import type { useLocalDispatchState } from "./useLocalDispatchState";
+import { useGT } from "gt-react";
 
 interface MultipleModelSendInput {
   readonly environmentId: EnvironmentId;
@@ -62,6 +63,7 @@ interface MultipleModelSendInput {
  * user has moved on, through a "Restore prompt" toast.
  */
 export function useMultipleModelSend(input: MultipleModelSendInput) {
+  const gt = useGT();
   const {
     environmentId,
     routeThreadKey,
@@ -151,6 +153,7 @@ export function useMultipleModelSend(input: MultipleModelSendInput) {
       const starts = Promise.all(
         targets.map(async (target) => {
           const started = await startFanoutThread({
+            gt,
             retryKey: JSON.stringify([
               routeThreadKey,
               target.selection.instanceId,
@@ -217,7 +220,10 @@ export function useMultipleModelSend(input: MultipleModelSendInput) {
         toastManager.add(
           stackedThreadToast({
             type: "success",
-            title: `Started ${startedCount} ${startedCount === 1 ? "thread" : "threads"} in background`,
+            title:
+              startedCount === 1
+                ? gt("Started 1 thread in background")
+                : gt("Started {count} threads in background", { count: startedCount }),
           }),
         );
       }
@@ -228,7 +234,10 @@ export function useMultipleModelSend(input: MultipleModelSendInput) {
     if (sendResult._tag === "Failure") {
       const error = squashAtomCommandFailure(sendResult);
       failedSelections.push(...selections);
-      setThreadError(threadId, error instanceof Error ? error.message : "Failed to send messages.");
+      setThreadError(
+        threadId,
+        error instanceof Error ? error.message : gt("Failed to send messages."),
+      );
     }
     const restoreFailedDraft = () => {
       appAtomRegistry.set(fanoutSelectionsAtom, failedSelections);
@@ -254,12 +263,13 @@ export function useMultipleModelSend(input: MultipleModelSendInput) {
         const recoveryToastId = toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "A background prompt could not be sent",
-            description:
+            title: gt("A background prompt could not be sent"),
+            description: gt(
               "Your newer draft is unchanged. Restore the failed prompt when this composer is empty.",
+            ),
             timeout: 0,
             actionProps: {
-              children: "Restore prompt",
+              children: gt("Restore prompt"),
               onClick: () => {
                 if (
                   !draftId ||
@@ -270,8 +280,9 @@ export function useMultipleModelSend(input: MultipleModelSendInput) {
                   )
                 ) {
                   toastManager.update(recoveryToastId, {
-                    description:
+                    description: gt(
                       "Return to the original draft and send or clear its current prompt before restoring.",
+                    ),
                   });
                   return;
                 }

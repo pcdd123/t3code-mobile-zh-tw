@@ -1,4 +1,5 @@
 import type { ScopedThreadRef } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 import { DiscoveryListRow } from "../ui/discovery-list";
 
 import { PreviewFaviconIcon } from "./PreviewFaviconIcon";
@@ -11,7 +12,8 @@ interface Props {
 }
 
 export function PreviewLocalServerCard({ threadRef, server, onOpen }: Props) {
-  const subtitle = describeServer(server);
+  const gt = useGT();
+  const subtitle = server.processName || gt("Listening");
   return (
     <DiscoveryListRow
       onClick={onOpen}
@@ -20,9 +22,4 @@ export function PreviewLocalServerCard({ threadRef, server, onOpen }: Props) {
       description={`${server.host}:${server.port}`}
     />
   );
-}
-
-function describeServer(server: PreviewableServer): string {
-  if (server.processName) return server.processName;
-  return "Listening";
 }

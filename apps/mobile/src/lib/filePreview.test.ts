@@ -60,6 +60,10 @@ const audio = vi.hoisted(() => ({
   navigate: vi.fn(),
   query: vi.fn(),
 }));
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("expo-audio", () => ({
   AudioModule: { setAudioSessionOwner: audio.setSessionOwner },
   useAudioPlayer: () => audio.player,

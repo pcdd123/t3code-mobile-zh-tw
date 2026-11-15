@@ -16,6 +16,13 @@ const { add, update, openExternal, commands, starred, page } = vi.hoisted(() => 
   },
 }));
 vi.mock("./ui/toast", () => ({ toastManager: { add, update, close: vi.fn() } }));
+vi.mock("./Localized", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./Localized")>();
+  return {
+    ...actual,
+    localized: (render: Parameters<typeof actual.localized>[0]) => render(actual.englishGt),
+  };
+});
 vi.mock("../localApi", () => ({ readLocalApi: () => ({ shell: { openExternal } }) }));
 vi.mock("../rpc/atomRegistry", () => ({ appAtomRegistry: {} }));
 vi.mock("../state/sourceControl", () => ({ sourceControlEnvironment: commands }));

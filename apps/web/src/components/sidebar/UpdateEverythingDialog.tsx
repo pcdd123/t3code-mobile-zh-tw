@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import { EnvironmentId } from "@t3tools/contracts";
 import { Atom } from "effect/reactivity";
+import { useGT } from "gt-react";
 import { ChevronRightIcon } from "lucide-react";
 import { Fragment, type RefObject, useRef } from "react";
 
@@ -86,11 +87,38 @@ export function UpdateEverythingDialog({
   );
 }
 
-const APP_LABELS = {
-  "this-app": "This app",
-  server: "Server",
-  "desktop-app": "Desktop app",
-} as const;
+function appLabel(app: "this-app" | "server" | "desktop-app", gt: ReturnType<typeof useGT>) {
+  switch (app) {
+    case "this-app":
+      return gt("This app");
+    case "server":
+      return gt("Server");
+    case "desktop-app":
+      return gt("Desktop app");
+  }
+}
+
+/** Skip reasons come from `updateEverything.logic` as English ids; known ones translate here. */
+function skipReasonLabel(reason: string, gt: ReturnType<typeof useGT>) {
+  switch (reason) {
+    case "not connected":
+      return gt("not connected");
+    case "no permission":
+      return gt("no permission");
+    case "already updating":
+      return gt("already updating");
+    case "needs a manual update":
+      return gt("needs a manual update");
+    case "needs a newer desktop app":
+      return gt("needs a newer desktop app");
+    case "runs a preview build":
+      return gt("runs a preview build");
+    case "switch the Mac app on that Mac":
+      return gt("switch the Mac app on that Mac");
+    default:
+      return reason;
+  }
+}
 
 function UpdateEverythingDialogContent({
   version,
@@ -100,12 +128,13 @@ function UpdateEverythingDialogContent({
   onConfirm,
   cancelRef,
   title,
-  confirmLabel = "Update",
+  confirmLabel,
   notes = [],
   disabledReason = null,
   busy = false,
   checking = false,
 }: UpdateEverythingDialogContentProps) {
+  const gt = useGT();
   const stopped = useAtomValue(
     runningThreadCountAtom(
       restarts
@@ -123,7 +152,8 @@ function UpdateEverythingDialogContent({
     ),
   );
   const running = stopped + continuing;
-  const threads = `${running} running ${running === 1 ? "thread" : "threads"}`;
+  const threads =
+    running === 1 ? gt("1 running thread") : gt("{count} running threads", { count: running });
   const restarting = new Set(restarts.map((machine) => machine.environmentId));
   const updating = rows.filter((row) => row.app !== null || row.providers.length > 0);
   const skipped = rows.filter((row) => row.skipped !== null);
@@ -132,7 +162,10 @@ function UpdateEverythingDialogContent({
     <>
       <AlertDialogHeader className="shrink-0">
         <AlertDialogTitle>
-          {title ?? `Update ${updating.length} ${updating.length === 1 ? "machine" : "machines"}?`}
+          {title ??
+            (updating.length === 1
+              ? gt("Update 1 machine?")
+              : gt("Update {count} machines?", { count: updating.length }))}
         </AlertDialogTitle>
         <AlertDialogDescription>
           {version !== null ? (
@@ -142,11 +175,16 @@ function UpdateEverythingDialogContent({
           ) : null}
           {version !== null && providerCount > 0 ? " · " : null}
           {providerCount > 0
-            ? `${providerCount} provider ${providerCount === 1 ? "update" : "updates"}`
+            ? providerCount === 1
+              ? gt("1 provider update")
+              : gt("{count} provider updates", { count: providerCount })
             : null}
-          {checking
-            ? `${version !== null || providerCount > 0 ? " · " : ""}Checking for more…`
-            : null}
+          {checking ? (
+            <>
+              {version !== null || providerCount > 0 ? " · " : ""}
+              {gt("Checking for more…")}
+            </>
+          ) : null}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <ScrollArea scrollFade>
@@ -165,9 +203,9 @@ function UpdateEverythingDialogContent({
               role="row"
               className="col-span-full grid grid-cols-subgrid border-b pb-1.5 text-muted-foreground text-xs"
             >
-              <span role="columnheader">Machine</span>
+              <span role="columnheader">{gt("Machine")}</span>
               <span role="columnheader">T3 Code</span>
-              <span role="columnheader">Providers</span>
+              <span role="columnheader">{gt("Providers")}</span>
               <span role="columnheader" />
             </div>
             {updating.map((row) => (
@@ -181,12 +219,14 @@ function UpdateEverythingDialogContent({
                   <MiddleTruncate value={row.label} aria-hidden />
                 </span>
                 <span role="cell">
-                  {row.app !== null ? APP_LABELS[row.app] : null}
+                  {row.app !== null ? appLabel(row.app, gt) : null}
                   {row.app === null && row.skipped !== null ? (
-                    <span className="text-muted-foreground">Skipped</span>
+                    <span className="text-muted-foreground">{gt("Skipped")}</span>
                   ) : null}
                   {row.app === "this-app" ? (
-                    <span className="block text-muted-foreground text-xs">restarts last</span>
+                    <span className="block text-muted-foreground text-xs">
+                      {gt("restarts last")}
+                    </span>
                   ) : null}
                 </span>
                 <span role="cell">
@@ -209,7 +249,7 @@ function UpdateEverythingDialogContent({
             <Collapsible>
               <CollapsibleTrigger className="flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground data-panel-open:[&_svg]:rotate-90">
                 <ChevronRightIcon className="size-3.5 transition-transform" aria-hidden />
-                {skipped.length} skipped
+                {gt("{count} skipped", { count: skipped.length })}
               </CollapsibleTrigger>
               <CollapsiblePanel>
                 <div className="grid grid-cols-[minmax(0,max-content)_1fr] gap-x-3 gap-y-0.5 pt-1.5 ps-4.5 text-muted-foreground text-xs">
@@ -218,7 +258,9 @@ function UpdateEverythingDialogContent({
                       <span className="max-w-32 min-w-0">
                         <MiddleTruncate value={row.label} />
                       </span>
-                      <span className="wrap-anywhere">{row.skipped}</span>
+                      <span className="wrap-anywhere">
+                        {row.skipped === null ? null : skipReasonLabel(row.skipped, gt)}
+                      </span>
                     </Fragment>
                   ))}
                 </div>
@@ -235,17 +277,20 @@ function UpdateEverythingDialogContent({
         ) : running > 0 ? (
           <p className="self-center text-muted-foreground text-sm max-sm:order-1 max-sm:text-center sm:mr-auto">
             {stopped === 0
-              ? `${threads} will be interrupted and can resume after the restart.`
+              ? gt("{threads} will be interrupted and can resume after the restart.", { threads })
               : continuing === 0
-                ? `${threads} will be interrupted.`
-                : `${threads} will be interrupted. ${continuing} can resume after the restart.`}
+                ? gt("{threads} will be interrupted.", { threads })
+                : gt("{threads} will be interrupted. {continuing} can resume after the restart.", {
+                    threads,
+                    continuing,
+                  })}
           </p>
         ) : null}
         <AlertDialogClose ref={cancelRef} render={<Button variant="outline" disabled={busy} />}>
-          Cancel
+          {gt("Cancel")}
         </AlertDialogClose>
         <Button disabled={disabledReason !== null || busy} onClick={onConfirm}>
-          {confirmLabel}
+          {confirmLabel ?? gt("Update")}
         </Button>
       </AlertDialogFooter>
     </>
@@ -253,6 +298,9 @@ function UpdateEverythingDialogContent({
 }
 
 function RunningThreads({ environmentId }: { readonly environmentId: EnvironmentId }) {
+  const gt = useGT();
   const count = useAtomValue(runningThreadCountAtom(environmentId));
-  return count > 0 ? <span className="whitespace-nowrap text-warning">{count} running</span> : null;
+  return count > 0 ? (
+    <span className="whitespace-nowrap text-warning">{gt("{count} running", { count })}</span>
+  ) : null;
 }

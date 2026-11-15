@@ -148,7 +148,9 @@ function ConfiguredSettingsNotificationsRouteScreen() {
   const agentAwarenessSubtitle =
     Platform.OS === "android" && !agentAwarenessPushAvailable
       ? gt("Install a newer app build to enable notifications")
-      : agentAwarenessPlatform.subtitle;
+      : agentAwarenessPlatform.supported
+        ? undefined
+        : gt("Unavailable on this platform");
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { getToken, isLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false });

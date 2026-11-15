@@ -6,6 +6,10 @@ import { expect, it, vi } from "vite-plus/test";
 
 const bridge = vi.hoisted(() => ({ ios: undefined as StackHeaderConfigProps["ios"] }));
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("react-native", () => ({ StyleSheet: { flatten: (style: unknown) => style } }));
 vi.mock("react-native-keyboard-controller", () => ({
   KeyboardController: { dismiss: vi.fn() },

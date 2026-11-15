@@ -1,4 +1,5 @@
 import { ThreadId } from "@t3tools/contracts";
+import type { useGT } from "gt-react-native";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
@@ -7,6 +8,8 @@ import {
   fileChipShareSource,
   resolveFileChipTarget,
 } from "./fileChipMenu";
+
+const gt = ((message: string) => message) as ReturnType<typeof useGT>;
 
 it("copies native paths from a relative file chip in a Windows workspace", () => {
   const target = resolveFileChipTarget("reports/Device Users.csv", "C:/repo");
@@ -69,7 +72,7 @@ describe("file chip downloads", () => {
     ["/tmp/data.db", "/tmp/data.db", "application/vnd.sqlite3"],
   ])("offers a host download for %s", (href, path, mimeType) => {
     const target = resolveFileChipTarget(href, "/repo")!;
-    expect(fileChipMenu(target).actions).toContainEqual({
+    expect(fileChipMenu(target, gt).actions).toContainEqual({
       id: "save",
       title: "Save or share",
     });
@@ -84,7 +87,7 @@ describe("file chip downloads", () => {
     for (const href of ["src/app.ts", "/tmp/archive.7z", "/tmp/clip.mp4.txt"]) {
       const target = resolveFileChipTarget(href, "/repo")!;
       expect(fileChipShareSource(target, threadId)).toBeNull();
-      expect(fileChipMenu(target).actions.some(({ id }) => id === "save")).toBe(false);
+      expect(fileChipMenu(target, gt).actions.some(({ id }) => id === "save")).toBe(false);
     }
   });
 });

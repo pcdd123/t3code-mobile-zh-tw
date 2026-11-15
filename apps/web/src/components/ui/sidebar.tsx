@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -292,6 +293,7 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none";
   resizable?: boolean | SidebarResizableOptions;
 }) {
+  const gt = useGT();
   const { isMobile, state, openMobile, setOpenMobile, setMobileSheetMounted } = useSidebar();
   // Not usePanelAnimationSettings: its navigation suppression would snap the sheet shut mid-exit when an item navigates.
   const panelAnimationDurationMs = useClientSettings(
@@ -351,8 +353,8 @@ function Sidebar({
             }
           >
             <SheetHeader className="sr-only">
-              <SheetTitle>{props["aria-label"] ?? "Sidebar"}</SheetTitle>
-              <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+              <SheetTitle>{props["aria-label"] ?? gt("Sidebar")}</SheetTitle>
+              <SheetDescription>{gt("Displays the mobile sidebar.")}</SheetDescription>
             </SheetHeader>
             <div
               className={cn(
@@ -423,6 +425,7 @@ function Sidebar({
 }
 
 function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
+  const gt = useGT();
   const { toggleSidebar } = useSidebar();
   const isOpen = useSidebarVisibility();
 
@@ -444,7 +447,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       {...props}
     >
       {isOpen ? <PanelLeftCloseIcon className="size-4" /> : <PanelLeftIcon className="size-4" />}
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{gt("Toggle Sidebar")}</span>
     </Button>
   );
 }
@@ -463,13 +466,14 @@ function SidebarRail({
   onPointerUp,
   ...props
 }: React.ComponentProps<"button">) {
+  const gt = useGT();
   const { open, toggleSidebar, onCollapse } = useSidebar();
   const sidebarInstance = React.use(SidebarInstanceContext);
   const suppressClickRef = React.useRef(false);
   const resolvedResizable = sidebarInstance?.resizable ?? null;
   const canResize = resolvedResizable !== null && open;
-  const railLabel = canResize ? "Resize Sidebar" : "Toggle Sidebar";
-  const railTitle = canResize ? "Drag to resize sidebar" : "Toggle Sidebar";
+  const railLabel = canResize ? gt("Resize Sidebar") : gt("Toggle Sidebar");
+  const railTitle = canResize ? gt("Drag to resize sidebar") : gt("Toggle Sidebar");
   const resize = useResizeDrag<HTMLButtonElement>((event) => {
     const options = resolvedResizable;
     if (!options || !open) return null;

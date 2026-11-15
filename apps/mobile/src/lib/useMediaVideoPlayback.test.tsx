@@ -15,6 +15,10 @@ const mocks = vi.hoisted(() => ({
   replace: vi.fn<() => Promise<void>>(),
   thumbnail: vi.fn<(key: string, source: unknown, signal: AbortSignal) => Promise<null>>(),
 }));
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("@react-navigation/native", () => ({ useIsFocused: () => mocks.focused }));
 vi.mock("react-native", () => ({
   Platform: { OS: "ios" },

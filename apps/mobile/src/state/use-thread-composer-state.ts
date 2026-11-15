@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { useComposerAttachmentActions } from "./use-composer-attachment-actions";
 import * as Dialog from "../components/ui/Dialog";
 import { AuthOrchestrationOperateScope } from "@t3tools/contracts";
@@ -205,6 +206,7 @@ export function useThreadComposerState(input: {
     settings: { readonly runtimeMode: RuntimeMode; readonly modelSelection: ModelSelection },
   ) => Promise<boolean>;
 }) {
+  const gt = useGT();
   const {
     selectedThread: selectedThreadShell,
     selectedThreadCreation,
@@ -482,7 +484,7 @@ export function useThreadComposerState(input: {
       edit.existingAttachments.length === 0 &&
       draft.attachments.length === 0
     ) {
-      Dialog.alert("Add a message", "A queued message cannot be left empty.");
+      Dialog.alert(gt("Add a message"), gt("A queued message cannot be left empty."));
       return;
     }
     if (
@@ -490,8 +492,10 @@ export function useThreadComposerState(input: {
       PROVIDER_SEND_TURN_MAX_ATTACHMENTS
     ) {
       Dialog.alert(
-        "Too many attachments",
-        `Remove attachments until there are at most ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS}.`,
+        gt("Too many attachments"),
+        gt("Remove attachments until there are at most {count}.", {
+          count: PROVIDER_SEND_TURN_MAX_ATTACHMENTS,
+        }),
       );
       return;
     }
@@ -513,8 +517,8 @@ export function useThreadComposerState(input: {
       finishSave(false);
       const error = squashAtomCommandFailure(prepared);
       Dialog.alert(
-        "Could not save the queued message",
-        error instanceof Error ? error.message : "Your edit is still in the composer.",
+        gt("Could not save the queued message"),
+        error instanceof Error ? error.message : gt("Your edit is still in the composer."),
       );
       return;
     }
@@ -549,8 +553,8 @@ export function useThreadComposerState(input: {
       // The run left the queue during the save; its exit already told the composer what happened.
       if (!finishSave(false)) return;
       Dialog.alert(
-        "Could not save the queued message",
-        "It may have already started. Your edit is still in the composer.",
+        gt("Could not save the queued message"),
+        gt("It may have already started. Your edit is still in the composer."),
       );
       return;
     }
@@ -627,14 +631,14 @@ export function useThreadComposerState(input: {
     const sideChatCommand = beforeDispatch === undefined ? parseSideChatCommand(text) : null;
     if (sideChatCommand) {
       if (sideChatUnavailableReason !== null) {
-        Dialog.alert("Side chat not started", sideChatUnavailableReason);
+        Dialog.alert(gt("Side chat not started"), sideChatUnavailableReason);
       } else if (attachments.length > 0 || (draft.context?.records.length ?? 0) > 0) {
         Dialog.alert(
-          "Side chats take text only",
-          "Remove the attachments and context, then send it again.",
+          gt("Side chats take text only"),
+          gt("Remove the attachments and context, then send it again."),
         );
       } else if (sideChatCommand.prompt.length === 0) {
-        Dialog.alert("Ask a side question", "Type the question after /side, then send it.");
+        Dialog.alert(gt("Ask a side question"), gt("Type the question after /side, then send it."));
       } else if (modelUnavailable) {
         alertModelUnavailable();
       } else if (!startingSideChatRef.current) {
@@ -680,15 +684,17 @@ export function useThreadComposerState(input: {
     // Recovery preserves over-cap attachments; require trimming or outbox delivery would reject indefinitely.
     if (attachments.length > PROVIDER_SEND_TURN_MAX_ATTACHMENTS) {
       Dialog.alert(
-        "Too many attachments",
-        `Remove attachments until there are at most ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS}.`,
+        gt("Too many attachments"),
+        gt("Remove attachments until there are at most {count}.", {
+          count: PROVIDER_SEND_TURN_MAX_ATTACHMENTS,
+        }),
       );
       return null;
     }
 
     const contextBlockReason = composerContextSendBlockReason(draft.context);
     if (contextBlockReason) {
-      Dialog.alert("Too much context", contextBlockReason);
+      Dialog.alert(gt("Too much context"), contextBlockReason);
       return null;
     }
 
@@ -707,7 +713,10 @@ export function useThreadComposerState(input: {
       if (!readEnvironmentScope(selectedThreadShell.environmentId, AuthOrchestrationOperateScope))
         return null;
       if (thread.activeProviderThreadId === null) {
-        Dialog.alert("Start a Codex thread first", "Send a message before you submit feedback.");
+        Dialog.alert(
+          gt("Start a Codex thread first"),
+          gt("Send a message before you submit feedback."),
+        );
         return null;
       }
       const metadata = makeQueuedMessageMetadata();

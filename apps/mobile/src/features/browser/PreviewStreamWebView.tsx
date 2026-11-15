@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { Button } from "../../components/ui/Button";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import * as Dialog from "../../components/ui/Dialog";
@@ -62,7 +63,9 @@ type NativeStreamBridge = {
   readonly pdfUri?: string | null;
 };
 
-async function sendFilesToPage(chooser: PreviewStreamFileChooser, pick: boolean) {
+type Translate = ReturnType<typeof useGT>;
+
+async function sendFilesToPage(chooser: PreviewStreamFileChooser, pick: boolean, gt: Translate) {
   const body = new FormData();
   if (pick) {
     const { getDocumentAsync } = await import("expo-document-picker");
@@ -86,14 +89,14 @@ async function sendFilesToPage(chooser: PreviewStreamFileChooser, pick: boolean)
     body,
     credentials: chooser.credentials ? "include" : "omit",
   });
-  if (!response.ok) throw new Error((await response.text()) || "The upload was refused.");
+  if (!response.ok) throw new Error((await response.text()) || gt("The upload was refused."));
 }
 
-function offerDownload(download: PreviewStreamDownload) {
-  Dialog.alert(`Downloaded ${download.fileName}`, undefined, [
-    { text: "Not now", style: "cancel" },
+function offerDownload(download: PreviewStreamDownload, gt: Translate) {
+  Dialog.alert(gt("Downloaded {fileName}", { fileName: download.fileName }), undefined, [
+    { text: gt("Not now"), style: "cancel" },
     {
-      text: "Save or share",
+      text: gt("Save or share"),
       onPress: () =>
         void downloadAndShareAttachment({
           url: download.url,
@@ -101,7 +104,7 @@ function offerDownload(download: PreviewStreamDownload) {
           signal: new AbortController().signal,
         }).catch((cause: unknown) =>
           Dialog.alert(
-            "Could not save the download",
+            gt("Could not save the download"),
             cause instanceof Error ? cause.message : undefined,
           ),
         ),
@@ -118,6 +121,7 @@ export function PreviewStreamWebView(
       readonly paused?: boolean;
     },
 ) {
+  const gt = useGT();
   const { access, error, refresh, retryAfter } = usePreviewStreamAccess(props.environmentId);
   if (access && !props.paused) {
     return (
@@ -146,11 +150,11 @@ export function PreviewStreamWebView(
               error ? "text-center text-sm text-foreground-muted" : "text-sm text-foreground-muted"
             }
           >
-            {error || "Connecting to browser..."}
+            {error || gt("Connecting to browser...")}
           </AppText>
           {error && (
             <View className="items-center">
-              <Button label="Retry" tone="secondary" onPress={refresh} />
+              <Button label={gt("Retry")} tone="secondary" onPress={refresh} />
             </View>
           )}
         </>
@@ -233,6 +237,7 @@ function PreviewStreamDocumentView({
   readonly onStreaming: () => void;
   readonly onRecoverProcess: () => boolean;
 }) {
+  const gt = useGT();
   const webView = useRef<WebView<object>>(null);
   const active = useRef(false);
   const failed = useRef(false);
@@ -249,9 +254,9 @@ function PreviewStreamDocumentView({
     const chooser = fileChooser;
     if (!chooser) return;
     setFileChooser(null);
-    void sendFilesToPage(chooser, pick).catch((cause: unknown) =>
+    void sendFilesToPage(chooser, pick, gt).catch((cause: unknown) =>
       Dialog.alert(
-        "Could not send the files to the page",
+        gt("Could not send the files to the page"),
         cause instanceof Error ? cause.message : undefined,
       ),
     );
@@ -267,7 +272,7 @@ function PreviewStreamDocumentView({
       (text) => {
         if (text) command({ type: "text", text });
       },
-      () => Dialog.alert("Could not read the clipboard"),
+      () => Dialog.alert(gt("Could not read the clipboard")),
     );
   const clearBootstrapTimer = () => {
     if (bootstrapTimer.current === null) return;
@@ -287,7 +292,7 @@ function PreviewStreamDocumentView({
     setStatus("error");
   };
   const bootstrapTimedOut = useEffectEvent(() =>
-    fail("Browser viewer could not start. Reconnect to try again."),
+    fail(gt("Browser viewer could not start. Reconnect to try again.")),
   );
   const streamEnded = useEffectEvent(() => {
     onStreamingChange?.(false);
@@ -319,7 +324,7 @@ function PreviewStreamDocumentView({
   }));
   const processTerminated = () => {
     if (!active.current || failed.current) return;
-    if (!onRecoverProcess()) fail("Browser viewer stopped. Reconnect to try again.");
+    if (!onRecoverProcess()) fail(gt("Browser viewer stopped. Reconnect to try again."));
   };
   return (
     <View className="flex-1" style={{ backgroundColor: background }}>
@@ -330,7 +335,7 @@ function PreviewStreamDocumentView({
           </AppText>
           {control?.canOperate ? (
             <Button
-              label={control.controller === "you" ? "Release control" : "Take control"}
+              label={control.controller === "you" ? gt("Release control") : gt("Take control")}
               tone="secondary"
               disabled={control.controller === "another-viewer"}
               onPress={() =>
@@ -355,8 +360,8 @@ function PreviewStreamDocumentView({
           allowsPictureInPictureMediaPlayback
           mediaPlaybackRequiresUserAction={false}
           style={{ flex: 1, backgroundColor: background }}
-          onError={() => fail("Browser viewer could not load. Reconnect to try again.")}
-          onHttpError={() => fail("Browser viewer could not load. Reconnect to try again.")}
+          onError={() => fail(gt("Browser viewer could not load. Reconnect to try again."))}
+          onHttpError={() => fail(gt("Browser viewer could not load. Reconnect to try again."))}
           onContentProcessDidTerminate={processTerminated}
           onRenderProcessGone={processTerminated}
           onShouldStartLoadWithRequest={(request) =>
@@ -377,12 +382,12 @@ function PreviewStreamDocumentView({
               }
               case "unauthorized":
                 if (!onUnauthorized()) {
-                  fail("This session can't open the browser stream. Reconnect to try again.");
+                  fail(gt("This session can't open the browser stream. Reconnect to try again."));
                 }
                 return;
               case "gone":
                 setGone(true);
-                fail("This tab was closed.");
+                fail(gt("This tab was closed."));
                 onGone?.();
                 return;
               case "hostSetup":
@@ -396,7 +401,7 @@ function PreviewStreamDocumentView({
                 void Clipboard.setStringAsync(message.text).catch(() => undefined);
                 return;
               case "download":
-                offerDownload(message);
+                offerDownload(message, gt);
                 return;
               case "fileChooser":
                 setFileChooser(message.chooser);
@@ -407,7 +412,7 @@ function PreviewStreamDocumentView({
               case "status":
                 if (message.status !== "connecting") clearBootstrapTimer();
                 if (message.status === "error") {
-                  fail(message.detail ?? "Browser stream failed.");
+                  fail(message.detail ?? gt("Browser stream failed."));
                   return;
                 }
                 setStatus(message.status);
@@ -431,12 +436,14 @@ function PreviewStreamDocumentView({
       {!compact && fileChooser && control?.controller === "you" ? (
         <View className="absolute inset-x-3 top-16 gap-3 rounded-xl border border-secondary-border bg-secondary p-4">
           <AppText className="text-sm text-secondary-foreground">
-            The page asks for {fileChooser.multiple ? "files" : "a file"}.
+            {fileChooser.multiple
+              ? gt("The page asks for files.")
+              : gt("The page asks for a file.")}
           </AppText>
           <View className="flex-row justify-end gap-3">
-            <Button label="Cancel" tone="text" onPress={() => answerFileChooser(false)} />
+            <Button label={gt("Cancel")} tone="text" onPress={() => answerFileChooser(false)} />
             <Button
-              label={`Choose ${fileChooser.multiple ? "files" : "file"}`}
+              label={fileChooser.multiple ? gt("Choose files") : gt("Choose file")}
               tone="secondary"
               onPress={() => answerFileChooser(true)}
             />
@@ -450,7 +457,7 @@ function PreviewStreamDocumentView({
             <>
               {control.dialog.type === "prompt" ? (
                 <TextInput
-                  accessibilityLabel="Dialog response"
+                  accessibilityLabel={gt("Dialog response")}
                   className="rounded-lg border border-input-border bg-input px-3 py-2 text-foreground"
                   placeholderTextColorClassName="accent-placeholder"
                   selectionColorClassName="accent-focus/32"
@@ -460,12 +467,12 @@ function PreviewStreamDocumentView({
               ) : null}
               <View className="flex-row justify-end gap-3">
                 <Button
-                  label="Dismiss"
+                  label={gt("Dismiss")}
                   tone="text"
                   onPress={() => command({ type: "dialog", accept: false })}
                 />
                 <Button
-                  label="Accept"
+                  label={gt("Accept")}
                   tone="secondary"
                   onPress={() =>
                     command({
@@ -478,7 +485,9 @@ function PreviewStreamDocumentView({
               </View>
             </>
           ) : (
-            <AppText className="text-xs text-foreground-muted">Take control to respond.</AppText>
+            <AppText className="text-xs text-foreground-muted">
+              {gt("Take control to respond.")}
+            </AppText>
           )}
         </View>
       ) : null}
@@ -493,13 +502,13 @@ function PreviewStreamDocumentView({
               accessibilityLiveRegion="polite"
               className="text-center text-sm text-foreground-muted"
             >
-              {status === "error" ? error : "Connecting to browser..."}
+              {status === "error" ? error : gt("Connecting to browser...")}
             </AppText>
           )}
           {status === "error" && hostSetup && !compact ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Copy ${hostSetup.command}`}
+              accessibilityLabel={gt("Copy {command}", { command: hostSetup.command })}
               className="w-full flex-row items-center gap-2 rounded-xl border border-secondary-border bg-secondary px-4 py-3"
               onPress={() => {
                 void Clipboard.setStringAsync(hostSetup.command).catch(() => undefined);
@@ -508,13 +517,13 @@ function PreviewStreamDocumentView({
               <AppText selectable className="flex-1 font-mono text-sm text-secondary-foreground">
                 {hostSetup.command}
               </AppText>
-              <AppText className="text-xs text-foreground-muted">Copy</AppText>
+              <AppText className="text-xs text-foreground-muted">{gt("Copy")}</AppText>
             </Pressable>
           ) : null}
           {status === "error" && !gone && !compact ? (
             <View className="items-center">
               <Button
-                label={hostSetup ? "Try again" : "Reconnect"}
+                label={hostSetup ? gt("Try again") : gt("Reconnect")}
                 tone="secondary"
                 onPress={onRetry}
               />

@@ -12,6 +12,7 @@ import {
   type PullRequestComment,
 } from "@t3tools/contracts";
 import { StackActions, type NavigationProp } from "@react-navigation/native";
+import { useGT } from "gt-react-native";
 import { useMemo, useState, type ComponentProps, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { parseMarkdownDocument } from "../../lib/markdownDocument";
@@ -82,6 +83,7 @@ function TimelineComment({
   params: PullRequestParams;
   actions: CommentActions;
 }) {
+  const gt = useGT();
   const target = parsePullRequestAnchor(params.navigationUrl);
   const linked =
     target?.kind === "timeline" && pullRequestAnchorMatchesUrl(target.anchor, comment.url);
@@ -105,9 +107,10 @@ function TimelineComment({
         <PullRequestAvatar actor={comment.author} size={22} />
         <View className="min-w-0 flex-1">
           <Text className="text-sm">
-            <Text className="font-t3-medium">{comment.author?.login ?? "Unknown author"}</Text>
+            <Text className="font-t3-medium">{comment.author?.login ?? gt("Unknown author")}</Text>
             <Text className="text-foreground-muted">
-              {approved ? " approved" : changes ? " requested changes" : " commented"}
+              {" "}
+              {approved ? gt("approved") : changes ? gt("requested changes") : gt("commented")}
             </Text>
           </Text>
         </View>
@@ -192,7 +195,7 @@ function TimelineComment({
               className="flex-row items-center justify-center gap-1 py-2 active:opacity-70"
             >
               <Text className="text-xs font-t3-medium text-foreground">
-                {expanded ? "Show less" : "Show more"}
+                {expanded ? gt("Show less") : gt("Show more")}
               </Text>
               <SymbolView
                 name={expanded ? "chevron.up" : "chevron.down"}
@@ -219,6 +222,7 @@ export function pullRequestTimelineRows(
   navigation: Pick<NavigationProp<ReactNavigation.RootParamList>, "navigate" | "dispatch">,
   actions: CommentActions,
   newestFirst: boolean,
+  gt: ReturnType<typeof useGT>,
 ) {
   const linkTarget = parsePullRequestAnchor(params.navigationUrl);
   const threads = pullRequestConversationThreads(activity);
@@ -254,9 +258,9 @@ export function pullRequestTimelineRows(
             <PullRequestAvatar actor={thread.comments[0]?.author ?? null} size={22} />
             <Text className="flex-1 text-sm">
               <Text className="font-t3-medium">
-                {thread.comments[0]?.author?.login ?? "Unknown author"}
+                {thread.comments[0]?.author?.login ?? gt("Unknown author")}
               </Text>
-              <Text className="text-foreground-muted"> started a discussion</Text>
+              <Text className="text-foreground-muted"> {gt("started a discussion")}</Text>
             </Text>
             {thread.comments[0] ? (
               <Text className="text-2xs text-foreground-tertiary">
@@ -266,7 +270,15 @@ export function pullRequestTimelineRows(
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Open ${thread.isResolved ? "resolved" : "unresolved"} discussion in ${thread.path ?? "the overview"}`}
+            accessibilityLabel={
+              thread.isResolved
+                ? thread.path === null
+                  ? gt("Open resolved discussion in the overview")
+                  : gt("Open resolved discussion in {path}", { path: thread.path })
+                : thread.path === null
+                  ? gt("Open unresolved discussion in the overview")
+                  : gt("Open unresolved discussion in {path}", { path: thread.path })
+            }
             onPress={() =>
               navigation.navigate("PullRequestDiscussion", { ...params, discussionId: thread.id })
             }
@@ -274,7 +286,7 @@ export function pullRequestTimelineRows(
           >
             <View className="flex-row items-center gap-2">
               {thread.path === null ? (
-                <Text className="flex-1 text-xs">Overview</Text>
+                <Text className="flex-1 text-xs">{gt("Overview")}</Text>
               ) : (
                 <>
                   <SymbolView name="doc.text" size={14} tintColorClassName="accent-icon-muted" />
@@ -287,9 +299,9 @@ export function pullRequestTimelineRows(
               <SymbolView name="chevron.right" size={12} tintColorClassName="accent-icon-muted" />
             </View>
             <Text className="text-xs text-foreground-muted">
-              {thread.isResolved ? "Resolved" : "Unresolved"}
-              {thread.isOutdated ? " · Outdated" : ""} ·{" "}
-              {discussionCommentCountLabel(thread.commentCount ?? thread.comments.length)}
+              {thread.isResolved ? gt("Resolved") : gt("Unresolved")}
+              {thread.isOutdated ? ` · ${gt("Outdated")}` : ""} ·{" "}
+              {discussionCommentCountLabel(thread.commentCount ?? thread.comments.length, gt)}
             </Text>
           </Pressable>
         </TimelineEvent>
@@ -302,7 +314,10 @@ export function pullRequestTimelineRows(
         <TimelineEvent icon="commit">
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`View commit ${commit.oid.slice(0, 7)}, ${commit.messageHeadline}`}
+            accessibilityLabel={gt("View commit {sha}, {message}", {
+              sha: commit.oid.slice(0, 7),
+              message: commit.messageHeadline,
+            })}
             onPress={() =>
               navigation.dispatch(
                 StackActions.push("PullRequestFile", { ...params, commit: commit.oid, path: "" }),
@@ -328,7 +343,7 @@ export function pullRequestTimelineRows(
       date: "",
       content: (
         <Text className="py-3 text-xs text-foreground-muted">
-          More activity is available on the provider.
+          {gt("More activity is available on the provider.")}
         </Text>
       ),
     });

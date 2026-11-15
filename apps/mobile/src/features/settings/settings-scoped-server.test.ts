@@ -8,7 +8,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { SettingsTarget } from "./settings-environment-filter";
 import {
-  managedSettingReason,
+  managedSettingOrganization,
   planMobileScopedSettingsClear,
   planMobileScopedSettingsPatch,
   resolveMobileSettingsTargets,
@@ -178,13 +178,13 @@ describe("managed settings across environments", () => {
       null,
     );
 
-    expect(managedSettingReason(targets, "storageCleanup.logsAfterDays")).toBe(
-      "Managed by Example Corp.",
+    expect(managedSettingOrganization(targets, "storageCleanup.logsAfterDays")).toBe(
+      "Example Corp",
     );
-    expect(managedSettingReason(targets, "defaultAutoPull", "storageCleanup")).toBe(
-      "Managed by Example Corp.",
+    expect(managedSettingOrganization(targets, "defaultAutoPull", "storageCleanup")).toBe(
+      "Example Corp",
     );
-    expect(managedSettingReason(targets, "defaultAutoPull")).toBeUndefined();
-    expect(managedSettingReason(targets.slice(0, 1), "storageCleanup")).toBeUndefined();
+    expect(managedSettingOrganization(targets, "defaultAutoPull")).toBeUndefined();
+    expect(managedSettingOrganization(targets.slice(0, 1), "storageCleanup")).toBeUndefined();
   });
 });

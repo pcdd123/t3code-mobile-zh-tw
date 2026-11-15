@@ -2,6 +2,7 @@ import {
   capitalizeTerm,
   sourceControlClients,
 } from "@t3tools/client-runtime/source-control-clients";
+import { useGT } from "gt-react-native";
 import { memo } from "react";
 import { Pressable, View } from "react-native";
 import { AppText as Text } from "../../components/ui/AppText";
@@ -23,13 +24,15 @@ import {
 import {
   pullRequestLabelColor,
   pullRequestListReviewStatus,
+  pullRequestListReviewStatusLabel,
   pullRequestListRowsAreEqual,
   type EnvironmentPullRequestListEntry,
 } from "./pullRequestList";
 import {
   pullRequestChecksStatus,
-  pullRequestConflict,
+  pullRequestConflictLabel,
   pullRequestStatus,
+  pullRequestStatusLabel,
 } from "./pullRequestStatus";
 import { PullRequestGlyph } from "./pullRequestGlyphs";
 
@@ -43,6 +46,7 @@ export const PullRequestListRow = memo(
     readonly getActions: (item: EnvironmentPullRequestListEntry) => MenuProps["actions"];
     readonly onAction: (item: EnvironmentPullRequestListEntry, action: string) => void;
   }) {
+    const gt = useGT();
     const { item } = props;
     const foreground = props.selected
       ? selectedThreadRowColors.foregroundClassName
@@ -60,8 +64,39 @@ export const PullRequestListRow = memo(
         ? "text-drawer-foreground-muted"
         : "text-foreground-tertiary";
     const status = pullRequestStatus(item);
-    const conflict = pullRequestConflict(item);
+    const conflict = pullRequestConflictLabel(item, gt);
     const review = pullRequestListReviewStatus(item);
+    const reviewLabel = review ? pullRequestListReviewStatusLabel(review.kind, gt) : null;
+    const checksLabel =
+      item.checksState === "passing"
+        ? gt("Checks passing")
+        : item.checksState === "failing"
+          ? gt("Checks failing")
+          : item.checksState === "pending"
+            ? gt("Checks pending")
+            : null;
+    const accessibilityLabel = [
+      `${capitalizeTerm(sourceControlClients.get(item.provider).changeRequest.singular)} ${item.number}`,
+      item.title,
+      pullRequestStatusLabel(item, gt),
+      ...(conflict ? [conflict.toLowerCase()] : []),
+      gt("by {author}", { author: item.author?.login ?? gt("unknown author") }),
+      ...(reviewLabel ? [reviewLabel] : []),
+      ...(checksLabel ? [checksLabel.toLowerCase()] : []),
+      ...(item.stack
+        ? [
+            gt("stack {position} of {size}", {
+              position: item.stack.position,
+              size: item.stack.size,
+            }),
+          ]
+        : []),
+      ...(item.labels.length ? [item.labels.map((label) => label.name).join(", ")] : []),
+      gt("{additions} additions, {deletions} deletions", {
+        additions: item.additions,
+        deletions: item.deletions,
+      }),
+    ].join(", ");
     const checks = item.checksState ? pullRequestChecksStatus(item.checksState) : null;
     return (
       <View style={props.sidebar ? THREAD_LIST_V2_SIDEBAR_ROW_CONTAINER_STYLE : undefined}>
@@ -74,8 +109,8 @@ export const PullRequestListRow = memo(
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: props.selected, busy: props.busy }}
-            accessibilityLabel={`${capitalizeTerm(sourceControlClients.get(item.provider).changeRequest.singular)} ${item.number}, ${item.title}, ${status.label}${conflict ? `, ${conflict.label.toLowerCase()}` : ""}, by ${item.author?.login ?? "unknown author"}${review ? `, ${review.accessibleLabel}` : ""}${item.checksState ? `, checks ${item.checksState}` : ""}${item.stack ? `, stack ${item.stack.position} of ${item.stack.size}` : ""}${item.labels.length ? `, ${item.labels.map((label) => label.name).join(", ")}` : ""}, ${item.additions} additions, ${item.deletions} deletions`}
-            accessibilityHint="Double tap to open. Touch and hold for quick actions."
+            accessibilityLabel={accessibilityLabel}
+            accessibilityHint={gt("Double tap to open. Touch and hold for quick actions.")}
             onPress={() => props.onSelect(item)}
             disabled={props.busy}
             style={props.sidebar ? THREAD_LIST_V2_SIDEBAR_ROW_STYLE : undefined}
@@ -176,12 +211,12 @@ export const PullRequestListRow = memo(
                   ) : null}
                 </View>
                 {checks ? (
-                  <View className="shrink-0" accessibilityLabel={`Checks ${item.checksState}`}>
+                  <View className="shrink-0" accessibilityLabel={checksLabel ?? undefined}>
                     <SymbolView name={checks.icon} size={13} tintColorClassName={checks.tint} />
                   </View>
                 ) : null}
                 {review ? (
-                  <View className="shrink-0" accessibilityLabel={review.accessibleLabel}>
+                  <View className="shrink-0" accessibilityLabel={reviewLabel ?? undefined}>
                     <SymbolView name={review.icon} size={13} tintColorClassName={review.tint} />
                   </View>
                 ) : null}

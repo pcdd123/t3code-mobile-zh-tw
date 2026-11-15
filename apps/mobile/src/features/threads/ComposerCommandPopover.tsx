@@ -11,6 +11,7 @@ import type {
   ServerProviderSlashCommand,
 } from "@t3tools/contracts";
 import type { ComposerTriggerKind } from "@t3tools/shared/composerTrigger";
+import { useGT } from "gt-react-native";
 import { memo } from "react";
 import { Pressable, ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 
@@ -137,39 +138,62 @@ function itemIcon(item: ComposerCommandItem): AppSymbolName | null {
   }
 }
 
+type Translate = ReturnType<typeof useGT>;
+
 function groupLabel(
   triggerKind: ComposerTriggerKind | null,
   items: ReadonlyArray<ComposerCommandItem>,
+  gt: Translate,
 ): string | null {
   switch (triggerKind) {
     case "pull-request":
-      return "Pull requests";
+      return gt("Pull requests");
     case "slash-command":
-      return "Commands";
+      return gt("Commands");
     case "skill":
-      return "Skills";
+      return gt("Skills");
     case "path":
-      return items.every((item) => item.type === "path") ? "Files" : "Mentions";
+      return items.every((item) => item.type === "path") ? gt("Files") : gt("Mentions");
     default:
       return null;
   }
 }
 
-function emptyText(triggerKind: ComposerTriggerKind | null, isLoading: boolean): string {
+function emptyText(
+  triggerKind: ComposerTriggerKind | null,
+  isLoading: boolean,
+  gt: Translate,
+): string {
   if (isLoading) {
-    return triggerKind === "path" ? "Searching files…" : "Loading…";
+    return triggerKind === "path" ? gt("Searching files…") : gt("Loading…");
   }
   switch (triggerKind) {
     case "pull-request":
-      return "No matching pull requests.";
+      return gt("No matching pull requests.");
     case "path":
-      return "No matching mentions.";
+      return gt("No matching mentions.");
     case "skill":
-      return "No skills found.";
+      return gt("No skills found.");
     case "slash-command":
-      return "No matching commands.";
+      return gt("No matching commands.");
     default:
-      return "No results.";
+      return gt("No results.");
+  }
+}
+
+function itemDescription(item: ComposerCommandItem, gt: Translate): string {
+  if (item.type !== "slash-command") return item.description;
+  switch (item.command) {
+    case "model":
+      return gt("Switch model");
+    case "side":
+      return gt("Ask a side question in a new side chat");
+    case "btw":
+      return gt("Same as /side");
+    case "clear":
+      return gt("Start a fresh session");
+    default:
+      return item.description;
   }
 }
 
@@ -179,7 +203,9 @@ const CommandRow = memo(function CommandRow(props: {
   readonly isLast: boolean;
   readonly isSlashSkill: boolean;
 }) {
+  const gt = useGT();
   const iconName = itemIcon(props.item);
+  const description = itemDescription(props.item, gt);
 
   return (
     <Pressable
@@ -224,9 +250,9 @@ const CommandRow = memo(function CommandRow(props: {
           props.item.label
         )}
       </Text>
-      {props.item.description ? (
+      {description ? (
         <Text className="min-w-0 flex-1 text-xs text-foreground-muted" numberOfLines={1}>
-          {props.item.description}
+          {description}
         </Text>
       ) : null}
     </Pressable>
@@ -236,7 +262,8 @@ const CommandRow = memo(function CommandRow(props: {
 export const ComposerCommandPopover = memo(function ComposerCommandPopover(
   props: ComposerCommandPopoverProps,
 ) {
-  const label = groupLabel(props.triggerKind, props.items);
+  const gt = useGT();
+  const label = groupLabel(props.triggerKind, props.items, gt);
 
   return (
     <PopoverSurface>
@@ -266,7 +293,7 @@ export const ComposerCommandPopover = memo(function ComposerCommandPopover(
       ) : (
         <View className="px-3.5 py-2.5">
           <Text className="text-xs text-foreground-tertiary">
-            {props.error ?? emptyText(props.triggerKind, props.isLoading)}
+            {props.error ?? emptyText(props.triggerKind, props.isLoading, gt)}
           </Text>
         </View>
       )}

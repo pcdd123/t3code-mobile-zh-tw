@@ -1,4 +1,5 @@
 import * as Dialog from "../../components/ui/Dialog";
+import { useGT } from "gt-react-native";
 import { useCallback } from "react";
 
 import { removeThreadOutboxMessage } from "../../state/thread-outbox-removal";
@@ -18,6 +19,7 @@ export function usePendingTaskListActions(
   readonly openPendingTask: (pendingTask: PendingNewTask) => void;
   readonly confirmDeletePendingTask: (pendingTask: PendingNewTask) => void;
 } {
+  const gt = useGT();
   const openPendingTask = useCallback(
     (pendingTask: PendingNewTask) => {
       selectThreadRoute(
@@ -38,67 +40,78 @@ export function usePendingTaskListActions(
     [selectThreadRoute],
   );
 
-  const confirmDeletePendingTask = useCallback((pendingTask: PendingNewTask) => {
-    if (pendingTask.kind === "draft") {
-      Dialog.alert("Discard draft?", `“${pendingTask.title}” will be removed.`, [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () => {
-            void withThreadDismissal(
-              pendingTask.key,
-              async () =>
-                clearComposerDraftContent(pendingTask.draftKey, {
-                  clearModelSelection: true,
-                  clearWorkspaceSelection: true,
-                }),
-              () => true,
-            );
-          },
-        },
-      ]);
-      return;
-    }
-    Dialog.alert(
-      "Delete pending task?",
-      `“${pendingTask.title}” has not been sent yet and will be removed from the outbox.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            // Hold delivery from confirmation so reconnects cannot send a task during removal.
-            // The editor can release the shared hold mid-animation; remove edited tasks at once.
-            // Keep an editor's hold unless removal succeeds.
-            const messageId = pendingTask.message.messageId;
-            const heldByEditor = appAtomRegistry.get(editingQueuedMessageIdsAtom)[messageId];
-            holdEditingQueuedMessage(messageId);
-            const releaseUnlessEditing = () => {
-              if (!heldByEditor) releaseEditingQueuedMessage(messageId);
-            };
-            const remove = () => removeThreadOutboxMessage(pendingTask.message);
-            void (
-              heldByEditor
-                ? remove()
-                : withThreadDismissal(pendingTask.key, remove, (removed) => removed)
-            )
-              .then((removed) =>
-                removed ? releaseEditingQueuedMessage(messageId) : releaseUnlessEditing(),
-              )
-              .catch((error) => {
-                releaseUnlessEditing();
-                Dialog.alert(
-                  "Could not delete pending task",
-                  error instanceof Error ? error.message : "The pending task could not be removed.",
+  const confirmDeletePendingTask = useCallback(
+    (pendingTask: PendingNewTask) => {
+      if (pendingTask.kind === "draft") {
+        Dialog.alert(
+          gt("Discard draft?"),
+          gt("“{title}” will be removed.", { title: pendingTask.title }),
+          [
+            { text: gt("Cancel"), style: "cancel" },
+            {
+              text: gt("Discard"),
+              style: "destructive",
+              onPress: () => {
+                void withThreadDismissal(
+                  pendingTask.key,
+                  async () =>
+                    clearComposerDraftContent(pendingTask.draftKey, {
+                      clearModelSelection: true,
+                      clearWorkspaceSelection: true,
+                    }),
+                  () => true,
                 );
-              });
+              },
+            },
+          ],
+        );
+        return;
+      }
+      Dialog.alert(
+        gt("Delete pending task?"),
+        gt("“{title}” has not been sent yet and will be removed from the outbox.", {
+          title: pendingTask.title,
+        }),
+        [
+          { text: gt("Cancel"), style: "cancel" },
+          {
+            text: gt("Delete"),
+            style: "destructive",
+            onPress: () => {
+              // Hold delivery from confirmation so reconnects cannot send a task during removal.
+              // The editor can release the shared hold mid-animation; remove edited tasks at once.
+              // Keep an editor's hold unless removal succeeds.
+              const messageId = pendingTask.message.messageId;
+              const heldByEditor = appAtomRegistry.get(editingQueuedMessageIdsAtom)[messageId];
+              holdEditingQueuedMessage(messageId);
+              const releaseUnlessEditing = () => {
+                if (!heldByEditor) releaseEditingQueuedMessage(messageId);
+              };
+              const remove = () => removeThreadOutboxMessage(pendingTask.message);
+              void (
+                heldByEditor
+                  ? remove()
+                  : withThreadDismissal(pendingTask.key, remove, (removed) => removed)
+              )
+                .then((removed) =>
+                  removed ? releaseEditingQueuedMessage(messageId) : releaseUnlessEditing(),
+                )
+                .catch((error) => {
+                  releaseUnlessEditing();
+                  Dialog.alert(
+                    gt("Could not delete pending task"),
+                    error instanceof Error
+                      ? error.message
+                      : gt("The pending task could not be removed."),
+                  );
+                });
+            },
           },
-        },
-      ],
-    );
-  }, []);
+        ],
+      );
+    },
+    [gt],
+  );
 
   return { openPendingTask, confirmDeletePendingTask };
 }

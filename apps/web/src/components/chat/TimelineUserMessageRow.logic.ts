@@ -1,9 +1,13 @@
 import { type ChatFileAttachment, type ChatImageAttachment } from "../../types";
 import type { ComposerContextRecord, KnownComposerContextRecord } from "@t3tools/contracts";
 import { asKnownContextRecord } from "~/lib/composerContextRecords";
+import type { useGT } from "gt-react";
 
-export function userMessageFileLabel(file: Pick<ChatFileAttachment, "name" | "source">) {
-  return file.source?._tag === "pasted-text" ? "Pasted text" : file.name;
+export function userMessageFileLabel(
+  gt: ReturnType<typeof useGT>,
+  file: Pick<ChatFileAttachment, "name" | "source">,
+) {
+  return file.source?._tag === "pasted-text" ? gt("Pasted text") : file.name;
 }
 
 export function resolvePreviewAnnotationImage(input: {

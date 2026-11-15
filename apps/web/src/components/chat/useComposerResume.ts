@@ -20,6 +20,7 @@ import type { makeThreadErrorSetter } from "../ChatView.logic";
 import { draftSendState } from "./chatViewSend";
 import type { useTimelineFollow } from "./useTimelineFollow";
 import type { useUsageLimitsPanel } from "./useUsageLimitsPanel";
+import { useGT } from "gt-react";
 
 interface ComposerResumeInput {
   readonly environmentId: EnvironmentId;
@@ -53,6 +54,7 @@ interface ComposerResumeInput {
  * in its queue. Shares the per-route send lock with the composer's send paths.
  */
 export function useComposerResume(input: ComposerResumeInput) {
+  const gt = useGT();
   const {
     environmentId,
     routeThreadKey,
@@ -148,7 +150,7 @@ export function useComposerResume(input: ComposerResumeInput) {
         const error = squashAtomCommandFailure(result);
         setThreadError(
           threadId,
-          error instanceof Error ? error.message : "Could not resume thread.",
+          error instanceof Error ? error.message : gt("Could not resume thread."),
         );
       }
     } else {

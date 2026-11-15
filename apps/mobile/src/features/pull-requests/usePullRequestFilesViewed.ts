@@ -2,6 +2,7 @@ import { usePullRequestConnected } from "./usePullRequestConnected";
 import { RegistryContext, useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
 import type { PullRequestDetail } from "@t3tools/contracts";
+import { useGT } from "gt-react-native";
 import { use, useState } from "react";
 import {
   composerPullRequests,
@@ -15,6 +16,7 @@ import { pullRequestReviewKey } from "./pullRequestReviewDrafts";
 import { viewedOverlay, type ViewedState } from "./pullRequestFilesViewed";
 
 export function usePullRequestFilesViewed(params: PullRequestParams, pr: PullRequestDetail | null) {
+  const gt = useGT();
   const registry = use(RegistryContext);
   const target = pullRequestTarget(params);
   const scopeKey = pullRequestReviewKey(params);
@@ -71,7 +73,7 @@ export function usePullRequestFilesViewed(params: PullRequestParams, pr: PullReq
       return {
         ...current,
         presses: rest,
-        error: cause instanceof Error ? cause.message : "Could not update viewed files.",
+        error: cause instanceof Error ? cause.message : gt("Could not update viewed files."),
       };
     });
     refresh();

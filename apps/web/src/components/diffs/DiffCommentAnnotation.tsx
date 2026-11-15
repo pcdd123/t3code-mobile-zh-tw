@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import type { EnvironmentId, ProjectId } from "@t3tools/contracts";
 import { MessageCircle, Trash2 } from "lucide-react";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -62,6 +63,7 @@ export function DiffCommentAnnotation({
   focusOnMount = true,
   completionScope = null,
 }: DiffCommentAnnotationProps) {
+  const gt = useGT();
   const [localDraftText, setLocalDraftText] = useState("");
   const displayedText = kind === "draft" && !onTextChange ? localDraftText : text;
   const trimmedText = displayedText.trim();
@@ -96,7 +98,7 @@ export function DiffCommentAnnotation({
             <Button
               variant="ghost-muted"
               size="icon-xs"
-              aria-label="Delete comment"
+              aria-label={gt("Delete comment")}
               onClick={onDelete}
             >
               <Trash2 className="size-3" />
@@ -136,7 +138,7 @@ export function DiffCommentAnnotation({
         value={displayedText}
         dir={textDirection(displayedText)}
         placeholder={placeholder}
-        aria-label={`Comment on lines ${rangeLabel}`}
+        aria-label={gt("Comment on lines {range}", { range: rangeLabel })}
         onValueChange={onTextChange ?? setLocalDraftText}
         onFocus={(event) => {
           const end = event.currentTarget.value.length;

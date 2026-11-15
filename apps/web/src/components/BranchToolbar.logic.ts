@@ -1,3 +1,4 @@
+import { englishGt, type Translate } from "./Localized";
 import type {
   EnvironmentId,
   EnvironmentMachineKind,
@@ -40,6 +41,7 @@ export function resolveEnvironmentOptionLabel(input: {
   environmentId: EnvironmentId;
   runtimeLabel?: string | null;
   savedLabel?: string | null;
+  gt?: Translate;
 }): string {
   const runtimeLabel = normalizeDisplayLabel(input.runtimeLabel);
   const savedLabel = normalizeDisplayLabel(input.savedLabel);
@@ -49,7 +51,7 @@ export function resolveEnvironmentOptionLabel(input: {
       if (!label) return false;
       return !GENERIC_LOCAL_ENVIRONMENT_LABELS.has(label.toLowerCase());
     });
-    return preferredLocalLabel ?? "This device";
+    return preferredLocalLabel ?? (input.gt ?? englishGt)("This device");
   }
 
   return runtimeLabel ?? savedLabel ?? input.environmentId;
@@ -91,8 +93,8 @@ export function resolveContextStripLabelsCompact(input: {
     : input.neededWidth > input.availableWidth;
 }
 
-export function resolveEnvModeLabel(mode: EnvMode): string {
-  return mode === "worktree" ? "New worktree" : "Current checkout";
+export function resolveEnvModeLabel(mode: EnvMode, gt: Translate = englishGt): string {
+  return mode === "worktree" ? gt("New worktree") : gt("Current checkout");
 }
 
 export const WORKTREE_SUBMODULES_LABELS: Record<WorktreeSubmodules, string> = {
@@ -101,16 +103,24 @@ export const WORKTREE_SUBMODULES_LABELS: Record<WorktreeSubmodules, string> = {
   none: "Skip",
 };
 
-export function resolveCurrentWorkspaceLabel(activeWorktreePath: string | null): string {
-  return activeWorktreePath ? "Current worktree" : resolveEnvModeLabel("local");
+export function resolveCurrentWorkspaceLabel(
+  activeWorktreePath: string | null,
+  gt: Translate = englishGt,
+): string {
+  return activeWorktreePath ? gt("Current worktree") : resolveEnvModeLabel("local", gt);
 }
 
 export function resolveLockedWorkspaceLabel(
   activeWorktreePath: string | null,
   effectiveEnvMode: EnvMode,
+  gt: Translate = englishGt,
 ): string {
-  if (activeWorktreePath) return activeWorktreePath.split(/[\\/]/).findLast(Boolean) ?? "Worktree";
-  return effectiveEnvMode === "worktree" ? resolveEnvModeLabel("worktree") : "Local checkout";
+  if (activeWorktreePath) {
+    return activeWorktreePath.split(/[\\/]/).findLast(Boolean) ?? gt("Worktree");
+  }
+  return effectiveEnvMode === "worktree"
+    ? resolveEnvModeLabel("worktree", gt)
+    : gt("Local checkout");
 }
 
 export interface PreviousWorktreeSeed {
@@ -151,8 +161,13 @@ export function resolvePreviousWorktreeSeed(input: {
   return latest === null ? null : { branch: latest.branch, worktreePath: latest.worktreePath };
 }
 
-export function resolvePreviousWorktreeLabel(seed: PreviousWorktreeSeed): string {
-  return seed.branch ? `Previous worktree (${seed.branch})` : "Previous worktree";
+export function resolvePreviousWorktreeLabel(
+  seed: PreviousWorktreeSeed,
+  gt: Translate = englishGt,
+): string {
+  return seed.branch
+    ? gt("Previous worktree ({branch})", { branch: seed.branch })
+    : gt("Previous worktree");
 }
 
 export function resolveEffectiveEnvMode(input: {
@@ -245,7 +260,9 @@ export function resolveBranchTriggerLabel(input: {
   resolvedActiveBranch: string | null;
   resolvedActiveBranchIsRemote: boolean | null;
   startFromOrigin: boolean;
+  gt?: Translate;
 }): string {
+  const gt = input.gt ?? englishGt;
   const {
     activeWorktreePath,
     effectiveEnvMode,
@@ -254,13 +271,13 @@ export function resolveBranchTriggerLabel(input: {
     startFromOrigin,
   } = input;
   if (!resolvedActiveBranch) {
-    return "Select ref";
+    return gt("Select ref");
   }
   if (effectiveEnvMode === "worktree" && !activeWorktreePath) {
     // Only the server can determine a local branch's configured remote.
     return startFromOrigin && resolvedActiveBranchIsRemote === false
-      ? `From ${resolvedActiveBranch} (remote)`
-      : `From ${resolvedActiveBranch}`;
+      ? gt("From {ref} (remote)", { ref: resolvedActiveBranch })
+      : gt("From {ref}", { ref: resolvedActiveBranch });
   }
   return resolvedActiveBranch;
 }

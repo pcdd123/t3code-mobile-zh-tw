@@ -2,6 +2,7 @@ import { ActiveNewTaskContext } from "../../state/active-new-task";
 import { resolveNewThreadModelSelection } from "@t3tools/shared/usageLimits";
 import { useNowMinuteMs } from "../../lib/clock";
 import * as Dialog from "../../components/ui/Dialog";
+import { useGT } from "gt-react-native";
 import React, { useEffect, useRef, useState } from "react";
 
 import type {
@@ -225,6 +226,7 @@ export function NewTaskFlowProvider(
     routeDraftId?: string;
   }>,
 ) {
+  const gt = useGT();
   const projects = useProjects();
   const threads = useThreadShells();
   const { savedConnectionsById } = useSavedRemoteConnections();
@@ -644,12 +646,12 @@ export function NewTaskFlowProvider(
     if (!isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
       Dialog.alert(
-        "Could not switch machine",
+        gt("Could not switch machine"),
         error instanceof Error
           ? error.message
           : triage?._tag === "Failure"
-            ? "The server could not prepare triage."
-            : "The folder for threads without a project could not be created.",
+            ? gt("The server could not prepare triage.")
+            : gt("The folder for threads without a project could not be created."),
       );
     }
     return false;

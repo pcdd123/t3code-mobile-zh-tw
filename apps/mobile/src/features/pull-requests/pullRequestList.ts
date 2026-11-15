@@ -1,3 +1,4 @@
+import type { useGT } from "gt-react-native";
 import { pullRequestFilterProjects } from "@t3tools/client-runtime/pull-request-project-filter";
 import { parsePullRequestQuery } from "@t3tools/client-runtime/pull-request-query";
 import {
@@ -468,6 +469,7 @@ export function pullRequestListReviewStatus(
 ) {
   if (entry.reviewDecision === "changes-requested")
     return {
+      kind: "changes-requested",
       label: "Changes",
       accessibleLabel: "Changes requested",
       icon: "person.fill.xmark",
@@ -475,6 +477,7 @@ export function pullRequestListReviewStatus(
     } as const;
   if (entry.reviewDecision === "approved")
     return {
+      kind: "approved",
       label: "Approved",
       accessibleLabel: "Reviews approved",
       icon: "person.fill.checkmark",
@@ -482,6 +485,7 @@ export function pullRequestListReviewStatus(
     } as const;
   if (entry.viewerReviewRequested)
     return {
+      kind: "viewer-requested",
       label: "Your review",
       accessibleLabel: "Your review requested",
       icon: "person.badge.clock",
@@ -489,12 +493,30 @@ export function pullRequestListReviewStatus(
     } as const;
   if (entry.reviewDecision === "review-required")
     return {
+      kind: "review-required",
       label: "Review",
       accessibleLabel: "Review required",
       icon: "person.badge.clock",
       tint: "accent-icon-muted",
     } as const;
   return null;
+}
+
+/** The localized form of `pullRequestListReviewStatus(entry)?.accessibleLabel`. */
+export function pullRequestListReviewStatusLabel(
+  kind: NonNullable<ReturnType<typeof pullRequestListReviewStatus>>["kind"],
+  gt: ReturnType<typeof useGT>,
+): string {
+  switch (kind) {
+    case "changes-requested":
+      return gt("Changes requested");
+    case "approved":
+      return gt("Reviews approved");
+    case "viewer-requested":
+      return gt("Your review requested");
+    case "review-required":
+      return gt("Review required");
+  }
 }
 
 export function pullRequestLabelColor(color: string | null) {

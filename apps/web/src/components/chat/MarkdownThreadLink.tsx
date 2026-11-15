@@ -14,6 +14,7 @@ import { orchestrationEnvironment } from "../../state/orchestration";
 import { useEnvironmentQuery } from "../../state/query";
 import { UnresolvedChip } from "../contextChipParts";
 import { ThreadContextChip } from "../ThreadContextChip";
+import { useGT } from "gt-react";
 
 /** `label` is the link's written text; an autolink has none. */
 export function MarkdownThreadLink(props: {
@@ -21,6 +22,7 @@ export function MarkdownThreadLink(props: {
   readonly link: ThreadLink;
   readonly label: string | null;
 }) {
+  const gt = useGT();
   const candidates = threadLinkCandidates(props.link, props.environmentId);
   const writtenRef = candidates[0]!;
   const written = useThreadShell(writtenRef);
@@ -60,7 +62,7 @@ export function MarkdownThreadLink(props: {
     return <UnresolvedChip label={props.label ?? unknown} tooltip={unknown} />;
   }
   const ref = resolved?.ref ?? writtenRef;
-  const title = resolved?.metadata.title.trim() || props.label || "Thread";
+  const title = resolved?.metadata.title.trim() || props.label || gt("Thread");
   return (
     <ThreadContextChip
       record={{ ...ref, title }}

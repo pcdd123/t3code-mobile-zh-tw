@@ -622,7 +622,8 @@ export function HomeScreen(props: HomeScreenProps) {
     props.selectedEnvironmentId === null
       ? null
       : (props.savedConnectionsById[props.selectedEnvironmentId]?.environmentLabel ??
-        "this environment");
+        gt("this environment"));
+
   const emptyState = deriveHomeEmptyState(props.catalogState, props.projects.length);
   const emptyStateLabels: Record<string, string> = {
     "Loading environments": gt("Loading environments"),

@@ -28,6 +28,7 @@ import { readEnvironmentScope } from "../state/session";
 import { selectThreadTerminalUiState, useTerminalUiStateStore } from "../terminalUiStateStore";
 import { useThreadSelectionStore } from "../threadSelectionStore";
 import { resolveThreadRouteTarget } from "../threadRoutes";
+import { localized } from "../components/Localized";
 import { useUiStateStore } from "../uiStateStore";
 import { type CommandHandler, registerCommands } from "./dispatcher";
 
@@ -155,8 +156,10 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
           toastManager.add(
             stackedThreadToast({
               type: "info",
-              title: "Preview is desktop-only",
-              description: "Open T3 Code in the desktop app to use the in-app preview.",
+              title: localized((gt) => gt("Preview is desktop-only")),
+              description: localized((gt) =>
+                gt("Open T3 Code in the desktop app to use the in-app preview."),
+              ),
             }),
           );
           return;

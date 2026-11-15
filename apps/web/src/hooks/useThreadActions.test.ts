@@ -3,6 +3,14 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { navigateAfterThreadDeletion } from "./useThreadActions";
 import { toastManager } from "../components/ui/toast";
 
+vi.mock("../components/Localized", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../components/Localized")>();
+  return {
+    ...actual,
+    localized: (render: Parameters<typeof actual.localized>[0]) => render(actual.englishGt),
+  };
+});
+
 describe("navigateAfterThreadDeletion", () => {
   afterEach(() => vi.restoreAllMocks());
 

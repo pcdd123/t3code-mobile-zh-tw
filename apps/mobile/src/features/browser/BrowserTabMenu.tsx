@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import * as Dialog from "../../components/ui/Dialog";
 import { useAtomValue } from "@effect/atom-react";
 import type { MenuAction } from "@react-native-menu/menu";
@@ -17,14 +18,10 @@ import { Menu } from "../../components/ui/Menu";
 import { previewEnvironment } from "../../state/preview";
 import { useAtomCommand } from "../../state/use-atom-command";
 
-const APPEARANCES = [
-  { id: "system", title: "System" },
-  { id: "light", title: "Light" },
-  { id: "dark", title: "Dark" },
-] as const;
+const APPEARANCES = [{ id: "system" }, { id: "light" }, { id: "dark" }] as const;
 
 const VIEWPORTS = [
-  { id: "fill", title: "Fit to screen", setting: FILL_PREVIEW_VIEWPORT },
+  { id: "fill", category: null, label: null, setting: FILL_PREVIEW_VIEWPORT },
   ...(["Phone", "Tablet", "Desktop"] as const).flatMap((category) => {
     const preset = PREVIEW_VIEWPORT_PRESETS.find((candidate) => candidate.category === category);
     if (!preset) return [];
@@ -34,7 +31,7 @@ const VIEWPORTS = [
       width: preset.width,
       height: preset.height,
     };
-    return [{ id: `preset:${preset.id}`, title: `${category} (${preset.label})`, setting }];
+    return [{ id: `preset:${preset.id}`, category, label: preset.label, setting }];
   }),
 ];
 
@@ -49,6 +46,19 @@ export function BrowserTabMenu({
   readonly streaming: boolean;
   readonly onPaste?: () => void;
 }) {
+  const gt = useGT();
+  const appearanceTitle = (id: (typeof APPEARANCES)[number]["id"]) =>
+    id === "system" ? gt("System") : id === "light" ? gt("Light") : gt("Dark");
+  const viewportTitle = (option: (typeof VIEWPORTS)[number]) => {
+    if (option.category === null) return gt("Fit to screen");
+    const category =
+      option.category === "Phone"
+        ? gt("Phone")
+        : option.category === "Tablet"
+          ? gt("Tablet")
+          : gt("Desktop");
+    return gt("{category} ({size})", { category, size: option.label });
+  };
   const adjust = useAtomCommand(previewEnvironment.adjust, "browser tab change");
   const resize = useAtomCommand(previewEnvironment.resize, "browser viewport change");
   const close = useAtomCommand(previewEnvironment.close, "browser tab close");
@@ -70,50 +80,50 @@ export function BrowserTabMenu({
 
   const closeAction: MenuAction = {
     id: "close",
-    title: "Close tab",
+    title: gt("Close tab"),
     image: "xmark",
     attributes: { destructive: true, disabled: !canClose },
   };
   const actions: MenuAction[] = [
-    ...(onPaste ? [{ id: "paste", title: "Paste", image: "doc.on.clipboard" }] : []),
-    { id: "hard-reload", title: "Hard reload", image: "arrow.clockwise.circle" },
+    ...(onPaste ? [{ id: "paste", title: gt("Paste"), image: "doc.on.clipboard" }] : []),
+    { id: "hard-reload", title: gt("Hard reload"), image: "arrow.clockwise.circle" },
     {
       id: "appearance",
-      title: "Appearance",
+      title: gt("Appearance"),
       image: "circle.lefthalf.filled",
       subactions: APPEARANCES.map((option) => ({
         id: `appearance:${option.id}`,
-        title: option.title,
+        title: appearanceTitle(option.id),
         state: option.id === colorScheme ? "on" : "off",
       })),
     },
     {
       id: "zoom",
-      title: `Zoom (${Math.round(zoomFactor * 100)}%)`,
+      title: gt("Zoom ({percent}%)", { percent: Math.round(zoomFactor * 100) }),
       image: "plus.magnifyingglass",
       subactions: [
-        { id: "zoom:in", title: "Zoom in", image: "plus.magnifyingglass" },
-        { id: "zoom:out", title: "Zoom out", image: "minus.magnifyingglass" },
-        { id: "zoom:reset", title: "Actual size", image: "1.magnifyingglass" },
+        { id: "zoom:in", title: gt("Zoom in"), image: "plus.magnifyingglass" },
+        { id: "zoom:out", title: gt("Zoom out"), image: "minus.magnifyingglass" },
+        { id: "zoom:reset", title: gt("Actual size"), image: "1.magnifyingglass" },
       ],
     },
     {
       id: "viewport",
-      title: "Viewport",
+      title: gt("Viewport"),
       image: "rectangle.and.arrow.up.right.and.arrow.down.left",
       subactions: VIEWPORTS.map((option) => ({
         id: `viewport:${option.id}`,
-        title: option.title,
+        title: viewportTitle(option),
         state: option.id === viewportId ? "on" : "off",
       })),
     },
     {
       id: "site-data",
-      title: "Site data",
+      title: gt("Site data"),
       image: "trash",
       subactions: [
-        { id: "clear:cookies", title: "Clear cookies", attributes: { destructive: true } },
-        { id: "clear:cache", title: "Clear cache", attributes: { destructive: true } },
+        { id: "clear:cookies", title: gt("Clear cookies"), attributes: { destructive: true } },
+        { id: "clear:cache", title: gt("Clear cache"), attributes: { destructive: true } },
       ],
     },
     closeAction,
@@ -121,13 +131,13 @@ export function BrowserTabMenu({
 
   const run = async (change: Omit<PreviewAdjustInput, "threadId" | "tabId">) => {
     const result = await adjust({ environmentId, input: { ...target, ...change } });
-    if (result._tag === "Failure") Dialog.alert("Could not change this browser tab");
+    if (result._tag === "Failure") Dialog.alert(gt("Could not change this browser tab"));
   };
 
   const onAction = (id: string) => {
     if (id === "close") {
       void close({ environmentId, input: target }).then((result) => {
-        if (result._tag === "Failure") Dialog.alert("Could not close this browser tab");
+        if (result._tag === "Failure") Dialog.alert(gt("Could not close this browser tab"));
       });
       return;
     }
@@ -148,7 +158,7 @@ export function BrowserTabMenu({
       if (!option) return;
       void resize({ environmentId, input: { ...target, viewport: option.setting } }).then(
         (result) => {
-          if (result._tag === "Failure") Dialog.alert("Could not change the viewport");
+          if (result._tag === "Failure") Dialog.alert(gt("Could not change the viewport"));
         },
       );
     }
@@ -160,12 +170,12 @@ export function BrowserTabMenu({
       // the other state's actions.
       key={streaming ? "streaming" : "idle"}
       accessible
-      accessibilityLabel="Browser tab options"
+      accessibilityLabel={gt("Browser tab options")}
       accessibilityRole="button"
       actions={streaming ? actions : [closeAction]}
       onPressAction={({ nativeEvent }) => onAction(nativeEvent.event)}
     >
-      <ControlPill icon="ellipsis" accessibilityLabel="Browser tab options" />
+      <ControlPill icon="ellipsis" accessibilityLabel={gt("Browser tab options")} />
     </Menu>
   );
 }

@@ -10,6 +10,7 @@ import {
 import { describe, expect, it, vi } from "vite-plus/test";
 import { applyServerSettingsPatch } from "@t3tools/shared/serverSettings";
 import * as Cause from "effect/Cause";
+import { decodeMsg } from "gt-react";
 import { resolveWorktreeCleanup } from "@t3tools/shared/projectSettings";
 
 import type { SidebarProjectSnapshot } from "../../sidebarProjectGrouping";
@@ -119,12 +120,11 @@ describe("scoped settings targets", () => {
     expect(selected.environments).toEqual([offline]);
     expect(selected.connectedEnvironments).toEqual([]);
     expect(selected.environment).toBeNull();
-    expect(
-      planScopedSettingsPatch(scope, environments, { enableProviderUpdateChecks: false }),
-    ).toMatchObject({
-      serverWrites: [],
-      unavailableReason: "Connect Offline to save this setting.",
+    const plan = planScopedSettingsPatch(scope, environments, {
+      enableProviderUpdateChecks: false,
     });
+    expect(plan.serverWrites).toEqual([]);
+    expect(decodeMsg(plan.unavailableReason ?? "")).toBe("Connect Offline to save this setting.");
   });
 
   it("resolves each member's effective settings and source at project scope", () => {

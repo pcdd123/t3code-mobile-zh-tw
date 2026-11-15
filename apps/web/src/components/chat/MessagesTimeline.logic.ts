@@ -77,6 +77,7 @@ import {
   formatSearchToolLabel,
 } from "@t3tools/shared/toolActivity";
 import { isWindowsAbsolutePath } from "@t3tools/shared/path";
+import type { useGT } from "gt-react";
 
 export function timelineEntryRunId(entry: TimelineEntry): RunId | null {
   if (entry.kind === "message") {
@@ -97,6 +98,87 @@ function workEntryIsActiveTurnActivity(entry: WorkLogEntry): boolean {
     (entry.toolLifecycleStatus === undefined &&
       (entry.sourceActivityKind === "task.progress" || workLogEntryIsToolLike(entry)))
   );
+}
+
+const TIMELINE_LABEL_TEMPLATES: ReadonlyArray<
+  readonly [RegExp, (gt: ReturnType<typeof useGT>, value: string) => string]
+> = [
+  [/^You stopped after (.+)$/, (gt, duration) => gt("You stopped after {duration}", { duration })],
+  [/^Worked for (.+)$/, (gt, duration) => gt("Worked for {duration}", { duration })],
+  [/^Continued for (.+)$/, (gt, duration) => gt("Continued for {duration}", { duration })],
+  [/^Waiting on (\d+) subagents$/, (gt, count) => gt("Waiting on {count} subagents", { count })],
+  [
+    /^Context compacted after (.+) idle$/,
+    (gt, age) => gt("Context compacted after {age} idle", { age }),
+  ],
+];
+
+const COMMAND_LABEL_TEMPLATES: ReadonlyArray<
+  readonly [RegExp, (gt: ReturnType<typeof useGT>, value: string) => string]
+> = [
+  [/^Running (\S+)$/, (gt, program) => gt("Running {program}", { program })],
+  [/^Failed (\S+)$/, (gt, program) => gt("Failed {program}", { program })],
+  [/^Declined (\S+)$/, (gt, program) => gt("Declined {program}", { program })],
+  [/^Stopped (\S+)$/, (gt, program) => gt("Stopped {program}", { program })],
+  [/^Ran (\S+)$/, (gt, program) => gt("Ran {program}", { program })],
+];
+
+/** Translates a `liveWorkEntryLabel` result, whose command rows read "<verb> <program>". */
+export function localizeLiveWorkEntryLabel(gt: ReturnType<typeof useGT>, label: string): string {
+  if (label === "Ran command") return gt("Ran command");
+  if (label === "Running command") return gt("Running command");
+  for (const [pattern, translate] of COMMAND_LABEL_TEMPLATES) {
+    const match = pattern.exec(label);
+    if (match?.[1] !== undefined) return translate(gt, match[1]);
+  }
+  return localizeTimelineLabel(gt, label);
+}
+
+/**
+ * Timeline rows keep English labels, which logic and tests compare. This translates the ones this
+ * module and the compaction constants produce when a row renders; other labels pass through.
+ */
+export function localizeTimelineLabel(gt: ReturnType<typeof useGT>, label: string): string {
+  switch (label) {
+    case "Thought":
+      return gt("Thought");
+    case "Thinking":
+      return gt("Thinking");
+    case "Web search":
+      return gt("Web search");
+    case "Read file":
+      return gt("Read file");
+    case "You stopped this response":
+      return gt("You stopped this response");
+    case "Worked":
+      return gt("Worked");
+    case "Continued":
+      return gt("Continued");
+    case "Superseded attempt":
+      return gt("Superseded attempt");
+    case "Compacting context":
+      return gt("Compacting context");
+    case "Context compaction":
+      return gt("Context compaction");
+    case "Compacting before the cache expires…":
+      return gt("Compacting before the cache expires…");
+    case "Compacting…":
+      return gt("Compacting…");
+    case "Context automatically compacted before cache expiry":
+      return gt("Context automatically compacted before cache expiry");
+    case "Context compacted before sending":
+      return gt("Context compacted before sending");
+    case "Waiting on a subagent":
+      return gt("Waiting on a subagent");
+  }
+  for (const [pattern, translate] of TIMELINE_LABEL_TEMPLATES) {
+    const match = pattern.exec(label);
+    if (match?.[1] !== undefined) return translate(gt, match[1]);
+  }
+  if (label.startsWith("Context compacted")) {
+    return gt("Context compacted") + label.slice("Context compacted".length);
+  }
+  return label;
 }
 
 function singleToolCallLabel(entry: WorkLogEntry): string {

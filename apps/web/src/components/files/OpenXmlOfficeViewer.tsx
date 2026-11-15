@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { useStableCallback } from "~/hooks/useStableCallback";
 import type { OfficePreviewKind } from "@t3tools/shared/filePreview";
 import { lazy, Suspense, useEffect, useState } from "react";
@@ -6,7 +7,12 @@ import {
   FileSurfaceNotice,
   FILE_SURFACE_SUBHEADER_CLASS,
 } from "./fileSurfaceChrome";
-import { OFFICE_PREVIEW_MAX_BYTES, type OfficeWorkerResult } from "./officePreviewProtocol";
+import {
+  OFFICE_PREVIEW_MAX_BYTES,
+  type OfficeDetails,
+  type OfficeWorkerResult,
+} from "./officePreviewProtocol";
+import { localizeFilePreviewError } from "./filePreviewErrors";
 const WordDocument = lazy(() => import("./office/WordDocument"));
 const Spreadsheet = lazy(() => import("./office/Spreadsheet"));
 const Presentation = lazy(() => import("./office/Presentation"));
@@ -39,9 +45,10 @@ export default function OfficeViewer(props: {
   readonly kind: Extract<OfficePreviewKind, "docx" | "xlsx" | "pptx">;
   readonly sizeBytes?: number;
 }) {
+  const gt = useGT();
   const [error, setError] = useState<string | null>(null);
   const [prepared, setPrepared] = useState<Extract<OfficeWorkerResult, { bytes: ArrayBuffer }>>();
-  const [details, setDetails] = useState("");
+  const [details, setDetails] = useState<OfficeDetails | null>(null);
   const fail = useStableCallback((cause: unknown) =>
     setError(cause instanceof Error ? cause.message : "Could not render this Office document."),
   );
@@ -97,9 +104,11 @@ export default function OfficeViewer(props: {
         role="alert"
         className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 px-6 text-center"
       >
-        <p className="text-sm font-medium">No preview for this file</p>
+        <p className="text-sm font-medium">{gt("No preview for this file")}</p>
         <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-          {error} Save it or open it in another app.
+          {gt("{error} Save it or open it in another app.", {
+            error: localizeFilePreviewError(error, gt),
+          })}
         </p>
       </div>
     );
@@ -110,14 +119,26 @@ export default function OfficeViewer(props: {
       {details ? (
         <div className={FILE_SURFACE_SUBHEADER_CLASS}>
           <span className="text-xs text-muted-foreground" aria-live="polite">
-            {details}
-            {props.kind !== "xlsx" ? " · Fit to width" : ""}
+            {details.partial
+              ? gt("{count}+ pages", { count: details.count })
+              : details.unit === "sheet"
+                ? details.count === 1
+                  ? gt("1 sheet")
+                  : gt("{count} sheets", { count: details.count })
+                : details.unit === "slide"
+                  ? details.count === 1
+                    ? gt("1 slide")
+                    : gt("{count} slides", { count: details.count })
+                  : details.count === 1
+                    ? gt("1 page")
+                    : gt("{count} pages", { count: details.count })}
+            {props.kind !== "xlsx" ? ` · ${gt("Fit to width")}` : ""}
           </span>
         </div>
       ) : null}
       {prepared.truncated ? (
         <FileSurfaceNotice>
-          Preview limited. Save it or open it in another app to read the full document.
+          {gt("Preview limited. Save it or open it in another app to read the full document.")}
         </FileSurfaceNotice>
       ) : null}
       <Suspense fallback={<FileSurfaceLoading />}>

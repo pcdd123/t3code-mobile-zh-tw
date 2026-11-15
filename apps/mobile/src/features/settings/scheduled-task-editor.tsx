@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import type { EnvironmentId, ThreadId } from "@t3tools/contracts";
+import { useGT } from "gt-react-native";
 import { useMemo, useCallback, type Dispatch, type SetStateAction } from "react";
 
 import { useProjects, useServerConfigs, useThreadShell } from "../../state/entities";
@@ -18,8 +19,6 @@ import {
   readScheduledTaskEditor,
   type ScheduledTaskEditor,
 } from "./scheduled-task-editor-state";
-
-export const NEW_THREAD_DESTINATION_LABEL = "New thread each run";
 
 export function useScheduledTaskThread(
   environmentId: EnvironmentId | null,
@@ -41,9 +40,10 @@ export function useScheduledTaskDestinationLabel(
   environmentId: EnvironmentId | null,
   threadId: ThreadId | null,
 ): string {
+  const gt = useGT();
   const thread = useScheduledTaskThread(environmentId, threadId);
-  if (environmentId === null || threadId === null) return NEW_THREAD_DESTINATION_LABEL;
-  return thread?.title.trim() || `Thread ${threadId}`;
+  if (environmentId === null || threadId === null) return gt("New thread each run");
+  return thread?.title.trim() || gt("Thread {id}", { id: threadId });
 }
 
 /** The form draft lives in an atom, so it survives while its native picker routes are on top. */

@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { DownloadIcon, CopyIcon, CheckIcon, Code2Icon, EyeIcon, Table2Icon } from "lucide-react";
 import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
 import { Spinner } from "~/components/ui/spinner";
@@ -116,6 +117,7 @@ import {
   FileSurfaceFailure,
   FileSurfaceLoading,
 } from "./fileSurfaceChrome";
+import { localizeFilePreviewError } from "./filePreviewErrors";
 import SourceFilePreview from "./ReadOnlySourcePreview";
 import { resolveCenteredFileLineScrollTop } from "./fileLineReveal";
 import { DiffCommentAnnotation } from "../diffs/DiffCommentAnnotation";
@@ -186,6 +188,7 @@ function WorkspaceImagePreview(props: {
   readonly alt: string;
   readonly workspaceMutationId: string | null;
 }) {
+  const gt = useGT();
   const resource = workspaceAssetResource({
     kind:
       mediaFileReference(props.absolutePath, props.workspaceRoot).relativePath !== undefined
@@ -214,7 +217,7 @@ function WorkspaceImagePreview(props: {
     return (
       <MediaActions source={actionsSource}>
         <div className="flex min-h-0 flex-1 items-center justify-center px-6 text-center text-xs leading-relaxed text-destructive">
-          Unable to load workspace image.
+          {gt("Unable to load workspace image.")}
         </div>
       </MediaActions>
     );
@@ -242,6 +245,7 @@ export function WorkspaceBrowserPreview(props: {
   readonly title: string;
   readonly workspaceMutationId: string | null;
 }) {
+  const gt = useGT();
   const pdf = isPdfPreviewFile(props.absolutePath);
   const resource = workspaceAssetResource({
     kind: pdf ? "media-file" : "workspace-file",
@@ -272,7 +276,7 @@ export function WorkspaceBrowserPreview(props: {
   if (assetUrl._tag === "Failure") {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center px-6 text-center text-xs leading-relaxed text-destructive">
-        Unable to load file preview.
+        {gt("Unable to load file preview.")}
       </div>
     );
   }
@@ -375,6 +379,7 @@ function WorkspaceAudioPreview(props: {
     resource,
     props.workspaceMutationId ?? undefined,
   );
+  const gt = useGT();
   const refreshAssetUrl = useAssetUrlRefresh(props.environmentId, resource);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const fileRevision = assetUrl._tag === "Success" ? assetUrl.fileRevision : undefined;
@@ -387,7 +392,7 @@ function WorkspaceAudioPreview(props: {
   if (assetUrl._tag === "Failure" || (url !== null && failedUrl === url)) {
     return (
       <FileSurfaceFailure
-        message="Unable to load audio."
+        message={gt("Unable to load audio.")}
         onRetry={() => {
           setFailedUrl(null);
           void refreshAssetUrl().catch(() => undefined);
@@ -417,6 +422,7 @@ function WorkspaceDocumentPreview(props: {
   readonly workspaceMutationId: string | null;
   readonly refreshRevision: number;
 }) {
+  const gt = useGT();
   const resource =
     props.draft && props.document
       ? {
@@ -459,7 +465,7 @@ function WorkspaceDocumentPreview(props: {
       mimeType="application/octet-stream"
       sizeBytes={0}
       asset={{ environmentId: props.environmentId, resource }}
-      origin="File"
+      origin={gt("File")}
     />
   );
 }
@@ -1096,11 +1102,13 @@ function RenderedMarkdownSurface({
 function renderedToggleLabel(
   mode: "markdown" | "mermaid" | "html" | "table",
   rendered: boolean,
+  gt: ReturnType<typeof useGT>,
 ): string {
-  if (mode === "mermaid") return rendered ? "Show Mermaid source" : "Show rendered diagram";
-  if (mode === "markdown") return rendered ? "Show markdown source" : "Show rendered markdown";
-  if (mode === "table") return rendered ? "Show source" : "Show table";
-  return rendered ? "Show HTML source" : "Show rendered page";
+  if (mode === "mermaid") return rendered ? gt("Show Mermaid source") : gt("Show rendered diagram");
+  if (mode === "markdown")
+    return rendered ? gt("Show markdown source") : gt("Show rendered markdown");
+  if (mode === "table") return rendered ? gt("Show source") : gt("Show table");
+  return rendered ? gt("Show HTML source") : gt("Show rendered page");
 }
 
 function initialExplorerOpen(): boolean {
@@ -1133,6 +1141,7 @@ export default function FilePreviewPanel({
   selectedFilePending,
   workspaceMutationId,
 }: FilePreviewPanelProps) {
+  const gt = useGT();
   const relativePath =
     attachment === undefined ? resolveFilePreviewPath(requestedPath, cwd) : requestedPath;
   const draft = typeof composerDraftTarget === "string";
@@ -1399,8 +1408,8 @@ export default function FilePreviewPanel({
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Unable to open file in browser",
-          description: error instanceof Error ? error.message : "An error occurred.",
+          title: gt("Unable to open file in browser"),
+          description: error instanceof Error ? error.message : gt("An error occurred."),
         }),
       );
     })();
@@ -1411,13 +1420,13 @@ export default function FilePreviewPanel({
       return (
         <div className="flex min-h-0 flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
           <Spinner className="size-4" />
-          Checking file access...
+          {gt("Checking file access...")}
         </div>
       );
     }
     return (
       <div className="p-4 text-sm text-muted-foreground">
-        {fileAccess.error ?? "This connection cannot read host files."}
+        {fileAccess.error ?? gt("This connection cannot read host files.")}
       </div>
     );
   }
@@ -1464,7 +1473,7 @@ export default function FilePreviewPanel({
           ) : null}
           {canToggleRendered && renderedMode ? (
             <FileSurfaceAction
-              label={renderedToggleLabel(renderedMode, rendered)}
+              label={renderedToggleLabel(renderedMode, rendered, gt)}
               pressed={rendered}
               onPress={() => {
                 const pressed = !rendered;
@@ -1487,7 +1496,7 @@ export default function FilePreviewPanel({
           ) : null}
           {showsRawText ? (
             <FileSurfaceAction
-              label={wordWrap ? "Disable word wrap" : "Enable word wrap"}
+              label={wordWrap ? gt("Disable word wrap") : gt("Enable word wrap")}
               pressed={wordWrap}
               onPress={() => setWordWrapOverride(!wordWrap)}
             >
@@ -1495,13 +1504,16 @@ export default function FilePreviewPanel({
             </FileSurfaceAction>
           ) : null}
           {canOpenInBrowser ? (
-            <FileSurfaceAction label="Open file in preview browser" onPress={handleOpenInBrowser}>
+            <FileSurfaceAction
+              label={gt("Open file in preview browser")}
+              onPress={handleOpenInBrowser}
+            >
               <Globe2 className="size-3.5" />
             </FileSurfaceAction>
           ) : null}
           {!isHostFile && previewPath !== null ? (
             <FileSurfaceAction
-              label={explorerOpen ? "Hide file explorer" : "Show file explorer"}
+              label={explorerOpen ? gt("Hide file explorer") : gt("Show file explorer")}
               pressed={explorerOpen}
               onPress={toggleExplorer}
             >
@@ -1512,7 +1524,7 @@ export default function FilePreviewPanel({
       ) : null}
       {relativePath && !attachment && !isHostFile && !canWriteFiles && !fileAccess.isPending ? (
         <div className="shrink-0 border-b px-3 py-1.5 text-2xs text-muted-foreground">
-          Read-only connection. Unsaved edits are kept until write access returns.
+          {gt("Read-only connection. Unsaved edits are kept until write access returns.")}
         </div>
       ) : null}
       {previewPath &&
@@ -1522,7 +1534,9 @@ export default function FilePreviewPanel({
       file.data?.truncated &&
       (draft || isMarkdown || isMermaid || isHtml) ? (
         <div className="shrink-0 border-b border-warning/20 bg-warning-surface px-3 py-1.5 text-2xs text-warning-foreground">
-          Preview limited to the first 1 MB of a {file.data.byteLength.toLocaleString()} byte file.
+          {gt("Preview limited to the first 1 MB of a {size} byte file.", {
+            size: file.data.byteLength.toLocaleString(),
+          })}
         </div>
       ) : null}
       <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -1538,7 +1552,7 @@ export default function FilePreviewPanel({
               tabIndex={-1}
               data-workspace-focus-default
               data-file-content-focus
-              aria-label="File contents"
+              aria-label={gt("File contents")}
               className="sr-only"
               onFocus={() => queueMicrotask(focusEditorFromContent)}
             />
@@ -1639,11 +1653,11 @@ export default function FilePreviewPanel({
             >
               <div className="my-auto flex shrink-0 flex-col gap-3 px-6 py-6 text-center text-xs leading-relaxed">
                 <p className="text-destructive">
-                  {file.readError ? filePreviewReadErrorMessage(file.readError) : file.error}
+                  {file.readError ? filePreviewReadErrorMessage(file.readError, gt) : file.error}
                 </p>
                 {attemptedPath ? (
                   <p className="text-muted-foreground">
-                    Attempted path
+                    {gt("Attempted path")}
                     <code className="block break-all font-mono text-foreground select-all">
                       {attemptedPath}
                     </code>
@@ -1651,11 +1665,11 @@ export default function FilePreviewPanel({
                 ) : null}
                 {!isHostFile ? (
                   <p className="text-muted-foreground">
-                    Workspace folder:{" "}
+                    {gt("Workspace folder:")}{" "}
                     <code className="break-all font-mono select-all">
                       {file.readError?.cwd ?? cwd}
                     </code>
-                    . Check the link's path or locate the file in Files.
+                    {gt(". Check the link's path or locate the file in Files.")}
                   </p>
                 ) : null}
               </div>
@@ -1776,6 +1790,7 @@ export function WorkspaceLargeTextPreview(props: {
     path: props.absolutePath,
     disposition: "attachment",
   } as const;
+  const gt = useGT();
   const copyContents = useRef<(() => Promise<string>) | null>(null);
   const { copyToClipboard, isCopied } = useCopyToClipboard({ target: props.name });
   const [saving, setSaving] = useState(false);
@@ -1783,8 +1798,9 @@ export function WorkspaceLargeTextPreview(props: {
   const showError = (cause: unknown) => {
     toastManager.add({
       type: "error",
-      title: "Could not read file",
-      description: cause instanceof Error ? cause.message : "Try again.",
+      title: gt("Could not read file"),
+      description:
+        cause instanceof Error ? localizeFilePreviewError(cause.message, gt) : gt("Try again."),
     });
   };
   // Each workspace mutation re-mints the URL, so an edited file loads its new bytes.
@@ -1807,7 +1823,7 @@ export function WorkspaceLargeTextPreview(props: {
   if (assetUrl._tag === "Failure")
     return (
       <FileSurfaceFailure
-        message="Unable to load file preview."
+        message={gt("Unable to load file preview.")}
         onRetry={() => {
           setRevision((value) => value + 1);
           void refreshAssetUrl().catch(showError);
@@ -1815,14 +1831,14 @@ export function WorkspaceLargeTextPreview(props: {
       />
     );
   if (assetUrl._tag !== "Success" || loaded === null)
-    return <div className="p-6 text-xs text-muted-foreground">Loading…</div>;
+    return <div className="p-6 text-xs text-muted-foreground">{gt("Loading…")}</div>;
   const src = `${loaded.url}${loaded.url.includes("?") ? "&" : "?"}revision=${encodeURIComponent(loaded.revision)}`;
   return (
     <>
       <div className={FILE_SURFACE_SUBHEADER_CLASS}>
-        <span className="min-w-0 flex-1 text-xs text-muted-foreground">Full file</span>
+        <span className="min-w-0 flex-1 text-xs text-muted-foreground">{gt("Full file")}</span>
         <FileSurfaceAction
-          label={isCopied ? "Copied" : "Copy contents"}
+          label={isCopied ? gt("Copied") : gt("Copy contents")}
           onPress={() => {
             const copy = copyContents.current;
             if (!copy) return;
@@ -1834,7 +1850,7 @@ export function WorkspaceLargeTextPreview(props: {
           {isCopied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
         </FileSurfaceAction>
         <FileSurfaceAction
-          label={saving ? "Preparing file…" : "Save file"}
+          label={saving ? gt("Preparing file…") : gt("Save file")}
           disabled={saving}
           onPress={() => {
             setSaving(true);
@@ -1857,7 +1873,9 @@ export function WorkspaceLargeTextPreview(props: {
           <DownloadIcon className="size-3.5" />
         </FileSurfaceAction>
       </div>
-      <Suspense fallback={<div className="p-6 text-xs text-muted-foreground">Loading…</div>}>
+      <Suspense
+        fallback={<div className="p-6 text-xs text-muted-foreground">{gt("Loading…")}</div>}
+      >
         <LargeTextViewer
           key={`${src}:${revision}`}
           name={props.name}

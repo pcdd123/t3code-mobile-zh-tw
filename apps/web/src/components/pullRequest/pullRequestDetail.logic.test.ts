@@ -55,6 +55,9 @@ import {
   readableFailure,
 } from "./pullRequestDetail.logic";
 import type { ReviewCommentContext } from "~/reviewCommentContext";
+import type { useGT } from "gt-react";
+
+const gt = ((message: string) => message) as unknown as ReturnType<typeof useGT>;
 
 describe("pull request checkout commands", () => {
   it("quotes shell metacharacters in Forgejo repository URLs", () => {
@@ -976,13 +979,13 @@ describe("what to say when an action fails", () => {
         reason,
       });
     expect(
-      checkoutFailureDescription(diagnostic("git worktree add failed", "path_already_exists")),
+      checkoutFailureDescription(diagnostic("git worktree add failed", "path_already_exists"), gt),
     ).toBe("git worktree add failed (path_already_exists)");
     const reason = "The worktree directory already exists. Choose another directory.";
-    expect(checkoutFailureDescription(diagnostic(reason))).toBe(reason);
-    expect(checkoutFailureDescription(diagnostic("x".repeat(900)))).toBe(`${"x".repeat(319)}…`);
+    expect(checkoutFailureDescription(diagnostic(reason), gt)).toBe(reason);
+    expect(checkoutFailureDescription(diagnostic("x".repeat(900)), gt)).toBe(`${"x".repeat(319)}…`);
     for (const failure of [undefined, diagnostic(""), diagnostic("exited with code 1")]) {
-      expect(checkoutFailureDescription(failure)).toBe(
+      expect(checkoutFailureDescription(failure, gt)).toBe(
         "Check that the branch still exists and is not checked out elsewhere, then try again.",
       );
     }

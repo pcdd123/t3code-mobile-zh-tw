@@ -1,3 +1,4 @@
+import { englishGt, type Translate } from "../Localized";
 import chatgptLogo from "./logos/chatgpt.png";
 import claudeLogo from "./logos/claude.png";
 import geminiLogo from "./logos/gemini.png";
@@ -184,30 +185,30 @@ export const OTHER_MCP_APP_STEPS = ["Add a remote MCP server with OAuth."] as co
  * The primary button for `app`: its label, the https page it opens, and what it copies first.
  * Null for apps set up with commands. It never copies the approval code.
  */
-export function mcpHandoffAction(app: McpApp, mcpUrl: string) {
+export function mcpHandoffAction(app: McpApp, mcpUrl: string, gt: Translate = englishGt) {
   const { handoff } = app;
   switch (handoff.kind) {
     case "open":
       return {
-        label: `Open in ${app.name}`,
+        label: gt("Open in {app}", { app: app.name }),
         link: handoff.link(mcpUrl),
         appLink: null,
         copy: null,
       };
     case "copy-url":
       return {
-        label: `Copy URL and open ${app.name}`,
+        label: gt("Copy URL and open {app}", { app: app.name }),
         link: handoff.link,
         appLink: null,
-        copy: { text: mcpUrl, title: "URL copied" },
+        copy: { text: mcpUrl, title: gt("URL copied") },
       };
     case "copy-message": {
       const message = handoff.message(mcpUrl);
       return {
-        label: `Copy message and open ${app.name}`,
+        label: gt("Copy message and open {app}", { app: app.name }),
         link: handoff.link,
         appLink: handoff.appLink?.(message) ?? null,
-        copy: { text: message, title: "Message copied" },
+        copy: { text: message, title: gt("Message copied") },
       };
     }
     case "commands":

@@ -2,6 +2,7 @@ import type { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview
 import { isAtomCommandInterrupted } from "@t3tools/client-runtime/state/runtime";
 import { parsePullRequestAnchor, pullRequestLinkCommit } from "@t3tools/shared/pullRequestAnchor";
 import type { EnvironmentId, PullRequestRef } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 import {
   cloneElement,
   useRef,
@@ -23,6 +24,7 @@ import { pullRequestLinkSubject, pullRequestReviewOutcome } from "./pullRequestD
 import {
   PullRequestActorAvatar,
   PullRequestReviewOutcomeBadge,
+  pullRequestStateLabel,
   resolvePullRequestState,
 } from "./pullRequestPresentation";
 
@@ -52,6 +54,7 @@ export function PullRequestLinkPreview({
   onOpenFallback?: (url: string) => Promise<void>;
   fallback?: ReactNode;
 }) {
+  const gt = useGT();
   const [open, setOpen] = useState(false);
   const previewActionsRef = useRef<PreviewCardPrimitive.Root.Actions | null>(null);
   const [resolvingClick, setResolvingClick] = useState(false);
@@ -152,7 +155,7 @@ export function PullRequestLinkPreview({
                   {state === null ? null : (
                     <span className="inline-flex shrink-0 items-center gap-1">
                       <state.Icon aria-hidden className={`size-3 ${state.toneClassName}`} />
-                      {state.label}
+                      {pullRequestStateLabel(state, gt)}
                     </span>
                   )}
                 </div>
@@ -173,7 +176,7 @@ export function PullRequestLinkPreview({
                       <>
                         <span aria-hidden>·</span>
                         <span className="shrink-0">
-                          opened <RelativeTime timestamp={preview.createdAt} />
+                          {gt("opened")} <RelativeTime timestamp={preview.createdAt} />
                         </span>
                       </>
                     )}
@@ -197,6 +200,7 @@ function LinkedComment({
 }: {
   subject: Extract<ReturnType<typeof pullRequestLinkSubject>, { kind: "comment" }>;
 }) {
+  const gt = useGT();
   const outcome = pullRequestReviewOutcome(subject.reviewState);
   return (
     <div className="mt-2 min-w-0">
@@ -206,7 +210,7 @@ function LinkedComment({
           {actorLabel(subject.author)}
         </span>
         {outcome === null ? (
-          <span className="shrink-0">commented</span>
+          <span className="shrink-0">{gt("commented")}</span>
         ) : (
           <PullRequestReviewOutcomeBadge outcome={outcome} className="shrink-0" />
         )}

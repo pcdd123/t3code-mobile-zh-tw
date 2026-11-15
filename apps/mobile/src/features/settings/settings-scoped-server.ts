@@ -23,17 +23,17 @@ export interface ScopedMobileSettingsTarget {
 }
 
 /**
- * "Managed by <organization>." when any target's policy locks `path`: the server refuses the
+ * The managing organization when any target's policy locks `path`: the server refuses the
  * whole write then, so the control is managed for the selection.
  */
-export function managedSettingReason(
+export function managedSettingOrganization(
   targets: readonly ScopedMobileSettingsTarget[],
   ...paths: readonly string[]
 ): string | undefined {
   const policy = targets
     .map((target) => target.environment.serverConfig.managedPolicy)
     .find((candidate) => paths.some((path) => isManagedSettingPath(candidate, path)));
-  return policy === undefined ? undefined : `Managed by ${policy.organization}.`;
+  return policy?.organization;
 }
 
 export function resolveMobileSettingsTargets(

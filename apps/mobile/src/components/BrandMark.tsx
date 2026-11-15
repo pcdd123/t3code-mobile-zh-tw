@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import Constants from "expo-constants";
 import { Image } from "expo-image";
 import { View } from "react-native";
@@ -10,6 +11,7 @@ const DEFAULT_STAGE_LABEL =
   appVariant === "development" ? "Dev" : appVariant === "preview" ? "Preview" : "Beta";
 
 export function BrandMark(props: { readonly compact?: boolean; readonly stageLabel?: string }) {
+  const gt = useGT();
   const compact = props.compact ?? false;
   const iconSize = compact ? 32 : 44;
   const stageLabel = props.stageLabel ?? DEFAULT_STAGE_LABEL;
@@ -36,7 +38,7 @@ export function BrandMark(props: { readonly compact?: boolean; readonly stageLab
         </View>
         {!compact ? (
           <Text className="text-xs font-medium text-foreground-muted">
-            Mobile control surface for your live coding environments
+            {gt("Mobile control surface for your live coding environments")}
           </Text>
         ) : null}
       </View>

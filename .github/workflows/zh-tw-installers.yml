@@ -18,10 +18,6 @@ jobs:
             platform: mac
             arch: arm64
             target: dmg
-          - runner: macos-26-intel
-            platform: mac
-            arch: x64
-            target: dmg
           - runner: windows-2025
             platform: win
             arch: x64

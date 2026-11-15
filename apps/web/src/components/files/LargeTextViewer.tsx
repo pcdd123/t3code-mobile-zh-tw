@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { useEffect, useImperativeHandle, useRef, useState, type RefObject } from "react";
 import { parseDelimitedPreview } from "@t3tools/shared/delimitedPreview";
 import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments";
@@ -8,8 +9,15 @@ import VirtualTablePreview from "./VirtualTablePreview";
 
 const FIRST_SCREEN_BYTES = 16 * 1024;
 
-function countLabel(count: number, noun: string) {
-  return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
+function countLabel(count: number, noun: "row" | "column" | "line", gt: ReturnType<typeof useGT>) {
+  if (count === 1)
+    return noun === "row" ? gt("1 row") : noun === "column" ? gt("1 column") : gt("1 line");
+  const value = { count: count.toLocaleString() };
+  return noun === "row"
+    ? gt("{count} rows", value)
+    : noun === "column"
+      ? gt("{count} columns", value)
+      : gt("{count} lines", value);
 }
 
 function firstScreen(text: string, delimiter: "," | "\t" | null, complete: boolean) {
@@ -43,6 +51,7 @@ export default function LargeTextViewer(props: {
   /** A preview's own wrap toggle; omitted follows the word wrap setting. */
   readonly wordWrap?: boolean;
 }) {
+  const gt = useGT();
   const [meta, setMeta] = useState<Extract<TextPreviewResult, { type: "meta" }> | null>(null);
   const [pages, setPages] = useState(new Map<number, string[][]>());
   const [error, setError] = useState<string | null>(null);
@@ -221,20 +230,20 @@ export default function LargeTextViewer(props: {
         role="status"
       >
         {props.delimiter
-          ? `${countLabel(Math.max(0, meta.count - 1), "row")} · ${countLabel(meta.count ? meta.columns : 0, "column")}`
-          : countLabel(meta.count, "line")}
+          ? `${countLabel(Math.max(0, meta.count - 1), "row", gt)} · ${countLabel(meta.count ? meta.columns : 0, "column", gt)}`
+          : countLabel(meta.count, "line", gt)}
         {meta.complete && meta.sizeBytes !== undefined
-          ? ` · ${meta.sizeBytes === 0 ? "0 bytes" : formatAttachmentSize(meta.sizeBytes)}`
-          : " · Indexing…"}
+          ? ` · ${meta.sizeBytes === 0 ? gt("0 bytes") : formatAttachmentSize(meta.sizeBytes)}`
+          : ` · ${gt("Indexing…")}`}
       </div>
       {!meta.complete ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20">
-          <FileSurfaceNotice>Loading the rest of the file…</FileSurfaceNotice>
+          <FileSurfaceNotice>{gt("Loading the rest of the file…")}</FileSurfaceNotice>
         </div>
       ) : null}
       {meta.columns === 1024 ? (
         <FileSurfaceNotice>
-          Showing the first 1,024 columns. Source and Save retain every column.
+          {gt("Showing the first 1,024 columns. Source and Save retain every column.")}
         </FileSurfaceNotice>
       ) : null}
       {meta.count > 0 ? (
@@ -256,7 +265,7 @@ export default function LargeTextViewer(props: {
         />
       ) : (
         <div className="flex flex-1 items-center justify-center p-6 text-xs text-muted-foreground">
-          This file is empty.
+          {gt("This file is empty.")}
         </div>
       )}
     </div>

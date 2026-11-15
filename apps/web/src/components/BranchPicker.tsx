@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { useLegendListRef } from "~/hooks/useLegendListRef";
 import type { VcsRef } from "@t3tools/contracts";
 import { LegendList, type LegendListRef } from "@legendapp/list/react";
@@ -58,6 +59,7 @@ export function BranchPicker({
   getItemType?: ((value: string) => string) | undefined;
   children: ReactNode;
 }) {
+  const gt = useGT();
   const highlightedValueRef = useRef<string | null>(null);
   const startFromOriginSwitchId = useId();
   const handleOpenChange = (nextOpen: boolean) => {
@@ -105,7 +107,7 @@ export function BranchPicker({
       {children}
       <ComboboxPopup {...popupProps}>
         <ComboboxSearchInput
-          placeholder="Search refs..."
+          placeholder={gt("Search refs...")}
           value={query}
           onChange={(event) => {
             onQueryChange(event.target.value);
@@ -126,7 +128,7 @@ export function BranchPicker({
           }}
         />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <ComboboxEmpty>No refs found.</ComboboxEmpty>
+          <ComboboxEmpty>{gt("No refs found.")}</ComboboxEmpty>
           <div className="relative flex min-h-0 w-full max-h-56 flex-1 flex-col overflow-hidden">
             <ComboboxListVirtualized className="flex size-full min-h-0 min-w-0 flex-col">
               <LegendList<string>
@@ -164,13 +166,13 @@ export function BranchPicker({
                   >
                     <span className="flex min-w-0 items-center gap-1.5 font-medium text-muted-foreground">
                       <RefreshIcon aria-hidden="true" className="size-3 shrink-0" />
-                      <span className="truncate">Start from remote</span>
+                      <span className="truncate">{gt("Start from remote")}</span>
                     </span>
                     <Switch
                       id={startFromOriginSwitchId}
                       checked={originControl.checked}
                       size="sm"
-                      aria-label="Start worktree from remote"
+                      aria-label={gt("Start worktree from remote")}
                       onCheckedChange={(checked) => originControl.onCheckedChange(Boolean(checked))}
                     />
                   </label>

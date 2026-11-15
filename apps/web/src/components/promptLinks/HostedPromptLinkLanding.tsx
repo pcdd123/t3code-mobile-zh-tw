@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import {
   type LinkedPrompt,
   parseNewThreadLink,
@@ -29,14 +30,14 @@ interface LinkSummary {
   readonly details: ReadonlyArray<string>;
 }
 
-const PROMPT_HEADER = {
-  title: "Open this prompt",
-  description: "It opens as a draft. Nothing runs until you press Send.",
-};
-
 function summarize(
   appPath: string,
+  gt: ReturnType<typeof useGT>,
 ): { ok: true; value: LinkSummary } | { ok: false; error: string } {
+  const PROMPT_HEADER = {
+    title: gt("Open this prompt"),
+    description: gt("It opens as a draft. Nothing runs until you press Send."),
+  };
   const url = new URL(appPath, window.location.origin);
   if (url.pathname !== "/new") {
     const prompt = parseThreadLinkPrompt(url.search);
@@ -46,12 +47,12 @@ function summarize(
       value:
         prompt.value === null
           ? {
-              title: "Open this thread",
-              description: "It opens in T3 Code if you're connected to the machine it runs on.",
+              title: gt("Open this thread"),
+              description: gt("It opens in T3 Code if you're connected to the machine it runs on."),
               prompt: null,
               details: [],
             }
-          : { ...PROMPT_HEADER, prompt: prompt.value, details: ["Opens one of your threads."] },
+          : { ...PROMPT_HEADER, prompt: prompt.value, details: [gt("Opens one of your threads.")] },
     };
   }
   const link = parseNewThreadLink(url.search);
@@ -63,7 +64,7 @@ function summarize(
       value: {
         ...PROMPT_HEADER,
         prompt: link.value.prompt,
-        details: [`Pull request ${owner}/${name}#${number}`],
+        details: [gt("Pull request {reference}", { reference: `${owner}/${name}#${number}` })],
       },
     };
   }
@@ -74,8 +75,14 @@ function summarize(
       ...PROMPT_HEADER,
       prompt: link.value.prompt,
       details: [
-        repository ? `Repository ${repository.owner}/${repository.name}` : "No project",
-        ...(provider ? [`Model ${model ? `${provider} ${model}` : provider}`] : []),
+        repository
+          ? gt("Repository {repository}", {
+              repository: `${repository.owner}/${repository.name}`,
+            })
+          : gt("No project"),
+        ...(provider
+          ? [gt("Model {model}", { model: model ? `${provider} ${model}` : provider })]
+          : []),
       ],
     },
   };
@@ -120,7 +127,8 @@ function HostedPromptLinkLanding({
   readonly openInAppRemembered: boolean;
   readonly onChoose: (choice: "app" | "browser", remember: boolean) => void;
 }) {
-  const summary = summarize(appPath);
+  const gt = useGT();
+  const summary = summarize(appPath, gt);
   const [remember, setRemember] = useState(false);
   const deepLink = promptLinkDeepLink(appPath);
   const onPhone = /android|iphone|ipad/i.test(navigator.userAgent);
@@ -136,7 +144,7 @@ function HostedPromptLinkLanding({
   if (!summary.ok) {
     return (
       <StandalonePage>
-        <StandalonePageHeader title="Could not open the link" description={summary.error} />
+        <StandalonePageHeader title={gt("Could not open the link")} description={summary.error} />
       </StandalonePage>
     );
   }
@@ -147,10 +155,16 @@ function HostedPromptLinkLanding({
       <StandalonePageHeader title={title} description={description} />
       {prompt !== null && prompt.hiddenCharacters > 0 ? (
         <Alert className="mt-5" variant="error">
-          <AlertTitle>This prompt had hidden characters, it may be malicious</AlertTitle>
+          <AlertTitle>{gt("This prompt had hidden characters, it may be malicious")}</AlertTitle>
           <AlertDescription>
-            T3 Code removed {prompt.hiddenCharacters} hidden character
-            {prompt.hiddenCharacters === 1 ? "" : "s"}. Read the prompt before you send it.
+            {prompt.hiddenCharacters === 1
+              ? gt("T3 Code removed 1 hidden character. Read the prompt before you send it.")
+              : gt(
+                  "T3 Code removed {count} hidden characters. Read the prompt before you send it.",
+                  {
+                    count: prompt.hiddenCharacters,
+                  },
+                )}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -164,20 +178,20 @@ function HostedPromptLinkLanding({
       ) : null}
       <div className="mt-6 flex flex-wrap gap-2">
         <Button render={<a href={deepLink} />} onClick={() => onChoose("app", remember)}>
-          {onPhone ? "Open in app" : "Open in desktop app"}
+          {onPhone ? gt("Open in app") : gt("Open in desktop app")}
         </Button>
         {canContinue ? (
           <Button variant="outline" onClick={() => onChoose("browser", remember)}>
-            Continue here
+            {gt("Continue here")}
           </Button>
         ) : null}
         <Button variant="ghost" render={<a href={DESKTOP_DOWNLOAD_URL} />}>
-          Get T3 Code
+          {gt("Get T3 Code")}
         </Button>
       </div>
       <label className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
         <Checkbox checked={remember} onCheckedChange={(checked) => setRemember(checked === true)} />
-        Remember my choice
+        {gt("Remember my choice")}
       </label>
     </StandalonePage>
   );

@@ -10,12 +10,14 @@ import {
 
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collapsible";
 import { findRevealRef, MarkdownFindContext } from "./markdownFindContext";
+import { useGT } from "gt-react";
 
 export function MarkdownDetails({
   children,
   open = false,
   dir,
 }: Pick<ComponentProps<"details">, "children" | "open" | "dir">) {
+  const gt = useGT();
   const [isOpen, setIsOpen] = useState(open);
   const searching = use(MarkdownFindContext);
   const expanded = isOpen;
@@ -31,7 +33,7 @@ export function MarkdownDetails({
   const summary =
     isValidElement<{ children?: ReactNode }>(summaryNode) && summaryNode.props.children
       ? summaryNode.props.children
-      : "Details";
+      : gt("Details");
   const content = childNodes.filter((_, index) => index !== summaryIndex);
 
   return (

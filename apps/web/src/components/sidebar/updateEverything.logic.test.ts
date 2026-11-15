@@ -1,4 +1,5 @@
 import { EnvironmentId, type ServerSelfUpdateCapability } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
@@ -11,6 +12,11 @@ import {
   runUpdateEverything,
   type UpdateEverythingMachine,
 } from "./updateEverything.logic";
+
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) =>
+    String(values?.[key] ?? ""),
+  )) as unknown as ReturnType<typeof useGT>;
 
 function machine(
   id: string,
@@ -380,30 +386,33 @@ describe("runUpdateEverything", () => {
 describe("describeUpdateEverything", () => {
   it("gives each machine one row with its T3 Code and provider updates", () => {
     const id = EnvironmentId.make;
-    const { rows } = describeUpdateEverything({
-      localVersion: "1.1.0",
-      localMachines: [
-        { environmentId: id("local"), label: "Mainbook" },
-        { environmentId: id("wsl"), label: "Mainbook WSL" },
-      ],
-      servers: [
-        {
-          environmentId: id("npm"),
-          serverLabel: "bb-1",
-          selfUpdate: "respawn",
-          targetVersion: "1.1.0",
-        },
-      ],
-      providerMachines: [
-        { environmentId: id("npm"), label: "bb-1", providers: ["Codex", "Claude"] },
-        { environmentId: id("local"), label: "Mainbook", providers: ["Codex"] },
-        { environmentId: id("manual"), label: "alvin", providers: ["Claude"] },
-      ],
-      skipped: [
-        { environmentId: id("manual"), label: "alvin", reason: "needs a manual update" },
-        { environmentId: id("offline"), label: "TheoRoom", reason: "not connected" },
-      ],
-    });
+    const { rows } = describeUpdateEverything(
+      {
+        localVersion: "1.1.0",
+        localMachines: [
+          { environmentId: id("local"), label: "Mainbook" },
+          { environmentId: id("wsl"), label: "Mainbook WSL" },
+        ],
+        servers: [
+          {
+            environmentId: id("npm"),
+            serverLabel: "bb-1",
+            selfUpdate: "respawn",
+            targetVersion: "1.1.0",
+          },
+        ],
+        providerMachines: [
+          { environmentId: id("npm"), label: "bb-1", providers: ["Codex", "Claude"] },
+          { environmentId: id("local"), label: "Mainbook", providers: ["Codex"] },
+          { environmentId: id("manual"), label: "alvin", providers: ["Claude"] },
+        ],
+        skipped: [
+          { environmentId: id("manual"), label: "alvin", reason: "needs a manual update" },
+          { environmentId: id("offline"), label: "TheoRoom", reason: "not connected" },
+        ],
+      },
+      gt,
+    );
 
     expect(
       rows.map(({ label, app, skipped, providers }) => [label, app, skipped, providers]),
@@ -440,8 +449,8 @@ describe("describeUpdateCapsule", () => {
     };
     const run = { localVersion: null, phase: "servers" as const, restartAt: null, machines: [] };
 
-    expect(describeUpdateCapsule(run, [failed], null, 0).action).toBe("retry");
-    expect(describeUpdateCapsule({ ...run, trackSwitch: true }, [failed], null, 0).action).toBe(
+    expect(describeUpdateCapsule(run, [failed], null, 0, gt).action).toBe("retry");
+    expect(describeUpdateCapsule({ ...run, trackSwitch: true }, [failed], null, 0, gt).action).toBe(
       "dismiss",
     );
   });

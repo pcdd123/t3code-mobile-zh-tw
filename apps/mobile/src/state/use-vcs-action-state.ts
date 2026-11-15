@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { useAtomValue } from "@effect/atom-react";
 import { secondTick } from "@t3tools/client-runtime/clock";
 import { type VcsActionState, type VcsActionTarget } from "@t3tools/client-runtime/state/vcs";
@@ -77,14 +78,19 @@ const EMPTY_PROGRESS: GitActionProgress = {
   description: null,
 };
 
-function formatElapsedSeconds(ms: number | null, nowMs: number): string | null {
+function formatElapsedSeconds(
+  ms: number | null,
+  nowMs: number,
+  gt: ReturnType<typeof useGT>,
+): string | null {
   if (ms === null) return null;
   const elapsed = Math.max(0, Math.floor((nowMs - ms) / 1000));
   if (elapsed < 2) return null;
-  return `Running for ${elapsed}s`;
+  return gt("Running for {seconds}s", { seconds: elapsed });
 }
 
 export function useGitActionProgress(target: VcsActionTarget): GitActionProgress {
+  const gt = useGT();
   const actionState = useVcsActionState(target);
   const { result } = useGitActionResultNotification();
 
@@ -97,7 +103,7 @@ export function useGitActionProgress(target: VcsActionTarget): GitActionProgress
   if (actionState.isRunning) {
     const description =
       actionState.lastOutputLine ??
-      formatElapsedSeconds(actionState.hookStartedAtMs ?? actionState.phaseStartedAtMs, nowMs);
+      formatElapsedSeconds(actionState.hookStartedAtMs ?? actionState.phaseStartedAtMs, nowMs, gt);
     return {
       phase: "running",
       label: actionState.currentLabel,

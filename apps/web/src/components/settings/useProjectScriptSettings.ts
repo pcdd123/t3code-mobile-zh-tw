@@ -17,6 +17,7 @@ import { resolveProjectScripts } from "@t3tools/shared/projectScripts";
 import { clearProjectSettingsOverrides } from "@t3tools/shared/projectSettings";
 import * as Cause from "effect/Cause";
 import { AsyncResult } from "effect/reactivity";
+import { useGT } from "gt-react";
 import { useRef, useState } from "react";
 
 import {
@@ -35,13 +36,16 @@ import { useAtomCommand } from "../../state/use-atom-command";
 import type { NewProjectScriptInput } from "../projectScriptEditor";
 import { toastManager } from "../ui/toast";
 
-function reportScriptFailure(result: AtomCommandResult<unknown, unknown>) {
+function reportScriptFailure(
+  result: AtomCommandResult<unknown, unknown>,
+  gt: ReturnType<typeof useGT>,
+) {
   if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
     const error = squashAtomCommandFailure(result);
     toastManager.add({
       type: "error",
-      title: "Failed to save project actions",
-      description: error instanceof Error ? error.message : "An error occurred.",
+      title: gt("Failed to save project actions"),
+      description: error instanceof Error ? error.message : gt("An error occurred."),
     });
   }
   return mapAtomCommandResult(result, () => undefined);
@@ -55,6 +59,7 @@ export function useProjectScriptSettings(
     project?: { id: ProjectId; scripts: readonly ProjectScript[] };
   }[],
 ) {
+  const gt = useGT();
   const projects = useProjects();
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -74,8 +79,8 @@ export function useProjectScriptSettings(
     keybinding?: string | null,
   ): Promise<AtomCommandResult<void, unknown>> {
     if (savingRef.current || targets.length === 0) {
-      const message = "No available machine, or another action change is saving.";
-      toastManager.add({ type: "error", title: "Actions not saved", description: message });
+      const message = gt("No available machine, or another action change is saving.");
+      toastManager.add({ type: "error", title: gt("Actions not saved"), description: message });
       return AsyncResult.failure(Cause.fail(new Error(message)));
     }
     if (
@@ -88,10 +93,11 @@ export function useProjectScriptSettings(
           Cause.fail(
             new EnvironmentAuthorizationError({
               requiredScope: AuthSettingsWriteScope,
-              message: "This connection cannot change environment settings.",
+              message: gt("This connection cannot change environment settings."),
             }),
           ),
         ),
+        gt,
       );
     }
     savingRef.current = true;
@@ -133,7 +139,7 @@ export function useProjectScriptSettings(
             : { defaultProjectScripts: nextScripts ?? [] },
         },
       });
-      if (result._tag === "Failure") return reportScriptFailure(result);
+      if (result._tag === "Failure") return reportScriptFailure(result, gt);
       const changedIds = scriptId
         ? [scriptId]
         : current
@@ -173,7 +179,7 @@ export function useProjectScriptSettings(
           : previous && !retainedElsewhere
             ? await removeKeybinding({ environmentId, input: previous })
             : null;
-        if (bindingResult?._tag === "Failure") return reportScriptFailure(bindingResult);
+        if (bindingResult?._tag === "Failure") return reportScriptFailure(bindingResult, gt);
       }
     }
     return AsyncResult.success(undefined);

@@ -138,6 +138,11 @@ export type SidebarProviderEntry = Pick<
   | "acpRegistryIconUrl"
   | "models"
 >;
+/** New threads keep the stored English title until one is generated; it displays translated. */
+function displayThreadTitle(title: string, gt: ReturnType<typeof useGT>): string {
+  return title === "New thread" ? gt("New thread") : title;
+}
+
 function compactSidebarTimeLabel(label: string): string {
   if (label === "just now") return "now";
   return label.endsWith(" ago") ? label.slice(0, -4) : label;
@@ -146,12 +151,13 @@ function compactSidebarTimeLabel(label: string): string {
 // Subscribes to the minute tick itself, so only the label re-renders each
 // minute. The minute is passed as the clock so it is the formatter's input.
 function RelativeTimeLabel(props: { timestamp: string | null }) {
+  const gt = useGT();
   const nowMinute = useNowMinute();
-  return props.timestamp === null
-    ? null
-    : compactSidebarTimeLabel(
-        formatRelativeTimeLabel(props.timestamp, Date.parse(`${nowMinute}:00.000Z`)),
-      );
+  if (props.timestamp === null) return null;
+  const label = compactSidebarTimeLabel(
+    formatRelativeTimeLabel(props.timestamp, Date.parse(`${nowMinute}:00.000Z`)),
+  );
+  return label === "now" ? gt("now") : label;
 }
 
 function JumpHintBadge(props: { label: string }) {
@@ -271,7 +277,7 @@ function SidebarThreadTooltip({
   return (
     <ThreadHoverCardPopup side="right" align="start" sideOffset={4}>
       <ThreadHoverCard
-        title={thread.title}
+        title={displayThreadTitle(thread.title, gt)}
         footer={
           supportsMultiplePullRequests && thread.pullRequests.length > 0 ? (
             <div className="border-t border-border/60 pt-2 pl-0.5 text-xs text-muted-foreground">
@@ -817,7 +823,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
     activeThreadBranch: thread.branch,
     currentGitBranch: visibleGitStatus?.refName ?? null,
   });
-  const prStatus = prStatusIndicator(pr, linkedPullRequestStatus?.sourceControlProvider);
+  const prStatus = prStatusIndicator(pr, linkedPullRequestStatus?.sourceControlProvider, gt);
 
   const modelInstanceId = thread.runtime?.providerInstanceId ?? thread.modelSelection.instanceId;
   const providerEntry = props.providerEntryByInstanceId.get(modelInstanceId) ?? null;
@@ -1030,7 +1036,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
     ) : null;
 
   const accessibility = resolveSidebarRowAccessibility({
-    title: thread.title,
+    title: displayThreadTitle(thread.title, gt),
     statusLabel: topStatus?.label ?? null,
     projectDisplayName: props.projectDisplayName,
     isActive: props.isActive,
@@ -1071,7 +1077,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
       )}
       dir={textDirection(thread.title)}
     >
-      {thread.title}
+      {displayThreadTitle(thread.title, gt)}
     </span>
   );
 
@@ -1659,10 +1665,11 @@ export const SidebarSearchResultRow = memo(function SidebarSearchResultRow(props
   onSelect: () => void;
   onFileDropThreads: (threadRef: ScopedThreadRef, files: File[]) => void;
 }) {
+  const gt = useGT();
   const thread =
     useThreadShell(scopeThreadRef(props.thread.environmentId, props.thread.id)) ?? props.thread;
   const accessibility = resolveSidebarRowAccessibility({
-    title: thread.title,
+    title: displayThreadTitle(thread.title, gt),
     statusLabel: null,
     projectDisplayName: props.projectDisplayName,
     isActive: props.isRouteActive,
@@ -1794,7 +1801,7 @@ export const SidebarSearchResultRow = memo(function SidebarSearchResultRow(props
                   thread.titleRegeneration != null && "opacity-55",
                 )}
               >
-                {thread.title}
+                {displayThreadTitle(thread.title, gt)}
               </span>
               <span id={`${props.resultId}-pr`} className="contents">
                 <ThreadSearchPullRequestNumber

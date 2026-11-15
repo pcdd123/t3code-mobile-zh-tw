@@ -7,7 +7,8 @@ import { DESKTOP_PASTE_AS_TEXT_EVENT } from "../../lib/desktopPasteAsText";
 import { BackgroundThreadContext } from "./backgroundThread";
 import {
   resolveCompatibleRuntimeMode,
-  runtimeModeConfig,
+  runtimeModeDescription,
+  runtimeModeLabel,
   resolveRuntimeModeOptions,
 } from "./runtimeModeConfig";
 import { isLocalEnvironmentDisabled } from "../../localEnvironment";
@@ -769,6 +770,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     maxFileAttachmentBytes,
   });
   const fileCapabilityBlockReason = fileAttachmentCapabilityBlockReason({
+    gt,
     files: composerFiles,
     attachmentUploadsCapabilityKnown,
     supportsAttachmentUploads,
@@ -778,14 +780,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     (questionAttachmentTarget &&
     !supportsQuestionAttachments &&
     (composerImages.length > 0 || composerFiles.length > 0)
-      ? "Update this server to send files with question answers"
+      ? gt("Update this server to send files with question answers")
       : null) ??
     fileCapabilityBlockReason ??
     (supportsAttachmentUploads
       ? needsReattachFileCount > 0
         ? needsReattachFileCount === 1
-          ? "Attach the interrupted file again or remove it"
-          : "Attach the interrupted files again or remove them"
+          ? gt("Attach the interrupted file again or remove it")
+          : gt("Attach the interrupted files again or remove them")
         : // A plain send waits for its uploads. Answers and approval redirects need them first.
           questionAttachmentTarget ||
             pendingApprovals.some((approval) => !heldRequestIds.has(approval.requestId))
@@ -921,7 +923,11 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   const compatibleRuntimeModeOptions = resolveRuntimeModeOptions(
     compatibleRuntimeModes,
     managedPolicy,
-  );
+  ).map((option) => ({
+    ...option,
+    label: runtimeModeLabel(gt, option.mode),
+    description: runtimeModeDescription(gt, option.mode),
+  }));
   // A thread or draft already above the ceiling would be refused; offer the broadest mode left.
   const runtimeModeCeilingDenial = managedRuntimeModeDenial(managedPolicy, compatibleRuntimeMode);
   const runtimeModeCeilingFallback =
@@ -935,7 +941,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   );
   const sendDisabledReason =
     externalSendDisabledReason ??
-    (multipleModelSelections?.length === 0 ? "Select at least one model." : null) ??
+    (multipleModelSelections?.length === 0 ? gt("Select at least one model.") : null) ??
     (activePendingProgress
       ? attachmentBlockReason
       : (attachmentBlockReason ??
@@ -1394,7 +1400,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   }
 
   if (composerSubmissionError !== null) {
-    const nextError = getComposerPromptLengthValidationMessage(prompt);
+    const nextError = getComposerPromptLengthValidationMessage(gt, prompt);
     if (nextError !== composerSubmissionError) {
       setComposerSubmissionError(nextError);
     }
@@ -1863,7 +1869,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   // The pending Submit button follows the answer's own blockers, matching submitComposer.
   const primaryActionSendDisabledReason =
     (activePendingProgress ? attachmentBlockReason : sendDisabledReason) ??
-    (speechInput.preparing ? "Preparing voice input" : null);
+    (speechInput.preparing ? gt("Preparing voice input") : null);
   const primaryActionEnvironmentUnavailable =
     environmentUnavailable !== null ||
     (!activePendingProgress && (noProviderAvailable || projectSelectionRequired));
@@ -2145,8 +2151,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       event?.preventDefault();
       toastManager.add({
         type: "info",
-        title: "Still compressing a pasted image.",
-        description: "Send again once its thumbnail appears.",
+        title: gt("Still compressing a pasted image."),
+        description: gt("Send again once its thumbnail appears."),
       });
       return false;
     }
@@ -2154,8 +2160,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       event?.preventDefault();
       toastManager.add({
         type: "info",
-        title: "Still bringing attached context into this message.",
-        description: "Send again once its chip resolves.",
+        title: gt("Still bringing attached context into this message."),
+        description: gt("Send again once its chip resolves."),
       });
       return false;
     }
@@ -2167,6 +2173,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       return true;
     }
     const submission = submitComposerDraft({
+      gt,
       prompt: promptRef.current,
       submissionTarget,
       event,
@@ -2496,8 +2503,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           variant: "default",
           icon: <ReplyIcon />,
           title: replyTo.subagents
-            ? `Replying to ${replyTo.subagents.map((subagent) => subagent.title).join(", ")}`
-            : "Replying to",
+            ? gt("Replying to {names}", {
+                names: replyTo.subagents.map((subagent) => subagent.title).join(", "),
+              })
+            : gt("Replying to"),
           description: (
             <button
               type="button"
@@ -2513,7 +2522,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
               {assistantCitationLabel(replyTo.citation)}
             </button>
           ),
-          dismissLabel: "Cancel reply",
+          dismissLabel: gt("Cancel reply"),
           onDismiss: () => setComposerDraftReplyTo(composerDraftTarget, null),
         },
       ]
@@ -2538,7 +2547,9 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       variant="ghost"
                       onClick={() => handleRuntimeModeChange(runtimeModeCeilingFallback)}
                     >
-                      Switch to {runtimeModeConfig[runtimeModeCeilingFallback].label}
+                      {gt("Switch to {mode}", {
+                        mode: runtimeModeLabel(gt, runtimeModeCeilingFallback),
+                      })}
                     </Button>
                   ),
                 }),
@@ -2688,8 +2699,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       if (path === null) {
         toastManager.add({
           type: "error",
-          title: `Couldn't get the path of "${folder.name}"`,
-          description: "Type the folder path with @ instead.",
+          title: gt('Couldn\'t get the path of "{name}"', { name: folder.name }),
+          description: gt("Type the folder path with @ instead."),
         });
         continue;
       }
@@ -2699,8 +2710,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       if (!inserted) {
         toastManager.add({
           type: "error",
-          title: "Unable to add folder",
-          description: "The composer is busy; try again once it is ready.",
+          title: gt("Unable to add folder"),
+          description: gt("The composer is busy; try again once it is ready."),
         });
         break;
       }
@@ -2727,7 +2738,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     if (target === "remote") {
       toastManager.add({
         type: "error",
-        title: "Folders can only be referenced on a server running on this computer",
+        title: gt("Folders can only be referenced on a server running on this computer"),
       });
       return;
     }
@@ -2804,8 +2815,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     onInsertRejected: () => {
       toastManager.add({
         type: "error",
-        title: "Unable to add to chat",
-        description: "The composer is busy; try again once it is ready.",
+        title: gt("Unable to add to chat"),
+        description: gt("The composer is busy; try again once it is ready."),
       });
     },
   });
@@ -2817,7 +2828,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       pendingDraftWork.begin(targetKey);
       const loadingToast = toastManager.add({
         type: "loading",
-        title: "Loading thread context…",
+        title: gt("Loading thread context…"),
         timeout: 0,
         data: { threadRef: routeThreadRef, hideCopyButton: true },
       });
@@ -2842,7 +2853,9 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
             if (activeThreadId) {
               setThreadError(
                 activeThreadId,
-                `You can attach up to ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS} files per message.`,
+                gt("You can attach up to {count} files per message.", {
+                  count: PROVIDER_SEND_TURN_MAX_ATTACHMENTS,
+                }),
               );
             }
           },
@@ -2852,12 +2865,12 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         const error = squashAtomCommandFailure(importResult);
         toastManager.add({
           type: "error",
-          title: "Unable to read the dropped thread",
+          title: gt("Unable to read the dropped thread"),
           description:
             isEnvironmentRequestInvalidError(error) &&
             error.reason === "thread_transcript_too_large"
-              ? "This thread exceeds the attachment size limit. Try a shorter thread."
-              : "Check that its environment is connected and up to date, then try again.",
+              ? gt("This thread exceeds the attachment size limit. Try a shorter thread.")
+              : gt("Check that its environment is connected and up to date, then try again."),
         });
       }
       toastManager.close(loadingToast);
@@ -2901,8 +2914,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       if (!inserted) {
         toastManager.add({
           type: "error",
-          title: "Unable to add thread",
-          description: "The composer is busy; try again once it is ready.",
+          title: gt("Unable to add thread"),
+          description: gt("The composer is busy; try again once it is ready."),
         });
         return;
       }
@@ -3146,8 +3159,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         if (activePendingProgress) {
           toastManager.add({
             type: "info",
-            title: "Terminal output can't be added to a question answer.",
-            description: "Answer or dismiss the question first, then add it to chat.",
+            title: gt("Terminal output can't be added to a question answer."),
+            description: gt("Answer or dismiss the question first, then add it to chat."),
           });
           return;
         }
@@ -3215,6 +3228,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       setMultipleModelSelections,
       validateProviderInput: (providerInput: string) => {
         const validationMessage = getComposerSubmissionValidationMessage({
+          gt,
           prompt: promptRef.current,
           providerInput,
           submissionTarget: "provider-turn",
@@ -3546,10 +3560,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 {composerSuggestionsVisible && composerMenuItems.length === 0
                   ? isComposerMenuLoading
                     ? composerTriggerKind === "pull-request"
-                      ? "Finding pull request..."
+                      ? gt("Finding pull request...")
                       : composerTriggerKind === "skill" || composerTriggerKind === "slash-command"
-                        ? "Searching workspace skills..."
-                        : "Searching workspace files..."
+                        ? gt("Searching workspace skills...")
+                        : gt("Searching workspace files...")
                     : composerMenuEmptyState
                   : ""}
               </div>
@@ -3595,7 +3609,11 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                   <ComposerPromptEditor
                     draftKey={composerDraftTargetKey}
                     // Switching threads lands focus here, so the label names the thread.
-                    ariaLabel={activeThread ? `Message ${activeThread.title}` : "Message"}
+                    ariaLabel={
+                      activeThread
+                        ? gt("Message {title}", { title: activeThread.title })
+                        : gt("Message")
+                    }
                     suggestionListId={composerSuggestionListId}
                     activeSuggestionId={
                       composerSuggestionListVisible && activeComposerMenuItem

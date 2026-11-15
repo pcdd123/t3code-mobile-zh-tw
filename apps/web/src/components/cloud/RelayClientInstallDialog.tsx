@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { DownloadIcon } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import type { RelayClientInstallProgressStage } from "@t3tools/contracts";
@@ -32,7 +33,32 @@ const installSteps: ReadonlyArray<{
   { stage: "activating", label: "Activating installation" },
 ];
 
+function installStepLabel(
+  stage: RelayClientInstallProgressStage,
+  gt: ReturnType<typeof useGT>,
+): string {
+  switch (stage) {
+    case "checking":
+      return gt("Checking current installation");
+    case "waiting_for_lock":
+      return gt("Waiting for installer");
+    case "downloading":
+      return gt("Downloading relay client");
+    case "verifying":
+      return gt("Verifying download");
+    case "installing":
+      return gt("Installing relay client");
+    case "validating":
+      return gt("Validating executable");
+    case "activating":
+      return gt("Activating installation");
+    default:
+      return installSteps.find((step) => step.stage === stage)?.label ?? stage;
+  }
+}
+
 export function RelayClientInstallDialog() {
+  const gt = useGT();
   const state = useSyncExternalStore(
     subscribeRelayClientInstallDialog,
     readRelayClientInstallDialogState,
@@ -66,7 +92,7 @@ export function RelayClientInstallDialog() {
             <DownloadIcon aria-hidden className="size-4.5 text-muted-foreground" />
           </div>
           <DialogTitle>
-            {isInstalling ? "Installing relay client" : "Install relay client?"}
+            {isInstalling ? gt("Installing relay client") : gt("Install relay client?")}
           </DialogTitle>
           <DialogDescription>
             {isInstalling
@@ -79,25 +105,25 @@ export function RelayClientInstallDialog() {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between gap-3 text-sm">
                 <p aria-live="polite" className="font-medium text-foreground">
-                  {activeStep?.label}
+                  {activeStep ? installStepLabel(activeStep.stage, gt) : null}
                 </p>
                 <p className="shrink-0 tabular-nums text-muted-foreground">
                   {activeStepIndex + 1} of {installSteps.length}
                 </p>
               </div>
               <progress
-                aria-label="Relay client installation progress"
+                aria-label={gt("Relay client installation progress")}
                 className="h-2 w-full appearance-none overflow-hidden rounded-full bg-muted [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-primary [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-primary"
                 max={installSteps.length}
                 value={activeStepIndex + 1}
               />
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Keep T3 Code open while the relay client is installed.
+                {gt("Keep T3 Code open while the relay client is installed.")}
               </p>
             </div>
           ) : (
             <div className="rounded-xl border border-border/70 bg-muted/35 p-3">
-              <p className="text-sm font-medium text-foreground">Managed relay client</p>
+              <p className="text-sm font-medium text-foreground">{gt("Managed relay client")}</p>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 T3 Code will download and install version{" "}
                 {view.status === "confirming" ? view.version : ""} locally.
@@ -111,10 +137,10 @@ export function RelayClientInstallDialog() {
               variant="outline"
               onClick={() => respondToRelayClientInstallConfirmation(false)}
             >
-              Cancel
+              {gt("Cancel")}
             </Button>
             <DialogAction onClick={() => respondToRelayClientInstallConfirmation(true)}>
-              Download and install
+              {gt("Download and install")}
             </DialogAction>
           </DialogFooter>
         ) : null}

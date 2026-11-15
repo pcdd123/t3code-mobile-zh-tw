@@ -4,6 +4,13 @@ export const OFFICE_PREVIEW_MAX_BYTES = 50 * 1024 * 1024;
 export const OFFICE_PREVIEW_MAX_ROWS = 250_000;
 export const OFFICE_PREVIEW_MAX_COLUMNS = 1024;
 
+/** The size of an opened Office document; `partial` while its pages are still being laid out. */
+export type OfficeDetails = {
+  readonly unit: "page" | "slide" | "sheet";
+  readonly count: number;
+  readonly partial?: boolean;
+};
+
 /** What a workbook's views ask of the preview that its engine does not read. */
 export type WorkbookView = {
   /** The sheets, by index in workbook order, whose view hides gridlines. */

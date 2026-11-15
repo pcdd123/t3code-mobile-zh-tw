@@ -1,5 +1,6 @@
 import { WorkspaceNoTabs } from "./WorkspaceNoTabs";
-import { WORKSPACE_TAB_LABELS, useEnabledNavigationTabs } from "./navigation-tabs";
+import { useGT } from "gt-react-native";
+import { useEnabledNavigationTabs, useWorkspaceTabLabels } from "./navigation-tabs";
 import { WorkspaceExtraTab } from "./WorkspaceExtraTab";
 import { WorkspaceSettingsList } from "../../settings/SettingsRouteScreen";
 import { WorkspaceSectionToolbar } from "./WorkspaceSectionToolbar";
@@ -39,24 +40,26 @@ import {
 } from "./useSystemWorkspaceTabBar";
 import { openSettings } from "../../settings/settings-navigation";
 
-const TAB_TITLES = WORKSPACE_TAB_LABELS;
-
 function WorkspaceRootTitle(props: {
   readonly columnWidth: number;
   readonly onOpenEnvironments: () => void;
 }) {
+  const gt = useGT();
+  const tabTitles = useWorkspaceTabLabels();
   const { state, settingsOpen } = useWorkspaceTabs()!;
   const maxWidth = Math.max(0, props.columnWidth - (use(HeaderItemsWidthContext) ?? 160));
   const enabled = useEnabledNavigationTabs();
   const tabTitle = settingsOpen
-    ? "Settings"
+    ? gt("Settings")
     : enabled.length
-      ? TAB_TITLES[state.selectedTab]
-      : "Navigation";
+      ? tabTitles[state.selectedTab]
+      : gt("Navigation");
   return (
     <View style={{ width: maxWidth, minHeight: 32, justifyContent: "center" }}>
       <WorkspaceConnectionTitle
-        brand={<CompactBrandTitle accessibilityLabel={`T3 Code, ${tabTitle}`} fit />}
+        brand={
+          <CompactBrandTitle accessibilityLabel={gt("T3 Code, {tab}", { tab: tabTitle })} fit />
+        }
         maxWidth={maxWidth}
         onPress={props.onOpenEnvironments}
       />
@@ -65,6 +68,8 @@ function WorkspaceRootTitle(props: {
 }
 
 function WorkspaceRootContent() {
+  const gt = useGT();
+  const tabTitles = useWorkspaceTabLabels();
   const navigation = useNavigation();
   const { width: windowWidth } = useWindowDimensions();
   const { layout, startNewTask } = useAdaptiveWorkspaceLayout();
@@ -126,10 +131,11 @@ function WorkspaceRootContent() {
           ]}
           options={{
             title: settingsOpen
-              ? "Settings"
+              ? gt("Settings")
               : enabled.length
-                ? TAB_TITLES[state.selectedTab]
-                : "Navigation",
+                ? tabTitles[state.selectedTab]
+                : gt("Navigation"),
+
             headerShown: true,
             headerTransparent: NATIVE_LIQUID_GLASS_SUPPORTED,
             headerStyle: NATIVE_LIQUID_GLASS_SUPPORTED

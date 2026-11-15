@@ -8,10 +8,35 @@ import { writeTextToClipboard } from "../../hooks/useCopyToClipboard";
 import { Button } from "../ui/button";
 import { toastManager } from "../ui/toast";
 import type { ComposerBannerStackItem } from "./ComposerBannerStack";
+import { useGT } from "gt-react";
+
+function CopyFeedbackIdButton({ feedbackId }: { feedbackId: string }) {
+  const gt = useGT();
+  return (
+    <Button
+      size="xs"
+      variant="ghost"
+      onClick={() => {
+        void writeTextToClipboard(feedbackId, "Codex feedback thread ID").catch(
+          (error: unknown) => {
+            toastManager.add({
+              type: "error",
+              title: gt("Could not copy thread ID"),
+              description: error instanceof Error ? error.message : gt("An error occurred."),
+            });
+          },
+        );
+      }}
+    >
+      {gt("Copy ID")}
+    </Button>
+  );
+}
 
 export function feedbackBannerItem(
   submission: CodexFeedbackSubmission,
   onDismiss: () => void,
+  gt: ReturnType<typeof useGT>,
 ): ComposerBannerStackItem | null {
   const notice = codexFeedbackNotice(submission);
   if (!notice) return null;
@@ -23,26 +48,10 @@ export function feedbackBannerItem(
     ...notice,
     actions:
       submission.status === "sent" ? (
-        <Button
-          size="xs"
-          variant="ghost"
-          onClick={() => {
-            void writeTextToClipboard(submission.feedbackId, "Codex feedback thread ID").catch(
-              (error: unknown) => {
-                toastManager.add({
-                  type: "error",
-                  title: "Could not copy thread ID",
-                  description: error instanceof Error ? error.message : "An error occurred.",
-                });
-              },
-            );
-          }}
-        >
-          Copy ID
-        </Button>
+        <CopyFeedbackIdButton feedbackId={submission.feedbackId} />
       ) : undefined,
     ...(submission.status !== "uploading"
-      ? { dismissLabel: "Dismiss feedback notice", onDismiss }
+      ? { dismissLabel: gt("Dismiss feedback notice"), onDismiss }
       : {}),
   };
 }

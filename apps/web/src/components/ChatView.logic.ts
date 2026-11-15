@@ -1,3 +1,4 @@
+import { englishGt, type Translate } from "./Localized";
 import { toServerClock } from "@t3tools/client-runtime/clock";
 import { type OrchestrationV2ProviderTurn, type RunAttemptId } from "@t3tools/contracts";
 import {
@@ -533,26 +534,27 @@ export function getAntigravitySendBlockReason(
     | null
     | undefined,
   model: string,
+  gt: Translate = englishGt,
 ): string | null {
   if (provider?.driver !== "antigravity") return null;
   if (!provider.installed) {
-    return "Install Antigravity in provider settings before sending.";
+    return gt("Install Antigravity in provider settings before sending.");
   }
   if (provider.auth.status === "unauthenticated") {
-    return "Sign in to Antigravity in provider settings before sending.";
+    return gt("Sign in to Antigravity in provider settings before sending.");
   }
   const slug = model.trim();
-  if (slug.length === 0) return "Choose an Antigravity model before sending.";
+  if (slug.length === 0) return gt("Choose an Antigravity model before sending.");
   if (provider.auth.status === "unknown") return null;
   if (provider.models.length === 0) {
-    return "Refresh Antigravity models in provider settings before sending.";
+    return gt("Refresh Antigravity models in provider settings before sending.");
   }
   if (
     provider.status === "ready" &&
     slug !== ANTIGRAVITY_DEFAULT_MODEL &&
     !provider.models.some((entry) => entry.slug === slug || entry.aliases?.includes(slug))
   ) {
-    return "That Antigravity model is no longer available. Choose another model.";
+    return gt("That Antigravity model is no longer available. Choose another model.");
   }
   return null;
 }
@@ -753,20 +755,29 @@ export function deriveComposerSendState(options: {
 export function buildExpiredTerminalContextToastCopy(
   expiredTerminalContextCount: number,
   variant: "omitted" | "empty",
+  gt: Translate = englishGt,
 ): { title: string; description: string } {
   const count = Math.max(1, Math.floor(expiredTerminalContextCount));
-  const noun = count === 1 ? "Expired terminal context" : "Expired terminal contexts";
-  const pronoun = count === 1 ? "it" : "them";
   if (variant === "empty") {
-    return {
-      title: `${noun} won't be sent`,
-      description: `Remove ${pronoun} or re-add ${pronoun} to include terminal output.`,
-    };
+    return count === 1
+      ? {
+          title: gt("Expired terminal context won't be sent"),
+          description: gt("Remove it or re-add it to include terminal output."),
+        }
+      : {
+          title: gt("Expired terminal contexts won't be sent"),
+          description: gt("Remove them or re-add them to include terminal output."),
+        };
   }
-  return {
-    title: `${noun} omitted from message`,
-    description: `Re-add ${pronoun} if you want that terminal output included.`,
-  };
+  return count === 1
+    ? {
+        title: gt("Expired terminal context omitted from message"),
+        description: gt("Re-add it if you want that terminal output included."),
+      }
+    : {
+        title: gt("Expired terminal contexts omitted from message"),
+        description: gt("Re-add them if you want that terminal output included."),
+      };
 }
 
 export function branchMismatchKey(
@@ -860,7 +871,9 @@ export function getStartedThreadModelChangeBlockReason(input: {
   currentModelSelection: ModelSelection;
   currentProviderInstanceId?: ModelSelection["instanceId"] | null | undefined;
   nextModelSelection: ModelSelection;
+  gt?: Translate;
 }): { title: string; description: string } | null {
+  const { gt = englishGt } = input;
   if (!input.hasStartedSession) {
     return null;
   }
@@ -875,8 +888,8 @@ export function getStartedThreadModelChangeBlockReason(input: {
     return null;
   }
   return {
-    title: "Start a new chat to switch providers",
-    description: "This thread does not support switching providers after it has started.",
+    title: gt("Start a new chat to switch providers"),
+    description: gt("This thread does not support switching providers after it has started."),
   };
 }
 
@@ -1187,8 +1200,8 @@ export type LocalThreadErrorEntry = {
   readonly at: number;
 };
 
-export function chatActionErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "An error occurred.";
+export function chatActionErrorMessage(error: unknown, gt: Translate = englishGt): string {
+  return error instanceof Error ? error.message : gt("An error occurred.");
 }
 
 export function releaseChatTimelineAnchor<T extends { readonly messageId: MessageId | null }>(

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useStableCallback } from "../../hooks/useStableCallback";
 import { toastManager } from "../ui/toast";
 import { usageLimitsBannerItem } from "./ComposerUsageLimits";
+import { useGT } from "gt-react";
 
 /** Keep opened data live. Retain hidden panels during reconnect; clear when quota-spending work resumes. */
 export function useUsageLimitsPanel(input: {
@@ -20,6 +21,7 @@ export function useUsageLimitsPanel(input: {
   readonly providers: readonly ServerProvider[];
   readonly sources: UsageLimitSourceSnapshots;
 }) {
+  const gt = useGT();
   const {
     environmentId,
     threadKey,
@@ -44,8 +46,12 @@ export function useUsageLimitsPanel(input: {
   const banner =
     report !== null && panel !== null
       ? // A fresh id per opening: the stack keeps the last dismissed id as "exiting".
-        usageLimitsBannerItem(`usage-limits:${panel.key}:${panel.now}`, report, environmentId, () =>
-          setPanel(null),
+        usageLimitsBannerItem(
+          gt,
+          `usage-limits:${panel.key}:${panel.now}`,
+          report,
+          environmentId,
+          () => setPanel(null),
         )
       : null;
   // Intercept /usage-limits only when Limits has selected-provider data.
@@ -63,7 +69,7 @@ export function useUsageLimitsPanel(input: {
       return true;
     }
     setPanel(null);
-    toastManager.add({ type: "info", title: "Usage limits are unavailable for this provider" });
+    toastManager.add({ type: "info", title: gt("Usage limits are unavailable for this provider") });
     return false;
   });
   // Async responses may clear only their originating thread's panel.

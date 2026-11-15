@@ -37,6 +37,10 @@ const mocks = vi.hoisted(() => ({
   openScratch: vi.fn(),
   prepareTriage: vi.fn(),
 }));
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("../../state/atom-registry", () => ({
   appAtomRegistry: {
     get: (atom: Atom.Atom<unknown>) => mocks.registry().get(atom),

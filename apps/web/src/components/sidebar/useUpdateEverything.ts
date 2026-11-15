@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { PROVIDER_DISPLAY_NAMES } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 
 import { APP_VERSION } from "~/branding";
 import { isDesktopLocalConnectionTarget } from "~/connection/desktopLocal";
@@ -53,6 +54,7 @@ export function useUpdateEverything(
   localUpdateVersion: string | null,
   channelSwitch?: ChannelSwitchRelease,
 ) {
+  const gt = useGT();
   const targetVersion = localUpdateVersion ?? APP_VERSION;
   const { environments } = useEnvironments();
   const environmentIds = environmentIdsKey(environments.map(({ environmentId }) => environmentId));
@@ -81,19 +83,22 @@ export function useUpdateEverything(
     reportFailure: false,
   });
 
-  const view = describeUpdateEverything({
-    localVersion: localUpdateVersion,
-    localMachines: machines.filter((machine) => machine.hostedByThisApp),
-    servers: moving,
-    skipped,
-    providerMachines: providers.machines.map((machine) => ({
-      environmentId: machine.environmentId,
-      label: machine.label,
-      providers: machine.candidates.map(
-        (candidate) => PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver,
-      ),
-    })),
-  });
+  const view = describeUpdateEverything(
+    {
+      localVersion: localUpdateVersion,
+      localMachines: machines.filter((machine) => machine.hostedByThisApp),
+      servers: moving,
+      skipped,
+      providerMachines: providers.machines.map((machine) => ({
+        environmentId: machine.environmentId,
+        label: machine.label,
+        providers: machine.candidates.map(
+          (candidate) => PROVIDER_DISPLAY_NAMES[candidate.driver] ?? candidate.driver,
+        ),
+      })),
+    },
+    gt,
+  );
 
   return {
     hasUpdates: servers.length > 0 || providers.machines.length > 0,
@@ -155,11 +160,13 @@ export function useUpdateEverything(
           updateProviders: async () => {
             const runs = await providers.updateAll({ quiet: true });
             const outcomes = runs.map((run) => {
-              const runOutcome = getProviderUpdateRunOutcome(run);
+              const runOutcome = getProviderUpdateRunOutcome(run, gt);
               if (runOutcome.status !== "updated") {
                 providerFailures.set(
                   run.environmentId,
-                  runOutcome.status === "failed" ? runOutcome.line : "Provider update interrupted",
+                  runOutcome.status === "failed"
+                    ? runOutcome.line
+                    : gt("Provider update interrupted"),
                 );
               }
               return runOutcome;

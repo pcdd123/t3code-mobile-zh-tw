@@ -68,6 +68,11 @@ export function retainPullRequestDiffPage(
   return [...pages.slice(0, index), { cursor, result }];
 }
 
+/** The partial-diff notice, in English; the diff hook shows it translated. */
+export function pullRequestDiffNotice(terminology: ChangeRequestTerminology) {
+  return `Some file contents are unavailable. Open the ${terminology.singular} on its provider to see the full changes.`;
+}
+
 export function combinePullRequestDiffPages(
   pages: readonly PullRequestDiffPage[],
   cache: WeakMap<PullRequestDiffResult, ReviewParsedDiff>,
@@ -107,7 +112,7 @@ export function combinePullRequestDiffPages(
     notice:
       pages.some((page) => page.result.truncated) ||
       parsed.some((page) => page.kind === "raw" || (page.kind === "files" && page.notice !== null))
-        ? `Some file contents are unavailable. Open the ${terminology.singular} on its provider to see the full changes.`
+        ? pullRequestDiffNotice(terminology)
         : null,
   };
 }

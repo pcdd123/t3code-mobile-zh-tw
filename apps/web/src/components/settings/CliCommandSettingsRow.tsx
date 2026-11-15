@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { useState } from "react";
 
 import {
@@ -11,19 +12,27 @@ import { stackedThreadToast, toastManager } from "../ui/toast";
 import { SettingsRow } from "./settingsLayout";
 import { searchableSetting } from "./settingsSearch";
 
-const FAILURE_TITLES = {
-  install: "Could not install t3",
-  uninstall: "Could not remove t3",
-  addToPath: "Could not add t3 to PATH",
-} as const;
+type CliCommandAction = "install" | "uninstall" | "addToPath";
+
+function failureTitle(action: CliCommandAction, gt: ReturnType<typeof useGT>): string {
+  switch (action) {
+    case "install":
+      return gt("Could not install t3");
+    case "uninstall":
+      return gt("Could not remove t3");
+    case "addToPath":
+      return gt("Could not add t3 to PATH");
+  }
+}
 
 /** The desktop `t3` command's state, and its actions with a toast on failure. */
 export function useDesktopCliCommand() {
+  const gt = useGT();
   const bridge = getDesktopCliCommandBridge();
   const query = useEnvironmentQuery(bridge ? desktopCliCommandStateAtom : null);
   const [pending, setPending] = useState(false);
 
-  const run = (action: keyof typeof FAILURE_TITLES) => {
+  const run = (action: CliCommandAction) => {
     if (!bridge || pending) return;
     setPending(true);
     void bridge[action]()
@@ -32,8 +41,8 @@ export function useDesktopCliCommand() {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: FAILURE_TITLES[action],
-            description: error instanceof Error ? error.message : "Something went wrong.",
+            title: failureTitle(action, gt),
+            description: error instanceof Error ? error.message : gt("Something went wrong."),
           }),
         );
       })
@@ -48,19 +57,31 @@ export function useDesktopCliCommand() {
 }
 
 export function CliCommandSettingsRow() {
+  const gt = useGT();
   const { state, busy, run } = useDesktopCliCommand();
 
   if (!state?.supported) return null;
   const installed = state.installedPath !== null;
+  const installedPath = state.installedPath ?? "";
   const description = state.shadowedBy
-    ? `Another t3 at ${state.shadowedBy} runs first in a new terminal. Remove it to use T3 Code's.`
+    ? gt("Another t3 at {path} runs first in a new terminal. Remove it to use T3 Code's.", {
+        path: state.shadowedBy,
+      })
     : !installed
-      ? "Run T3 Code's CLI as `t3` from any terminal."
+      ? gt("Run T3 Code's CLI as `t3` from any terminal.")
       : state.onPath
-        ? `Installed at ${state.installedPath}. Open a new terminal to use it.`
+        ? gt("Installed at {path}. Open a new terminal to use it.", { path: installedPath })
         : state.pathSetup?.added
-          ? `Installed at ${state.installedPath} and added to PATH in ${state.pathSetup.file}. Open a new terminal to use it.`
-          : `Installed at ${state.installedPath}, which is not on your PATH yet.${state.pathSetup ? "" : " Add its folder to your PATH to run `t3`."}`;
+          ? gt("Installed at {path} and added to PATH in {file}. Open a new terminal to use it.", {
+              path: installedPath,
+              file: state.pathSetup.file,
+            })
+          : state.pathSetup
+            ? gt("Installed at {path}, which is not on your PATH yet.", { path: installedPath })
+            : gt(
+                "Installed at {path}, which is not on your PATH yet. Add its folder to your PATH to run `t3`.",
+                { path: installedPath },
+              );
 
   return (
     <SettingsRow
@@ -70,7 +91,7 @@ export function CliCommandSettingsRow() {
         <div className="flex gap-2">
           {state.pathSetup && !state.pathSetup.added ? (
             <Button size="sm" variant="outline" disabled={busy} onClick={() => run("addToPath")}>
-              Add to PATH
+              {gt("Add to PATH")}
             </Button>
           ) : null}
           <Button
@@ -79,7 +100,7 @@ export function CliCommandSettingsRow() {
             disabled={busy || (!installed && Boolean(state.shadowedBy))}
             onClick={() => run(installed ? "uninstall" : "install")}
           >
-            {installed ? "Remove" : "Install"}
+            {installed ? gt("Remove") : gt("Install")}
           </Button>
         </div>
       }

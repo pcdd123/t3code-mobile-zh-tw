@@ -26,8 +26,9 @@ export function createProviderCatalogRefreshRunner<Result>(
 
 export function providerCatalogRefreshError(
   result: AtomCommandResult<unknown, unknown>,
+  fallbackMessage = "Provider discovery failed.",
 ): string | null {
   if (result._tag !== "Failure" || isAtomCommandInterrupted(result)) return null;
   const error = squashAtomCommandFailure(result);
-  return error instanceof Error ? error.message : "Provider discovery failed.";
+  return error instanceof Error ? error.message : fallbackMessage;
 }

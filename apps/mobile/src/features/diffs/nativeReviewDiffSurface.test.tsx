@@ -134,6 +134,7 @@ vi.mock("../settings/appearance/AppearancePreferencesProvider", () => ({
   useAppearancePreferences: () => ({ themeAppearance: "light", themeId: "test" }),
 }));
 vi.mock("../../lib/useUniwindTheme", () => ({ useUniwindTheme: () => ({}) }));
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
 
 import { resolveNativeReviewDiffView } from "./nativeReviewDiffSurface";
 import { useNativeReviewDiffBridge } from "../review/useNativeReviewDiffBridge";

@@ -1,3 +1,4 @@
+import { localized } from "./Localized";
 import type { EnvironmentId } from "@t3tools/contracts";
 import { appSignInTargetForRemote } from "@t3tools/client-runtime/source-control-clients";
 import { runAtomCommand } from "@t3tools/client-runtime/state/runtime";
@@ -25,10 +26,17 @@ export async function suggestAppAccessForRemote(
   const owner = target.input.repository.split("/")[0] ?? target.input.repository;
   const id = toastManager.add({
     type: "info",
-    title: `Give ${target.appSignIn.appName} access to ${owner}`,
-    description: `It isn't installed there, so GitHub requests for ${target.input.repository} use your own login and its lower rate limit.`,
+    title: localized((gt) =>
+      gt("Give {app} access to {owner}", { app: target.appSignIn.appName, owner }),
+    ),
+    description: localized((gt) =>
+      gt(
+        "It isn't installed there, so GitHub requests for {repository} use your own login and its lower rate limit.",
+        { repository: target.input.repository },
+      ),
+    ),
     actionProps: {
-      children: "Install",
+      children: localized((gt) => gt("Install")),
       onClick: () => {
         toastManager.close(id);
         window.open(target.appSignIn.installUrl, "_blank", "noopener,noreferrer");

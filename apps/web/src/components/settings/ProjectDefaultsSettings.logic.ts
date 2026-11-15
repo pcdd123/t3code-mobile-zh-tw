@@ -1,5 +1,6 @@
 import type { ModelSelection, ProjectId, ServerProvider } from "@t3tools/contracts";
 import type { UnifiedSettings } from "@t3tools/contracts/settings";
+import type { useGT } from "gt-react";
 
 import { resolveEffectiveDefaultModelSelection } from "../../modelSelection";
 import {
@@ -19,6 +20,7 @@ export function resolveDefaultModelSettingsPresentation(input: {
   readonly providers: ReadonlyArray<ServerProvider>;
   readonly settings: UnifiedSettings;
   readonly projectId: ProjectId | null;
+  readonly gt: ReturnType<typeof useGT>;
 }): DefaultModelSettingsPresentation {
   const saved = input.settings.defaultModelSelection;
   if (saved === null) {
@@ -43,7 +45,7 @@ export function resolveDefaultModelSettingsPresentation(input: {
     !savedEntry.isAvailable ||
     resolved?.instanceId !== saved.instanceId
   ) {
-    return { selection: saved, providerNote: providerNote(savedEntry) };
+    return { selection: saved, providerNote: providerNote(savedEntry, input.gt) };
   }
   return {
     selection: resolveEffectiveDefaultModelSelection(input.settings, input.providers, resolved),
@@ -51,8 +53,11 @@ export function resolveDefaultModelSettingsPresentation(input: {
   };
 }
 
-function providerNote(entry: ProviderInstanceEntry | undefined): string {
-  if (!entry) return "This provider is not available on this environment.";
-  if (!entry.enabled) return `${entry.displayName} is turned off.`;
-  return `${entry.displayName} is unavailable.`;
+function providerNote(
+  entry: ProviderInstanceEntry | undefined,
+  gt: ReturnType<typeof useGT>,
+): string {
+  if (!entry) return gt("This provider is not available on this environment.");
+  if (!entry.enabled) return gt("{provider} is turned off.", { provider: entry.displayName });
+  return gt("{provider} is unavailable.", { provider: entry.displayName });
 }

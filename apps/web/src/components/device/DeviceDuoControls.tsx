@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { useState } from "react";
 import {
   duoFoldState,
@@ -15,10 +16,7 @@ const FOLDS = [
   { id: "half", angle: 90 },
   { id: "open", angle: 180 },
 ] as const;
-const STANDS = [
-  { id: "laptop", label: "Laptop stand" },
-  { id: "tent", label: "Tent stand" },
-] as const;
+const STANDS = ["laptop", "tent"] as const;
 
 export function DeviceDuoControls(props: {
   screen: DeviceScreenSize;
@@ -26,6 +24,7 @@ export function DeviceDuoControls(props: {
   enabled: boolean;
   onCommand: (command: DuoCommand) => void;
 }) {
+  const gt = useGT();
   const { screen } = props;
   const { fold, stand, phoneVertical: reportedVertical, settled } = duoFoldState(screen);
   const [settledVertical, setSettledVertical] = useState(reportedVertical);
@@ -36,9 +35,9 @@ export function DeviceDuoControls(props: {
   // correct display frame.
   const foldWaits = props.state.pending && (stand || props.state.requested?.control === "pose");
   const foldLabels = {
-    closed: "Closed",
-    half: phoneVertical ? "Book" : "Laptop",
-    open: "Open",
+    closed: gt("Closed"),
+    half: phoneVertical ? gt("Book") : gt("Laptop"),
+    open: gt("Open"),
   };
   const button = (
     key: string,
@@ -67,11 +66,12 @@ export function DeviceDuoControls(props: {
       <TooltipPopup side="left">{label}</TooltipPopup>
     </Tooltip>
   );
+  const standLabels = { laptop: gt("Laptop stand"), tent: gt("Tent stand") };
   const group =
     "pointer-events-auto flex shrink-0 flex-col items-center gap-1 rounded-full border border-border/50 bg-background/80 p-1 shadow-sm";
   return (
-    <div aria-label="iPhone Duo stands" className="flex flex-col items-center gap-2">
-      <div role="group" aria-label="Fold shape" className={group}>
+    <div aria-label={gt("iPhone Duo stands")} className="flex flex-col items-center gap-2">
+      <div role="group" aria-label={gt("Fold shape")} className={group}>
         {FOLDS.map(({ id, angle: value }) =>
           button(
             id,
@@ -90,11 +90,11 @@ export function DeviceDuoControls(props: {
           ),
         )}
       </div>
-      <div role="group" aria-label="Device stance" className={group}>
-        {STANDS.map(({ id, label }) =>
+      <div role="group" aria-label={gt("Device stance")} className={group}>
+        {STANDS.map((id) =>
           button(
             id,
-            label,
+            standLabels[id],
             screen.hingePose === id,
             () => {
               if (!stand) setStandVertical(settledVertical);

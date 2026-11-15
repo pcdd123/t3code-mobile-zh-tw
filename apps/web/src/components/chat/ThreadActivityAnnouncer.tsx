@@ -10,11 +10,14 @@ import {
   type ThreadAnnouncementMemory,
 } from "@t3tools/client-runtime/state/thread-activity-announcement";
 import {
+  localizeTurnActivity,
+  localizeTurnMessage,
   nextTurnDetailAnnouncement,
   NO_TURN_DETAIL,
   turnDetail,
   type TurnDetailMemory,
 } from "./turnDetailAnnouncement";
+import { useGT } from "gt-react";
 
 // Long enough for a screen reader to finish a short label before the next one.
 const ACTIVITY_GAP_MS = 2_000;
@@ -61,6 +64,7 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
   readonly entries: ReadonlyArray<TimelineEntry>;
   readonly workspaceRoot: string | undefined;
 }) {
+  const gt = useGT();
   const { regionRef, announce, clear } = useLiveRegion();
   const {
     regionRef: detailRegionRef,
@@ -135,8 +139,9 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
     if (detail.messages.length > 0) {
       // NVDA reads two regions written in the same frame in either order, so a
       // status that lands with a message is read as its last sentence.
+      const messages = detail.messages.map((message) => localizeTurnMessage(gt, message));
       const text = asOneAnnouncement(
-        turn.announcement === null ? detail.messages : [...detail.messages, turn.announcement],
+        turn.announcement === null ? messages : [...messages, turn.announcement],
       );
       write(text, holdAfter(text));
     } else if (turn.announcement !== null) {
@@ -151,7 +156,7 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
     if (label === null) return;
     const speakStep = () => {
       step.waiting = null;
-      write(label, ACTIVITY_GAP_MS);
+      write(localizeTurnActivity(gt, label), ACTIVITY_GAP_MS);
     };
     const wait = step.quietUntil - Date.now();
     if (wait <= 0) {
@@ -176,6 +181,7 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
     clear,
     announceDetail,
     clearDetail,
+    gt,
   ]);
 
   // No role="status": Orca 50 maps it to a status bar in Chromium and drops its updates.

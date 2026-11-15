@@ -10,6 +10,7 @@ import {
   type ThreadSearchSubject,
 } from "@t3tools/shared/paletteSearch";
 import { threadSearchSubject } from "@t3tools/client-runtime/state/thread-search";
+import type { useGT } from "gt-react";
 import type { CommandPaletteLinkedThreads } from "../commandPaletteBus";
 import {
   addProjectRemoteSourceLabel,
@@ -39,10 +40,13 @@ export const RECENT_THREAD_LIMIT = 12;
 export const ITEM_ICON_CLASS = "size-4 text-icon-muted";
 export const ADDON_ICON_CLASS = "size-4";
 
+type Translate = ReturnType<typeof useGT>;
+
 export function buildLinkedThreadActionItems(
   input: CommandPaletteLinkedThreads & {
     query: string;
     icon: ReactNode;
+    gt: Translate;
     runThread: (thread: Pick<SidebarThreadSummary, "environmentId" | "id">) => Promise<void>;
   },
 ): CommandPaletteActionItem[] {
@@ -50,8 +54,9 @@ export function buildLinkedThreadActionItems(
     kind: "action",
     value: `thread:${input.environmentId}:${thread.id}`,
     threadRef: { environmentId: input.environmentId, threadId: thread.id },
-    title: thread.title || "Untitled thread",
-    description: thread.archivedAt === null ? "Linked thread" : "Archived thread",
+    title: thread.title || input.gt("Untitled thread"),
+    description:
+      thread.archivedAt === null ? input.gt("Linked thread") : input.gt("Archived thread"),
     searchTerms: [input.query, thread.title],
     icon: input.icon,
     run: () => input.runThread({ environmentId: input.environmentId, id: thread.id }),
@@ -434,6 +439,7 @@ export function buildThreadActionItems<TThread extends BuildThreadActionItemsThr
   renderTrailingContent?: (thread: TThread) => ReactNode;
   renderDescription?: (thread: TThread, meta: { projectTitle: string | undefined }) => ReactNode;
   runThread: (thread: TThread) => Promise<void>;
+  gt: Translate;
   /** Makes the environment searchable; pass it only with two or more environments. */
   environmentLabelOf?: (thread: TThread) => string | null;
 }): CommandPaletteActionItem[] {
@@ -458,7 +464,7 @@ export function buildThreadActionItems<TThread extends BuildThreadActionItemsThr
       thread.id === input.activeThread?.id &&
       thread.environmentId === input.activeThread.environmentId;
     if (isCurrent) {
-      descriptionParts.push("Current thread");
+      descriptionParts.push(input.gt("Current thread"));
     }
 
     const leadingContent = input.renderLeadingContent?.(thread);
@@ -482,10 +488,12 @@ export function buildThreadActionItems<TThread extends BuildThreadActionItemsThr
           projectTitle,
           input.environmentLabelOf?.(thread),
         ),
-        title: thread.title,
+        title: thread.title === "New thread" ? input.gt("New thread") : thread.title,
         description,
         timestamp: formatRelativeTimeLabel(
           thread.latestUserMessageAt ?? thread.updatedAt ?? thread.createdAt,
+          undefined,
+          input.gt,
         ),
         icon: input.icon,
       },
@@ -789,16 +797,16 @@ export function buildRootGroups(input: {
   return groups;
 }
 
-export function getCommandPaletteInputPlaceholder(mode: CommandPaletteMode): string {
+export function getCommandPaletteInputPlaceholder(mode: CommandPaletteMode, gt: Translate): string {
   switch (mode) {
     case "root":
-      return "Search commands, projects, and threads...";
+      return gt("Search commands, projects, and threads...");
     case "root-browse":
-      return "Enter project path (e.g. ~/projects/my-app)";
+      return gt("Enter project path (e.g. ~/projects/my-app)");
     case "submenu":
-      return "Search...";
+      return gt("Search...");
     case "submenu-browse":
-      return "Enter path (e.g. ~/projects/my-app)";
+      return gt("Enter path (e.g. ~/projects/my-app)");
   }
 }
 
@@ -839,13 +847,19 @@ export type AddProjectCloneFlow =
       readonly remoteUrl: string;
     };
 
-export function remoteProjectInputPlaceholder(flow: AddProjectCloneFlow | null): string | null {
+export function remoteProjectInputPlaceholder(
+  flow: AddProjectCloneFlow | null,
+  gt: Translate,
+): string | null {
   if (!flow) return null;
   if (flow.step === "confirm") return null;
   if (flow.source === "url") {
-    return "Enter Git clone URL";
+    return gt("Enter Git clone URL");
   }
-  return `Enter ${addProjectRemoteSourceLabel(flow.source)} repository (${addProjectRemoteSourcePathHint(flow.source)})`;
+  return gt("Enter {label} repository ({hint})", {
+    label: addProjectRemoteSourceLabel(flow.source),
+    hint: addProjectRemoteSourcePathHint(flow.source),
+  });
 }
 
 export function buildPaletteRemoteSourceReadiness(
@@ -866,11 +880,11 @@ export function buildPaletteRemoteSourceReadiness(
   };
 }
 
-export function errorMessage(error: unknown): string {
+export function errorMessage(error: unknown, gt: Translate): string {
   if (error instanceof Error && error.message.trim().length > 0) {
     return error.message;
   }
-  return "An error occurred.";
+  return gt("An error occurred.");
 }
 
 const OVERLAY_MODE_BY_COMMAND = {

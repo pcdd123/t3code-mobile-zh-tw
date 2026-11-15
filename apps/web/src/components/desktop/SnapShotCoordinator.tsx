@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import {
   type DesktopBridge,
   type DesktopPendingSnapShot,
@@ -228,6 +229,7 @@ export async function deliverSnapShot(
 }
 
 export function SnapShotCoordinator() {
+  const gt = useGT();
   const {
     activeDraftThread,
     activeThread,
@@ -374,8 +376,8 @@ export function SnapShotCoordinator() {
               "missing-project",
               stackedThreadToast({
                 type: "error",
-                title: "Snapshot taken, but no project is available",
-                description: "Add a project, then capture the window again.",
+                title: gt("Snapshot taken, but no project is available"),
+                description: gt("Add a project, then capture the window again."),
               }),
             );
             continue;
@@ -398,9 +400,9 @@ export function SnapShotCoordinator() {
               "delivery",
               stackedThreadToast({
                 type: "error",
-                title: "Snapshot failed",
+                title: gt("Snapshot failed"),
                 description: `Capture ${item.id}: ${
-                  error instanceof Error ? error.message : "Try the capture again."
+                  error instanceof Error ? error.message : gt("Try the capture again.")
                 }`,
               }),
             );
@@ -414,8 +416,8 @@ export function SnapShotCoordinator() {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Snapshot failed",
-            description: error instanceof Error ? error.message : "Try the capture again.",
+            title: gt("Snapshot failed"),
+            description: error instanceof Error ? error.message : gt("Try the capture again."),
           }),
         );
       })
@@ -483,8 +485,8 @@ export function SnapShotCoordinator() {
             toastManager.add(
               stackedThreadToast({
                 type: "error",
-                title: "Snapshot failed",
-                description: state.message ?? "Try the capture again.",
+                title: gt("Snapshot failed"),
+                description: state.message ?? gt("Try the capture again."),
               }),
             );
           });

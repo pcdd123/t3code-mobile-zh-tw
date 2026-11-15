@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import * as Schema from "effect/Schema";
 import { observeResize } from "~/lib/observeResize";
 import { useEffect, useRef, useState } from "react";
@@ -14,7 +15,8 @@ import {
   type CellAddr,
 } from "@betteroffice/xlsx/headless";
 import { FileSurfaceLoading, FileSurfaceNotice } from "../fileSurfaceChrome";
-import type { WorkbookView } from "../officePreviewProtocol";
+import { localizeFilePreviewError } from "../filePreviewErrors";
+import type { OfficeDetails, WorkbookView } from "../officePreviewProtocol";
 import { createWorkerClient, SupersededError } from "./worker-rpc";
 import type { SheetLayout, SheetMethods, SheetFrameRequest, SheetTab } from "./sheet-protocol";
 import {
@@ -48,9 +50,10 @@ type Opened = {
 export default function Spreadsheet(props: {
   bytes: ArrayBuffer;
   view: WorkbookView;
-  onDetails: (text: string) => void;
+  onDetails: (details: OfficeDetails) => void;
   onError: (cause: unknown) => void;
 }) {
+  const gt = useGT();
   const { onError, bytes: source, onDetails, view } = props;
   const [opened, setOpened] = useState<Opened>();
   const [error, setError] = useState("");
@@ -73,7 +76,7 @@ export default function Spreadsheet(props: {
       .then((value) => {
         if (!value) throw new Error("This workbook has no visible sheets.");
         setOpened({ ...value, engine });
-        onDetails(`${value.tabs.length} sheet${value.tabs.length === 1 ? "" : "s"}`);
+        onDetails({ unit: "sheet", count: value.tabs.length });
       })
       .catch(fail);
     return () => {
@@ -101,7 +104,7 @@ export default function Spreadsheet(props: {
   if (!opened) return <FileSurfaceLoading />;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {error ? <FileSurfaceNotice>{error}</FileSurfaceNotice> : null}
+      {error ? <FileSurfaceNotice>{localizeFilePreviewError(error, gt)}</FileSurfaceNotice> : null}
       <SpreadsheetGrid
         key={opened.layout.info.activeSheet}
         engine={opened.engine}
@@ -114,7 +117,7 @@ export default function Spreadsheet(props: {
       />
       <div
         role="tablist"
-        aria-label="Sheets"
+        aria-label={gt("Sheets")}
         className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-t border-border px-2"
         onKeyDown={(event) => {
           const current = opened.tabs.findIndex(
@@ -161,6 +164,7 @@ function SpreadsheetGrid(props: {
   initialCell: CellAddr | undefined;
   onNavigate: (sheet: string, cell: CellAddr) => void;
 }) {
+  const gt = useGT();
   const { onNavigate, layout, engine, initialCell } = props;
   const scroller = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -753,7 +757,7 @@ function SpreadsheetGrid(props: {
           role="status"
           className="absolute inset-x-3 bottom-3 rounded-md bg-background p-2 text-xs text-foreground shadow-md"
         >
-          {notice}
+          {localizeFilePreviewError(notice, gt)}
         </div>
       ) : null}
     </div>

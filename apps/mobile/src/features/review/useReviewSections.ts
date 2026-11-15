@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import { resolveFilesystemReadAccess } from "@t3tools/client-runtime/state/filesystem";
 import { Atom } from "effect/reactivity";
+import { useGT } from "gt-react-native";
 
 import { deriveThreadCheckpointSummaries } from "@t3tools/client-runtime/state/thread-checkpoints";
 import type { EnvironmentId, ReviewDiffPreviewSource, ThreadId } from "@t3tools/contracts";
@@ -38,6 +39,7 @@ export function useReviewSections(input: {
   readonly threadId?: ThreadId;
   readonly reviewCache: ReviewCacheForThread;
 }) {
+  const gt = useGT();
   const { environmentId, reviewCache, threadId } = input;
   const enabled = input.enabled ?? true;
   const fileAccessSession = useEnvironmentQuery(
@@ -146,7 +148,7 @@ export function useReviewSections(input: {
       diffPreview.error ??
       activeTurnDiff.error ??
       (selectedSection === null && !fileAccess.isPending && !canReadFiles
-        ? (fileAccess.error ?? "This connection cannot read local diffs.")
+        ? (fileAccess.error ?? gt("This connection cannot read local diffs."))
         : null),
     isSelectedSectionPending:
       selectedSection?.kind === "turn" ? activeTurnDiff.isPending : diffPreview.isPending,

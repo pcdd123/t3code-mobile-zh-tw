@@ -8,6 +8,7 @@ import {
 } from "@t3tools/contracts";
 import { CheckIcon, ChevronRightIcon, LayersIcon } from "lucide-react";
 import * as Equal from "effect/Equal";
+import { useGT } from "gt-react";
 
 import { cn } from "../../lib/utils";
 import type { EnvironmentPresentation } from "../../state/environments";
@@ -31,39 +32,58 @@ interface InheritanceLayer {
   readonly set: boolean;
 }
 
-const WRITING_STYLE_LABELS: Record<string, string> = {
-  repo_conventions: "Repository conventions",
-  conventional_commits: "Conventional Commits",
-  custom: "Custom instructions",
-};
+type Translate = ReturnType<typeof useGT>;
 
-const BACKGROUND_ACTIVITY_PROFILE_LABELS: Record<string, string> = {
-  balanced: "Balanced",
-  performance: "Performance",
-  "battery-saver": "Battery saver",
-  custom: "Advanced",
-};
+function writingStyleLabel(gt: Translate, mode: string): string {
+  switch (mode) {
+    case "repo_conventions":
+      return gt("Repository conventions");
+    case "conventional_commits":
+      return "Conventional Commits";
+    case "custom":
+      return gt("Custom instructions");
+    default:
+      return mode;
+  }
+}
 
-function formatValue(key: keyof ServerSettings, value: unknown): string {
+function backgroundActivityProfileLabel(gt: Translate, profile: string): string {
+  switch (profile) {
+    case "balanced":
+      return gt("Balanced");
+    case "performance":
+      return gt("Performance");
+    case "battery-saver":
+      return gt("Battery saver");
+    case "custom":
+      return gt("Advanced");
+    default:
+      return profile;
+  }
+}
+
+function formatValue(gt: Translate, key: keyof ServerSettings, value: unknown): string {
   if (value === null || value === undefined) {
     return key === "pullRequestMergeMethod"
-      ? "Last selected"
+      ? gt("Last selected")
       : key === "sidebarAutoSettleAfterDays"
-        ? "Never"
+        ? gt("Never")
         : key === "defaultModelSelection"
-          ? "Automatic"
+          ? gt("Automatic")
           : key === "sourceControlWriterModelSelection"
-            ? "Text generation model"
+            ? gt("Text generation model")
             : key === "reviewGuideModelSelection"
-              ? "Source control writer model"
+              ? gt("Source control writer model")
               : key === "defaultThreadEnvMode" || key === "worktreeSubmodules"
-                ? "Inherit"
-                : "Not set";
+                ? gt("Inherit")
+                : gt("Not set");
   }
-  if (typeof value === "boolean") return value ? "On" : "Off";
+  if (typeof value === "boolean") return value ? gt("On") : gt("Off");
   if (typeof value === "number") {
     return key === "sidebarAutoSettleAfterDays"
-      ? `${value} ${value === 1 ? "day" : "days"}`
+      ? value === 1
+        ? gt("1 day")
+        : gt("{count} days", { count: value })
       : String(value);
   }
   if (typeof value === "string") {
@@ -78,22 +98,22 @@ function formatValue(key: keyof ServerSettings, value: unknown): string {
         value as keyof typeof PULL_REQUEST_MERGE_METHOD_LABELS
       ];
     }
-    return value === "" ? "Empty" : value;
+    return value === "" ? gt("Empty") : value;
   }
-  if (Array.isArray(value)) return `${value.length} ${value.length === 1 ? "item" : "items"}`;
+  if (Array.isArray(value)) {
+    return value.length === 1 ? gt("1 item") : gt("{count} items", { count: value.length });
+  }
   if (typeof value === "object") {
     if (key === "backgroundActivity" && "profile" in value && typeof value.profile === "string") {
-      return BACKGROUND_ACTIVITY_PROFILE_LABELS[value.profile] ?? value.profile;
+      return backgroundActivityProfileLabel(gt, value.profile);
     }
     if ("model" in value && typeof value.model === "string") return value.model;
     if ("mode" in value && typeof value.mode === "string") {
-      if (key === "worktreeCleanup") return value.mode === "off" ? "Off" : "Custom";
-      return key === "sourceControlWritingStyle"
-        ? (WRITING_STYLE_LABELS[value.mode] ?? value.mode)
-        : value.mode;
+      if (key === "worktreeCleanup") return value.mode === "off" ? gt("Off") : gt("Custom");
+      return key === "sourceControlWritingStyle" ? writingStyleLabel(gt, value.mode) : value.mode;
     }
   }
-  return "Custom";
+  return gt("Custom");
 }
 
 /** Matches resolveProjectSettings order. */
@@ -101,6 +121,7 @@ export function settingInheritanceLayers(
   target: ScopedSettingsTarget,
   environmentSettings: ServerSettings,
   key: keyof ServerSettings,
+  gt: Translate,
 ): readonly InheritanceLayer[] {
   const environmentValue = environmentSettings[key];
   const source = isProjectScopedSettingKey(key) ? target.sources[key] : "environment";
@@ -110,8 +131,8 @@ export function settingInheritanceLayers(
   if (target.projectId !== null && isProjectScopedSettingKey(key)) {
     layers.push({
       key: "project",
-      label: "Project",
-      value: source === "project" ? formatValue(key, target.settings[key]) : "Inherits",
+      label: gt("Project"),
+      value: source === "project" ? formatValue(gt, key, target.settings[key]) : gt("Inherits"),
       effective: source === "project",
       set: source === "project",
     });
@@ -119,7 +140,7 @@ export function settingInheritanceLayers(
   layers.push({
     key: "environment",
     label: target.label,
-    value: environmentSet ? formatValue(key, environmentValue) : "Inherits",
+    value: environmentSet ? formatValue(gt, key, environmentValue) : gt("Inherits"),
     effective: source === "environment" && environmentSet,
     set: environmentSet,
   });
@@ -127,7 +148,7 @@ export function settingInheritanceLayers(
     layers.push({
       key: "t3.json",
       label: "t3.json",
-      value: source === "t3.json" ? formatValue(key, target.settings[key]) : "Inherits",
+      value: source === "t3.json" ? formatValue(gt, key, target.settings[key]) : gt("Inherits"),
       effective: source === "t3.json",
       set: source === "t3.json",
     });
@@ -138,8 +159,8 @@ export function settingInheritanceLayers(
     : DEFAULT_SERVER_SETTINGS[key];
   layers.push({
     key: "built-in",
-    label: "Default",
-    value: formatValue(key, builtIn),
+    label: gt("Default"),
+    value: formatValue(gt, key, builtIn),
     effective: source === "environment" && !environmentSet,
     set: true,
   });
@@ -184,13 +205,19 @@ export function SettingInheritance({
   overridingProjects?: readonly SettingOverridingProject[];
   onClearOverrides?: (entries: readonly ProjectOverrideEntry[]) => void;
 }) {
+  const gt = useGT();
   const scopeContext = useOptionalSettingsScope();
   const key = keys[0];
   if (!key || targets.length === 0) return null;
   const hasMultipleEnvironments = new Set(targets.map((target) => target.environmentId)).size > 1;
   const overrideSummary =
     overridingProjects.length > 0
-      ? `${summary} · ${overridingProjects.length} project ${overridingProjects.length === 1 ? "override" : "overrides"}`
+      ? overridingProjects.length === 1
+        ? gt("{summary} · 1 project override", { summary })
+        : gt("{summary} · {count} project overrides", {
+            summary,
+            count: overridingProjects.length,
+          })
       : summary;
   const chains = targets.flatMap((target) => {
     const environment = environments.find(
@@ -204,7 +231,7 @@ export function SettingInheritance({
     const secondary = [labels.secondary, path?.split(/[\\/]/).filter(Boolean).slice(-2).join("/")]
       .filter(Boolean)
       .join(" · ");
-    const layers = settingInheritanceLayers(target, environment.serverConfig.settings, key);
+    const layers = settingInheritanceLayers(target, environment.serverConfig.settings, key, gt);
     const winningLayer = layers.find((layer) => layer.effective);
     return [
       {
@@ -252,7 +279,9 @@ export function SettingInheritance({
                 <Button
                   size="icon-micro"
                   variant="ghost-muted"
-                  aria-label={`${overrideSummary}. Show where this value comes from`}
+                  aria-label={gt("{summary}. Show where this value comes from", {
+                    summary: overrideSummary,
+                  })}
                 />
               }
             />
@@ -290,7 +319,7 @@ export function SettingInheritance({
                         layer.effective ? "font-medium text-foreground" : "text-muted-foreground",
                       )}
                     >
-                      {layer.key === "environment" ? "Environment" : layer.label}
+                      {layer.key === "environment" ? gt("Environment") : layer.label}
                     </span>
                     <span
                       className={cn(
@@ -343,7 +372,7 @@ export function SettingInheritance({
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {winningLayer?.key === "environment"
-                              ? "Environment"
+                              ? gt("Environment")
                               : winningLayer?.label}
                           </span>
                           <ChevronRightIcon
@@ -377,7 +406,7 @@ export function SettingInheritance({
                     {chain}
                     {hasMultipleEnvironments ? (
                       <p className="px-2 pt-1.5 text-xs text-muted-foreground">
-                        Same on all machines
+                        {gt("Same on all machines")}
                       </p>
                     ) : null}
                   </>
@@ -396,14 +425,14 @@ export function SettingInheritance({
                             aria-hidden
                             className="size-3 [[data-panel-open]_&]:rotate-90"
                           />
-                          Overridden by
+                          {gt("Overridden by")}
                         </CollapsibleTrigger>
                       ) : (
-                        <span>Overridden by</span>
+                        <span>{gt("Overridden by")}</span>
                       )}
                       {onClearOverrides ? (
                         <InlineButton onClick={() => onClearOverrides(overriding)}>
-                          Reset {overriding.length === 1 ? "it" : "all"}
+                          {overriding.length === 1 ? gt("Reset it") : gt("Reset all")}
                         </InlineButton>
                       ) : null}
                     </div>
@@ -434,6 +463,7 @@ export function SettingInheritance({
                           <span className="max-w-32 truncate text-muted-foreground tabular-nums">
                             {isProjectScopedSettingKey(key)
                               ? formatValue(
+                                  gt,
                                   key,
                                   members.find(
                                     (member) =>

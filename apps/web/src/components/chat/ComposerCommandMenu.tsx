@@ -36,6 +36,7 @@ import { PierreEntryIcon } from "./PierreEntryIcon";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";
 import { ComposerBanner } from "./ComposerBanner";
 import { resolvePullRequestState } from "../pullRequest/pullRequestPresentation";
+import { useGT } from "gt-react";
 
 export type ComposerCommandItem =
   | {
@@ -116,6 +117,7 @@ export const ComposerCommandMenu = memo(function ComposerCommandMenu(props: {
   onHighlightedItemChange: (itemId: string | null) => void;
   onSelect: (item: ComposerCommandItem) => void;
 }) {
+  const gt = useGT();
   const listRef = useRef<HTMLDivElement>(null);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- scrolls the highlighted menu item's DOM node into view
@@ -145,7 +147,9 @@ export const ComposerCommandMenu = memo(function ComposerCommandMenu(props: {
         {props.items.length > 0 ? (
           <CommandList
             id={props.listId}
-            aria-label={props.triggerKind ? LISTBOX_LABEL_BY_TRIGGER[props.triggerKind] : undefined}
+            aria-label={
+              props.triggerKind ? listboxLabelByTrigger(gt)[props.triggerKind] : undefined
+            }
             className="max-h-72 min-h-0 scroll-pb-6"
           >
             <CommandGroup>
@@ -168,16 +172,16 @@ export const ComposerCommandMenu = memo(function ComposerCommandMenu(props: {
             <p className="text-secondary-label text-xs">
               {props.isLoading
                 ? props.triggerKind === "skill" || props.triggerKind === "slash-command"
-                  ? "Searching workspace skills..."
+                  ? gt("Searching workspace skills...")
                   : props.triggerKind === "pull-request"
-                    ? "Finding pull request..."
-                    : "Searching workspace files..."
+                    ? gt("Finding pull request...")
+                    : gt("Searching workspace files...")
                 : (props.emptyStateText ??
                   (props.triggerKind === "skill"
-                    ? "No skills found. Try / to browse provider commands."
+                    ? gt("No skills found. Try / to browse provider commands.")
                     : props.triggerKind === "path"
-                      ? "No matching files or folders."
-                      : "No matching command."))}
+                      ? gt("No matching files or folders.")
+                      : gt("No matching command.")))}
             </p>
           </div>
         )}
@@ -201,6 +205,8 @@ const ComposerCommandMenuItem = memo(function ComposerCommandMenuItem(props: {
     props.triggerKind === "slash-command" && props.item.type === "skill" ? props.item.skill : null;
   const pullRequestPresentation =
     props.item.type === "pull-request" ? resolvePullRequestState(props.item.pullRequest) : null;
+  const gt = useGT();
+  const displayDescription = composerItemDescription(gt, props.item.description);
   const descriptionRef = useRef<HTMLSpanElement>(null);
   const [descriptionTruncated, setDescriptionTruncated] = useState(false);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- measures the rendered description so only cut-off text gets a tooltip
@@ -283,9 +289,9 @@ const ComposerCommandMenuItem = memo(function ComposerCommandMenuItem(props: {
               />
             }
           >
-            {props.item.description}
+            {displayDescription}
           </TooltipTrigger>
-          <TooltipPopup>{props.item.description}</TooltipPopup>
+          <TooltipPopup>{displayDescription}</TooltipPopup>
         </Tooltip>
         {skillSourceKind ? (
           <SkillSourceBadge
@@ -298,17 +304,40 @@ const ComposerCommandMenuItem = memo(function ComposerCommandMenuItem(props: {
   );
 });
 
+/** Item descriptions stay English because search matches them; this translates the built-in ones. */
+function composerItemDescription(gt: ReturnType<typeof useGT>, description: string): string {
+  switch (description) {
+    case "Switch response model for this thread":
+      return gt("Switch response model for this thread");
+    case "Ask a side question in a new side chat":
+      return gt("Ask a side question in a new side chat");
+    case "Same as /side":
+      return gt("Same as /side");
+    case "Start a fresh session; earlier messages stay visible":
+      return gt("Start a fresh session; earlier messages stay visible");
+    case "Run provider command":
+      return gt("Run provider command");
+    case "Run provider skill":
+      return gt("Run provider skill");
+  }
+  const scoped = /^(\S+) skill$/.exec(description);
+  if (scoped?.[1] !== undefined) return gt("{scope} skill", { scope: scoped[1] });
+  return description;
+}
+
 export function composerSuggestionOptionId(listId: string, itemId: string): string {
   // JSON escapes lone UTF-16 surrogates before URI encoding without losing identity.
   return `${listId}-${encodeURIComponent(JSON.stringify(itemId))}`;
 }
 
-const LISTBOX_LABEL_BY_TRIGGER: Record<ComposerTriggerKind, string> = {
-  path: "Files and folders",
-  "pull-request": "Pull requests",
-  "slash-command": "Commands",
-  skill: "Skills",
-};
+const listboxLabelByTrigger = (
+  gt: ReturnType<typeof useGT>,
+): Record<ComposerTriggerKind, string> => ({
+  path: gt("Files and folders"),
+  "pull-request": gt("Pull requests"),
+  "slash-command": gt("Commands"),
+  skill: gt("Skills"),
+});
 
 const SKILL_SOURCE_ICON_BY_KIND: Record<ProviderSkillSourceKind, LucideIcon> = {
   app: BlocksIcon,
@@ -319,22 +348,25 @@ const SKILL_SOURCE_ICON_BY_KIND: Record<ProviderSkillSourceKind, LucideIcon> = {
   other: PackageIcon,
 };
 
-const SKILL_SOURCE_LABEL_BY_KIND: Record<ProviderSkillSourceKind, string> = {
-  app: "App",
-  repo: "Repo",
-  project: "Project",
-  personal: "Personal",
-  system: "System",
-  other: "Provider",
-};
+const skillSourceLabelByKind = (
+  gt: ReturnType<typeof useGT>,
+): Record<ProviderSkillSourceKind, string> => ({
+  app: gt("App"),
+  repo: gt("Repo"),
+  project: gt("Project"),
+  personal: gt("Personal"),
+  system: gt("System"),
+  other: gt("Provider"),
+});
 
 function SkillSourceBadge(props: { kind: ProviderSkillSourceKind; showSkillSuffix: boolean }) {
+  const gt = useGT();
   const Icon = SKILL_SOURCE_ICON_BY_KIND[props.kind];
   return (
     <Badge className="ms-auto" variant="secondary">
       <Icon aria-hidden="true" className="text-current" />
-      {SKILL_SOURCE_LABEL_BY_KIND[props.kind]}
-      {props.showSkillSuffix ? " Skill" : null}
+      {skillSourceLabelByKind(gt)[props.kind]}
+      {props.showSkillSuffix ? gt(" Skill") : null}
     </Badge>
   );
 }

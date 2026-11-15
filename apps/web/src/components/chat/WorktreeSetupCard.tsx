@@ -24,6 +24,7 @@ import { observeVisibleAnimation } from "~/lib/visibleAnimation";
 import { cn } from "~/lib/utils";
 import { useNowSecond } from "~/hooks/useNowSecond";
 import { WorkLogRow } from "./WorkLog";
+import { useGT } from "gt-react";
 
 interface WorktreeSetupCardProps {
   snapshot: WorktreeSetupSnapshot;
@@ -109,27 +110,45 @@ function ShimmerOverlay({ children }: { children: ReactNode }) {
   );
 }
 
-function headerLabel(snapshot: WorktreeSetupSnapshot): string {
+function headerLabel(gt: ReturnType<typeof useGT>, snapshot: WorktreeSetupSnapshot): string {
   switch (snapshot.phase) {
     case "running":
-      return "Setting up worktree…";
+      return gt("Setting up worktree…");
     case "done":
       return snapshot.stages.some((stage) => stage.status === "failed")
-        ? "Worktree ready, setup script failed"
-        : "Worktree ready";
+        ? gt("Worktree ready, setup script failed")
+        : gt("Worktree ready");
     case "failed":
-      return "Worktree setup failed";
+      return gt("Worktree setup failed");
     case "cancelled":
-      return "Worktree setup cancelled";
+      return gt("Worktree setup cancelled");
+  }
+}
+
+function stageLabel(gt: ReturnType<typeof useGT>, id: WorktreeSetupStage["id"]): string {
+  switch (id) {
+    case "fetch":
+      return gt("Fetch base branch");
+    case "checkout":
+      return gt("Check out files");
+    case "submodules":
+      return gt("Init submodules");
+    case "setup-script":
+      return gt("Run setup script");
+    case "agent":
+      return gt("Start agent");
+    default:
+      return worktreeSetupStageLabel(id);
   }
 }
 
 function SetupHeaderRow({ snapshot }: { snapshot: WorktreeSetupSnapshot }) {
+  const gt = useGT();
   const running = snapshot.phase === "running";
   const failed = snapshot.phase === "failed";
   const finishedWithFailedStage =
     snapshot.phase === "done" && snapshot.stages.some((stage) => stage.status === "failed");
-  const text = headerLabel(snapshot);
+  const text = headerLabel(gt, snapshot);
   const tone = failed
     ? "text-destructive-foreground"
     : finishedWithFailedStage
@@ -169,14 +188,14 @@ function StageRow({
   setupEndedAt: string | null;
   scriptName: string | null;
 }) {
-  const label =
-    stage.id === "setup-script" && scriptName ? scriptName : worktreeSetupStageLabel(stage.id);
+  const gt = useGT();
+  const label = stage.id === "setup-script" && scriptName ? scriptName : stageLabel(gt, stage.id);
   const running = stage.status === "running";
   const trailing =
     stage.status === "pending"
       ? null
       : stage.status === "skipped"
-        ? (stage.detail ?? "skipped")
+        ? (stage.detail ?? gt("skipped"))
         : stage.id === "checkout" && running && stage.percent !== null
           ? `${stage.percent}%`
           : stage.detail;
@@ -248,11 +267,12 @@ function OutputTail({ lines, failed }: { lines: ReadonlyArray<string>; failed: b
 }
 
 function SetupDetails({ snapshot }: { snapshot: WorktreeSetupSnapshot }) {
+  const gt = useGT();
   return (
     <dl className="mt-1 mb-1.5 ml-8 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
       {snapshot.branch ? (
         <>
-          <dt className="text-foreground/80">Branch</dt>
+          <dt className="text-foreground/80">{gt("Branch")}</dt>
           <dd className="min-w-0 font-mono">
             <MiddleTruncate value={snapshot.branch} className="flex" />
           </dd>
@@ -260,7 +280,7 @@ function SetupDetails({ snapshot }: { snapshot: WorktreeSetupSnapshot }) {
       ) : null}
       {snapshot.baseRef ? (
         <>
-          <dt className="text-foreground/80">Base</dt>
+          <dt className="text-foreground/80">{gt("Base")}</dt>
           <dd className="min-w-0 font-mono">
             <MiddleTruncate value={snapshot.baseRef} className="flex" />
           </dd>
@@ -268,7 +288,7 @@ function SetupDetails({ snapshot }: { snapshot: WorktreeSetupSnapshot }) {
       ) : null}
       {snapshot.worktreePath ? (
         <>
-          <dt className="text-foreground/80">Path</dt>
+          <dt className="text-foreground/80">{gt("Path")}</dt>
           <dd className="min-w-0 font-mono">
             <MiddleTruncate value={snapshot.worktreePath} className="flex" />
           </dd>
@@ -276,7 +296,7 @@ function SetupDetails({ snapshot }: { snapshot: WorktreeSetupSnapshot }) {
       ) : null}
       {snapshot.setupScript ? (
         <>
-          <dt className="text-foreground/80">Setup</dt>
+          <dt className="text-foreground/80">{gt("Setup")}</dt>
           <dd className="truncate font-mono">{snapshot.setupScript.command}</dd>
         </>
       ) : null}
@@ -285,13 +305,14 @@ function SetupDetails({ snapshot }: { snapshot: WorktreeSetupSnapshot }) {
 }
 
 function CollapsedSummaryRow({ snapshot }: { snapshot: WorktreeSetupSnapshot }) {
+  const gt = useGT();
   const status: WorktreeSetupStage["status"] =
     snapshot.phase === "failed" || snapshot.phase === "cancelled"
       ? "failed"
       : snapshot.stages.some((stage) => stage.id === "setup-script" && stage.status === "failed")
         ? "failed"
         : "done";
-  const label = headerLabel(snapshot);
+  const label = headerLabel(gt, snapshot);
   return (
     <WorkLogRow
       data-worktree-setup-stage="summary"
@@ -320,6 +341,7 @@ export function WorktreeSetupCard({
 }: WorktreeSetupCardProps & {
   embedded?: boolean;
 }) {
+  const gt = useGT();
   const running = snapshot.phase === "running";
   const [detailsOpen, setDetailsOpen] = useState(false);
   const setupStage = snapshot.stages.find((stage) => stage.id === "setup-script");
@@ -332,7 +354,7 @@ export function WorktreeSetupCard({
       (setupStage.status === "running" && setupStage.tail.length > 0));
 
   return (
-    <section aria-label="Worktree setup" data-worktree-setup-phase={snapshot.phase}>
+    <section aria-label={gt("Worktree setup")} data-worktree-setup-phase={snapshot.phase}>
       {showHeader ? <SetupHeaderRow snapshot={snapshot} /> : null}
       {collapsed ? (
         <CollapsedSummaryRow snapshot={snapshot} />
@@ -367,24 +389,24 @@ export function WorktreeSetupCard({
           onClick={() => setDetailsOpen((open) => !open)}
         >
           {detailsOpen ? <ChevronDownIcon aria-hidden /> : <ChevronRightIcon aria-hidden />}
-          Details
+          {gt("Details")}
         </Button>
         {showTerminal ? (
           <Button type="button" size="xs" variant="ghost-muted" onClick={onOpenTerminal}>
             <TerminalIcon aria-hidden />
-            Open terminal
+            {gt("Open terminal")}
           </Button>
         ) : null}
         {onWorkLocally ? (
           <Button type="button" size="xs" variant="ghost-muted" onClick={onWorkLocally}>
             <LaptopIcon aria-hidden />
-            Work locally
+            {gt("Work locally")}
           </Button>
         ) : null}
         {onCancel && running ? (
           <Button type="button" size="xs" variant="ghost-muted" onClick={onCancel}>
             <XIcon aria-hidden />
-            Cancel
+            {gt("Cancel")}
           </Button>
         ) : null}
       </div>

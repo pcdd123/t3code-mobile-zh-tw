@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import { Atom, AsyncResult } from "effect/reactivity";
 import { settlePromise, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
@@ -94,6 +95,7 @@ export function useAttachmentDocument(input: {
   readonly environmentId: EnvironmentId | null;
   readonly attachment: FileBackedComposerAttachment | null;
 }) {
+  const gt = useGT();
   const kind = filePreviewKind(input, { richDocuments: false });
   const delimiter = filePreviewDelimiter(input);
   const shareController = useRef<AbortController | null>(null);
@@ -133,7 +135,7 @@ export function useAttachmentDocument(input: {
   );
   const content = AsyncResult.isSuccess(text) ? text.value : null;
   const contentError = AsyncResult.isFailure(text)
-    ? (Option.getOrNull(AsyncResult.error(text))?.message ?? "Could not read this file.")
+    ? (Option.getOrNull(AsyncResult.error(text))?.message ?? gt("Could not read this file."))
     : null;
   const table = content && delimiter ? parseDelimitedPreview(content.text, delimiter) : null;
   const presentation = attachmentDocumentPresentation({
@@ -143,9 +145,10 @@ export function useAttachmentDocument(input: {
     rendered,
   });
   const error = attachment
-    ? localPreview.error && (localPreview.error.message || "The local file is unavailable.")
+    ? localPreview.error && (localPreview.error.message || gt("The local file is unavailable."))
     : AsyncResult.isFailure(remote)
-      ? (Option.getOrNull(AsyncResult.error(remote))?.message ?? "The attachment is unavailable.")
+      ? (Option.getOrNull(AsyncResult.error(remote))?.message ??
+        gt("The attachment is unavailable."))
       : null;
   const share = async () => {
     if (!uri || sharing) return;
@@ -166,8 +169,8 @@ export function useAttachmentDocument(input: {
     if (AsyncResult.isFailure(result)) {
       const cause = squashAtomCommandFailure(result);
       Dialog.alert(
-        "Could not share file",
-        cause instanceof Error ? cause.message : "Please try again.",
+        gt("Could not share file"),
+        cause instanceof Error ? cause.message : gt("Please try again."),
       );
     }
   };

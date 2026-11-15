@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import {
   legacyThreadPullRequestKey,
   threadPullRequestKeyOf,
@@ -407,6 +408,7 @@ export function usePaginatedBranches(target: VcsRefTarget) {
 }
 
 export function useComposerPathSearch(target: ComposerPathSearchTarget) {
+  const gt = useGT();
   const query = normalizeComposerPathSearchQuery(target.query);
   const normalizedTarget = { environmentId: target.environmentId, cwd: target.cwd, query };
   const debouncedTarget = useDebouncedValue(normalizedTarget, COMPOSER_PATH_SEARCH_DEBOUNCE_MS);
@@ -452,7 +454,7 @@ export function useComposerPathSearch(target: ComposerPathSearchTarget) {
         ? null
         : canReadFiles
           ? result.error
-          : (fileAccess.error ?? "This connection cannot search host files."),
+          : (fileAccess.error ?? gt("This connection cannot search host files.")),
     isPending:
       !isSameCheckout ||
       normalizedTarget.query !== debouncedTarget.query ||

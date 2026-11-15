@@ -29,6 +29,48 @@ import { MiddleTruncate } from "../ui/middle-truncate";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";
 import { cn } from "~/lib/utils";
 import { deriveProviderInstanceEntries, shouldShowInstanceBadge } from "../../providerInstances";
+import { useGT } from "gt-react";
+
+function subagentStatusLabel(
+  gt: ReturnType<typeof useGT>,
+  status: OrchestrationV2TurnItemStatus,
+): string {
+  switch (status) {
+    case "idle":
+      return gt("Idle");
+    case "pending":
+      return gt("Pending");
+    case "running":
+      return gt("Running");
+    case "waiting":
+      return gt("Waiting");
+    case "completed":
+      return gt("Completed");
+    case "failed":
+      return gt("Failed");
+    case "cancelled":
+      return gt("Cancelled");
+    case "interrupted":
+      return gt("Interrupted");
+    default:
+      return String(status).replaceAll("_", " ");
+  }
+}
+
+function subagentMetadataLabel(gt: ReturnType<typeof useGT>, label: string): string {
+  switch (label) {
+    case "Project":
+      return gt("Project");
+    case "Branch":
+      return gt("Branch");
+    case "Worktree":
+      return gt("Worktree");
+    case "Workspace":
+      return gt("Workspace");
+    default:
+      return label;
+  }
+}
 
 export function SubagentTooltipContent(props: {
   title: string;
@@ -50,6 +92,7 @@ export function SubagentTooltipContent(props: {
   result?: string | null | undefined;
   progress?: string | null | undefined;
 }) {
+  const gt = useGT();
   const childSelection =
     props.modelSelection ??
     (props.origin === "app_owned" ? props.childThread?.modelSelection : undefined);
@@ -163,7 +206,7 @@ export function SubagentTooltipContent(props: {
           )}
         >
           <StatusIcon aria-hidden className="size-3 shrink-0" />
-          {props.status.replaceAll("_", " ")}
+          {subagentStatusLabel(gt, props.status)}
         </span>
         {props.elapsed}
       </div>
@@ -172,7 +215,7 @@ export function SubagentTooltipContent(props: {
         return (
           <div key={label} className="flex min-w-0 items-center gap-2">
             <Icon aria-hidden className="size-3 shrink-0" />
-            <span className="sr-only">{label}</span>
+            <span className="sr-only">{subagentMetadataLabel(gt, label)}</span>
             <MiddleTruncate value={value} className="flex" showTitle={false} />
           </div>
         );

@@ -259,8 +259,8 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Failed to un-settle thread",
-          description: error instanceof Error ? error.message : "An error occurred.",
+          title: gt("Failed to un-settle thread"),
+          description: error instanceof Error ? error.message : gt("An error occurred."),
         }),
       );
     }
@@ -304,8 +304,8 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Failed to wake thread",
-          description: error instanceof Error ? error.message : "An error occurred.",
+          title: gt("Failed to wake thread"),
+          description: error instanceof Error ? error.message : gt("An error occurred."),
         }),
       );
     }
@@ -372,7 +372,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Failed to switch checkout",
+            title: gt("Failed to switch checkout"),
             description: chatActionErrorMessage(squashAtomCommandFailure(checkoutResult)),
           }),
         );
@@ -396,7 +396,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
           toastManager.add(
             stackedThreadToast({
               type: "error",
-              title: "Checkout switched, but the thread could not be updated",
+              title: gt("Checkout switched, but the thread could not be updated"),
               description: chatActionErrorMessage(squashAtomCommandFailure(updateResult)),
             }),
           );
@@ -495,7 +495,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
     }
     const shell = readThreadShell(threadRef);
     if (shell === null ? !shellOmitsChildren && isEnvironmentLive() : shell.deletedAt != null) {
-      toastManager.add({ type: "info", title: "This thread is no longer available" });
+      toastManager.add({ type: "info", title: gt("This thread is no longer available") });
       return;
     }
     if (activeThreadRef && openSideChatTab(activeThreadRef, shell)) return;
@@ -507,6 +507,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
   const onOpenRelatedThreadStable = useStableCallback(onOpenRelatedThread);
   const childThreadInputs = useChildThreadInputs(activeThreadRef);
   const childInputNow = childInputNowItem({
+    gt,
     childThreadInputs,
     parentAwaitingUser: Boolean(
       activePendingApproval || activePendingUserInput || activeThreadShell?.hasPendingUserInput,
@@ -579,6 +580,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
   const goalNow =
     activeThread && activeGoal !== null
       ? goalNowItem({
+          gt,
           threadId: activeThread.id,
           goal: activeGoal,
           isWorking,
@@ -595,6 +597,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
   const runStopNow =
     activeThread && runStop !== null
       ? runStopNowItem({
+          gt,
           threadId: activeThread.id,
           stop: runStop,
           canForceStop: forceStop.canForceStop,
@@ -604,6 +607,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
       : null;
   const backgroundWorkNow = activeThread
     ? backgroundWorkNowItem({
+        gt,
         environmentId,
         threadId: activeThread.id,
         tasks: activeBackgroundTasks,
@@ -668,7 +672,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
         stackedThreadToast({
           type: "error",
           title,
-          description: error instanceof Error ? error.message : "An error occurred.",
+          description: error instanceof Error ? error.message : gt("An error occurred."),
         }),
       );
     };
@@ -681,7 +685,9 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
         return;
       }
       if (settleAndAdvance(activeThreadRef)) return;
-      void settleThread(activeThreadRef).then(toastThreadActionFailure("Failed to settle thread"));
+      void settleThread(activeThreadRef).then(
+        toastThreadActionFailure(gt("Failed to settle thread")),
+      );
     },
     "thread.pin": ({ event }) => {
       // An open project list pins its highlighted project with this key instead.
@@ -697,7 +703,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
         activeThreadPinned ? confirmAndUnpinThread(activeThreadRef) : pinThread(activeThreadRef)
       ).then(
         toastThreadActionFailure(
-          activeThreadPinned ? "Failed to unpin thread" : "Failed to pin thread",
+          activeThreadPinned ? gt("Failed to unpin thread") : gt("Failed to pin thread"),
         ),
       );
     },

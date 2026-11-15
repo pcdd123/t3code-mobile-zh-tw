@@ -1,11 +1,16 @@
 import { ProviderDriverKind, ProviderInstanceId, type ServerProvider } from "@t3tools/contracts";
 import { DEFAULT_UNIFIED_SETTINGS, type UnifiedSettings } from "@t3tools/contracts/settings";
 import { createModelSelection } from "@t3tools/shared/model";
+import type { useGT } from "gt-react";
 import { describe, expect, it } from "vite-plus/test";
 
 import { providerInstanceEntriesFor } from "../../providerInstances";
 import { resolveDefaultModelSettingsPresentation } from "./ProjectDefaultsSettings.logic";
 
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) =>
+    String(values?.[key] ?? ""),
+  )) as unknown as ReturnType<typeof useGT>;
 const claudeId = ProviderInstanceId.make("claudeAgent");
 const high = [{ id: "effort", value: "high" }];
 const savedClaude = createModelSelection(claudeId, "claude-opus-4-8", high);
@@ -57,6 +62,7 @@ function present(
     providers,
     settings,
     projectId: null,
+    gt,
   });
 }
 

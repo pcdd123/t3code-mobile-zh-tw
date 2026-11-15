@@ -3,6 +3,7 @@ import { DEFAULT_TERMINAL_ID, type ProjectScript } from "@t3tools/contracts";
 import { nextTerminalId, resolveTerminalSessionLabel } from "@t3tools/shared/terminalLabels";
 import * as Arr from "effect/Array";
 import * as Order from "effect/Order";
+import type { useGT } from "gt-react-native";
 
 export { resolveTerminalSessionLabel } from "@t3tools/shared/terminalLabels";
 
@@ -55,6 +56,17 @@ export function getTerminalStatusLabel(input: {
   }
 
   return "Not started";
+}
+
+/** Translates a label from getTerminalStatusLabel, which stays English for callers without a translator. */
+export function localizeTerminalStatusLabel(label: string, gt: ReturnType<typeof useGT>): string {
+  if (label === "Task running") return gt("Task running");
+  if (label === "Ready") return gt("Ready");
+  if (label === "Starting") return gt("Starting");
+  if (label === "Exited") return gt("Exited");
+  if (label === "Error") return gt("Error");
+  if (label === "Not started") return gt("Not started");
+  return label;
 }
 
 /** Count the mounted terminal before sessions load, or new-terminal navigation may replace it with itself. */

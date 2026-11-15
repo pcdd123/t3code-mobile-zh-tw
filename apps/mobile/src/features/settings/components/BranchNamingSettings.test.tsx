@@ -13,6 +13,7 @@ type InputProps = {
 
 const inputs = vi.hoisted(() => new Map<string, InputProps>());
 
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
 vi.mock("react-native", () => ({
   View: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));

@@ -62,6 +62,10 @@ const mocks = vi.hoisted(() => {
   return { createState, state: createState() };
 });
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("@t3tools/client-runtime/state/runtime", () => ({
   executeAtomQuery: (_registry: unknown, query: Query, options: { signal?: AbortSignal }) =>
     new Promise<Result>((resolve) =>

@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { useAtomValue } from "@effect/atom-react";
 import { useAuth } from "@clerk/react";
 import { findErrorTraceId } from "@t3tools/client-runtime/errors";
@@ -48,6 +49,7 @@ function tunnelLimitFromLinkFailure(cause: unknown): number | null {
 }
 
 export function useCloudLinkController(environmentId: EnvironmentId | null) {
+  const gt = useGT();
   const { getToken, isSignedIn } = useAuth();
   const refreshRelayEnvironments = useAtomCommand(relayEnvironmentDiscovery.refresh, {
     reportFailure: false,
@@ -70,19 +72,22 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
   const [tunnelLimit, setTunnelLimit] = useState<number | null>(null);
 
   const reportUpdateFailure = (cause: unknown, reason?: string) => {
-    const message = cause instanceof Error ? cause.message : "Could not update T3 Connect access.";
+    const message =
+      cause instanceof Error ? cause.message : gt("Could not update T3 Connect access.");
     const traceId = findErrorTraceId(cause);
     console.error("[t3-connect] Could not update T3 Connect", { message, traceId, cause });
-    setOperationError(traceId ? `${message} Trace ID: ${traceId}` : message);
+    setOperationError(
+      traceId ? gt("{message} Trace ID: {traceId}", { message, traceId }) : message,
+    );
     toastManager.add(
       stackedThreadToast({
         type: "error",
-        title: "Could not update T3 Connect",
+        title: gt("Could not update T3 Connect"),
         description: reason ?? relayFailureReason(cause) ?? message,
         ...(traceId
           ? {
               actionProps: {
-                children: "Copy trace ID",
+                children: gt("Copy trace ID"),
                 onClick: () => void navigator.clipboard?.writeText(traceId),
               },
               actionVariant: "outline",
@@ -153,7 +158,7 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
           reportUpdateFailure(
             cause,
             relayKeptLink
-              ? "Disconnected here, but T3 Connect still lists it. Remove it in Account."
+              ? gt("Disconnected here, but T3 Connect still lists it. Remove it in Account.")
               : undefined,
           );
         }

@@ -33,6 +33,7 @@ import { openDeviceSetupDialog } from "./ChatOverlayHosts";
 import { previewEnvironment } from "../../state/preview";
 import { useAtomCommand } from "../../state/use-atom-command";
 import type { ChatShortcutCommands } from "./useChatShortcuts";
+import { useGT } from "gt-react";
 interface RightPanelActionsInput {
   readonly activeThreadRef: ScopedThreadRef | null;
   readonly activeProject: EnvironmentProject | null;
@@ -66,6 +67,7 @@ interface RightPanelActionsInput {
  * requests, device, and terminal tabs.
  */
 export function useRightPanelActions(input: RightPanelActionsInput) {
+  const gt = useGT();
   const {
     closeRightPanelSurface,
     activeThreadRef,
@@ -119,7 +121,7 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Unable to open browser",
+            title: gt("Unable to open browser"),
             description: error.message,
           }),
         );
@@ -257,8 +259,8 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Failed to copy path",
-          description: "Clipboard API unavailable.",
+          title: gt("Failed to copy path"),
+          description: gt("Clipboard API unavailable."),
         }),
       );
       return;
@@ -272,8 +274,8 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Failed to copy path",
-          description: error instanceof Error ? error.message : "An error occurred.",
+          title: gt("Failed to copy path"),
+          description: error instanceof Error ? error.message : gt("An error occurred."),
         }),
       );
     });

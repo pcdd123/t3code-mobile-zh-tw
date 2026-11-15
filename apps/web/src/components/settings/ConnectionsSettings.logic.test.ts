@@ -47,9 +47,9 @@ describe("togglePairingScopeSelection", () => {
 
 describe("parseManualDesktopSshTarget", () => {
   it.each(["22.5", "1e3", "2222garbage"])("rejects explicit port %j", (port) => {
-    expect(() => parseManualDesktopSshTarget({ host: "devbox", username: "", port })).toThrow(
-      "SSH port must be between 1 and 65535.",
-    );
+    expect(() =>
+      parseManualDesktopSshTarget({ host: "devbox", username: "", port }, (message) => message),
+    ).toThrow("SSH port must be between 1 and 65535.");
   });
 });
 

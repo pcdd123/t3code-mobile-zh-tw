@@ -6,6 +6,7 @@ import { ComposerControl, ComposerControlIcon } from "./ComposerControl";
 import { focusRequestedPermission, useComposerMenuProps } from "./composerEventScope";
 import { useComposerMenuState } from "./useComposerMenuState";
 import { ComposerPermissionsSection, type RuntimeModeOption } from "./ComposerFooterControls";
+import { useGT } from "gt-react";
 
 export const CompactComposerControlsMenu = memo(function CompactComposerControlsMenu(props: {
   runtimeMode: RuntimeMode;
@@ -16,6 +17,7 @@ export const CompactComposerControlsMenu = memo(function CompactComposerControls
   hidden?: boolean;
   onRuntimeModeChange: (mode: RuntimeMode) => void;
 }) {
+  const gt = useGT();
   const composerFloatingLayerProps = useComposerMenuProps();
   const size = props.size ?? "sm";
   const [open, setOpen] = useComposerMenuState(props.hidden);
@@ -33,7 +35,7 @@ export const CompactComposerControlsMenu = memo(function CompactComposerControls
             ref={triggerRef}
             size={size}
             className="shrink-0"
-            aria-label="More composer controls"
+            aria-label={gt("More composer controls")}
             data-composer-shortcut={props.showPermissions ? "composer.mode" : undefined}
           />
         }

@@ -65,6 +65,7 @@ const harness = vi.hoisted(() => ({
 }));
 
 vi.mock("react-native", () => ({ Alert: { alert: vi.fn() } }));
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
 
 vi.mock("expo-file-system", () => ({
   Directory: harness.draftFile.Directory,

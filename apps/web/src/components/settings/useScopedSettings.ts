@@ -7,6 +7,7 @@ import {
 import { readEnvironmentScope } from "../../state/session";
 import * as Cause from "effect/Cause";
 import { AsyncResult } from "effect/reactivity";
+import { useGT, useMessages } from "gt-react";
 import {
   DEFAULT_SERVER_SETTINGS,
   type EnvironmentId,
@@ -57,6 +58,9 @@ export function useScopedSettingSource(keys: readonly (keyof ServerSettings)[]) 
 }
 
 function useRunScopedPlan() {
+  const gt = useGT();
+  // Plan messages are English `msg` strings, translated here where they are shown.
+  const m = useMessages();
   const persistServer = useAtomCommand(serverEnvironment.updateSettings, { reportFailure: false });
   return (
     environments: Parameters<typeof writeScopedSettings>[0],
@@ -67,8 +71,8 @@ function useRunScopedPlan() {
     if (plan.unavailableReason) {
       toastManager.add({
         type: "warning",
-        title: "Setting not saved",
-        description: plan.unavailableReason,
+        title: gt("Setting not saved"),
+        description: m(plan.unavailableReason),
       });
       onFailed?.();
       return;
@@ -99,7 +103,7 @@ function useRunScopedPlan() {
               Cause.fail(
                 new EnvironmentAuthorizationError({
                   requiredScope: missing,
-                  message: "This connection lacks permission to change these settings.",
+                  message: gt("This connection lacks permission to change these settings."),
                 }),
               ),
             )
@@ -117,13 +121,22 @@ function useRunScopedPlan() {
       toastManager.add({
         type: "error",
         title:
-          savedEnvironmentCount > 0 ? "Setting saved on some environments" : "Setting not saved",
+          savedEnvironmentCount > 0
+            ? gt("Setting saved on some environments")
+            : gt("Setting not saved"),
         description: [
-          ...failedEnvironments.map(
-            ({ label, message }) => `Could not save on ${label}: ${message}`,
+          ...failedEnvironments.map(({ label, message }) =>
+            gt("Could not save on {environment}: {message}", {
+              environment: label,
+              message: m(message),
+            }),
           ),
           ...(savedEnvironmentCount > 0
-            ? [`Saved on ${savedEnvironments.map(({ label }) => label).join(", ")}.`]
+            ? [
+                gt("Saved on {environments}.", {
+                  environments: savedEnvironments.map(({ label }) => label).join(", "),
+                }),
+              ]
             : []),
         ].join("\n"),
       });

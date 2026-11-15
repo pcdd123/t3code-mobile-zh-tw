@@ -192,6 +192,7 @@ export function HomeRouteScreen() {
               selectedProjectKey,
               onEnvironmentChange: setSelectedEnvironmentId,
               onProjectChange: setSelectedProjectKey,
+              gt,
             }),
           }}
         />

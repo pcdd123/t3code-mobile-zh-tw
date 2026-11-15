@@ -17,8 +17,10 @@ import type {
   ThreadId,
 } from "@t3tools/contracts";
 import { resolveSelectableModel } from "@t3tools/shared/model";
+import type { useGT } from "gt-react-native";
 
 const PROMPT_TITLE_LIMIT = 80;
+const SUBAGENT_FALLBACK_TITLE = "Subagent";
 
 export type SubagentRowTone = "working" | "completed" | "failed" | "stopped";
 
@@ -56,7 +58,7 @@ function rowTitle(subagent: Pick<OrchestrationV2Subagent, "title" | "prompt">): 
   const title = subagent.title?.trim();
   if (title) return formatSubagentDisplayTitle(title);
   const prompt = subagent.prompt.trim();
-  if (prompt.length === 0) return "Subagent";
+  if (prompt.length === 0) return SUBAGENT_FALLBACK_TITLE;
   return prompt.length > PROMPT_TITLE_LIMIT
     ? `${prompt.slice(0, PROMPT_TITLE_LIMIT - 3)}...`
     : prompt;
@@ -87,6 +89,51 @@ function rowStatusLabel(status: OrchestrationV2Subagent["status"]): string {
     case "interrupted":
       return "Interrupted";
   }
+}
+
+/** The localized form of `SubagentRowPresentation`'s English title and status label. */
+export function localizeSubagentRowPresentation(
+  presentation: SubagentRowPresentation,
+  status: OrchestrationV2Subagent["status"],
+  gt: ReturnType<typeof useGT>,
+): SubagentRowPresentation {
+  return {
+    ...presentation,
+    title: presentation.title === SUBAGENT_FALLBACK_TITLE ? gt("Subagent") : presentation.title,
+    statusLabel: localizedSubagentStatusLabel(status, gt),
+  };
+}
+
+function localizedSubagentStatusLabel(
+  status: OrchestrationV2Subagent["status"],
+  gt: ReturnType<typeof useGT>,
+): string {
+  switch (status) {
+    case "pending":
+    case "running":
+      return gt("Working");
+    case "waiting":
+      return gt("Waiting");
+    case "idle":
+      return gt("Idle");
+    case "completed":
+      return gt("Completed");
+    case "failed":
+      return gt("Failed");
+    case "cancelled":
+      return gt("Cancelled");
+    case "interrupted":
+      return gt("Interrupted");
+  }
+}
+
+/** The localized title of a workflow rail item; the unphased item's English title is a fallback. */
+export function localizedWorkflowRailTitle(
+  item: Pick<WorkflowRailItem, "key" | "title">,
+  gt: ReturnType<typeof useGT>,
+): string {
+  if (item.key !== "unphased") return item.title;
+  return item.title === "Agents" ? gt("Agents") : gt("Other");
 }
 
 export function resolveSubagentRowPresentation(

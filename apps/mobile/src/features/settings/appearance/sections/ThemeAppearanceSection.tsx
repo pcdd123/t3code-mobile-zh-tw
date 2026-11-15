@@ -124,10 +124,19 @@ function ThemeCard(props: {
   readonly onSelect: (appearance: MobileThemeAppearance) => void;
   readonly themeId: MobileThemeId;
 }) {
+  const gt = useGT();
   const choice = (appearance: MobileThemeAppearance, selected: boolean) => (
     <Pressable
-      accessibilityHint={`Sets the ${appearance} appearance only`}
-      accessibilityLabel={`${props.label} ${appearance} theme`}
+      accessibilityHint={
+        appearance === "light"
+          ? gt("Sets the light appearance only")
+          : gt("Sets the dark appearance only")
+      }
+      accessibilityLabel={
+        appearance === "light"
+          ? gt("{theme} light theme", { theme: props.label })
+          : gt("{theme} dark theme", { theme: props.label })
+      }
       accessibilityRole="button"
       accessibilityState={{ disabled: props.disabled, selected }}
       className={cn(
@@ -155,8 +164,8 @@ function ThemeCard(props: {
   return (
     <View className="min-w-36 flex-1 basis-[47%] gap-3 rounded-[24px] border border-border bg-grouped-card px-2 py-4">
       <Pressable
-        accessibilityHint="Sets both light and dark appearances"
-        accessibilityLabel={`${props.label} theme`}
+        accessibilityHint={gt("Sets both light and dark appearances")}
+        accessibilityLabel={gt("{theme} theme", { theme: props.label })}
         accessibilityRole="button"
         accessibilityState={{
           disabled: props.disabled,

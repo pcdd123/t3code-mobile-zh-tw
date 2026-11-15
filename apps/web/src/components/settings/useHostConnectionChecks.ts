@@ -1,5 +1,6 @@
 import { AuthSettingsWriteScope } from "@t3tools/contracts";
 import { readEnvironmentScope } from "../../state/session";
+import { useGT } from "gt-react";
 import { useRef, useState } from "react";
 import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
 import type { SshDeviceHostConfig } from "@t3tools/contracts";
@@ -13,6 +14,7 @@ import {
 } from "./deviceHostConnectionChecks";
 
 export function useHostConnectionChecks(targets: ReadonlyArray<DeviceHostCheckTarget>) {
+  const gt = useGT();
   const test = useAtomCommand(deviceEnvironment.testHost, { reportFailure: false });
   const [checks, setChecks] = useState<Record<string, Record<string, DeviceHostCheck>>>({});
   const running = useRef(new Set<string>());
@@ -27,7 +29,7 @@ export function useHostConnectionChecks(targets: ReadonlyArray<DeviceHostCheckTa
       host,
       async (environmentId, input) => {
         if (!readEnvironmentScope(environmentId, AuthSettingsWriteScope)) {
-          throw new Error("This connection cannot test device hosts.");
+          throw new Error(gt("This connection cannot test device hosts."));
         }
         const result = await test({ environmentId, input });
         if (result._tag === "Failure") throw squashAtomCommandFailure(result);
@@ -40,6 +42,7 @@ export function useHostConnectionChecks(targets: ReadonlyArray<DeviceHostCheckTa
           [key]: { ...current[key], [environmentId]: result },
         }));
       },
+      gt,
     ).finally(() => running.current.delete(key));
     return results;
   };

@@ -52,6 +52,10 @@ function loadRouters() {
   };
 }
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("../layout/workspace/useSelectWorkspaceDetail", async () => {
   const { selectWorkspaceDetail } = await import("../layout/workspace/workspace-detail-selection");
   return {
@@ -567,6 +571,8 @@ describe("local project navigation", () => {
     expect(state.alert).toHaveBeenCalledExactlyOnceWith(
       "Project added",
       "The project was created but has not reached this device yet. It will appear in the project list once the connection catches up.",
+      [{ text: "OK" }],
+      undefined,
     );
   });
 

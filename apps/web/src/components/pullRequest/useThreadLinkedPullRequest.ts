@@ -10,6 +10,7 @@ import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
+import { useGT } from "gt-react";
 import { useEffect, useRef } from "react";
 import { selectActiveRightPanelSurface, useRightPanelStore } from "../../rightPanelStore";
 import { threadEnvironment } from "../../state/threads";
@@ -29,6 +30,7 @@ export function useThreadLinkedPullRequest(input: {
 }) {
   const { serverThreadRef, persisted, projectId, projectRepository, threadBranch, gitStatus } =
     input;
+  const gt = useGT();
   const updateThreadMetadata = useOrchestrationCommand(threadEnvironment.updateMetadata, {
     reportFailure: false,
   });
@@ -89,12 +91,12 @@ export function useThreadLinkedPullRequest(input: {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Unable to update the thread pull request",
-          description: error instanceof Error ? error.message : "An error occurred.",
+          title: gt("Unable to update the thread pull request"),
+          description: error instanceof Error ? error.message : gt("An error occurred."),
         }),
       );
     });
-  }, [persisted, replacement, serverThreadRef, updateThreadMetadata]);
+  }, [gt, persisted, replacement, serverThreadRef, updateThreadMetadata]);
 
   const linked = replacement ?? persisted;
   return {

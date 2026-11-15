@@ -13,6 +13,11 @@ import { describe, expect, it, vi } from "vite-plus/test";
 
 import { isComposerSubmissionBlocked, submitComposerDraft } from "./composerSubmission";
 
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_, key: string) => String(values?.[key] ?? ""))) as Parameters<
+  typeof submitComposerDraft
+>[0]["gt"];
+
 const assistantCitation = {
   version: 1 as const,
   environmentId: EnvironmentId.make("source-environment"),
@@ -34,6 +39,7 @@ describe("submitComposerDraft", () => {
 
     const submit = () => {
       const result = submitComposerDraft({
+        gt,
         prompt: draft,
         submissionTarget: "provider-turn",
         event: { preventDefault },
@@ -65,6 +71,7 @@ describe("submitComposerDraft", () => {
     const onSend = vi.fn();
 
     const result = submitComposerDraft({
+      gt,
       prompt: draft,
       providerInput: `${draft}\n\nTerminal context`,
       submissionTarget: "provider-turn",
@@ -81,6 +88,7 @@ describe("submitComposerDraft", () => {
     expect(onSend).not.toHaveBeenCalled();
 
     const correctedResult = submitComposerDraft({
+      gt,
       prompt: "Corrected prompt",
       providerInput: "Corrected prompt\n\nShort terminal context",
       submissionTarget: "provider-turn",
@@ -96,6 +104,7 @@ describe("submitComposerDraft", () => {
     const preventDefault = vi.fn();
 
     const result = submitComposerDraft({
+      gt,
       prompt: "Sendable raw draft",
       submissionTarget: "provider-turn",
       event: { preventDefault },
@@ -121,6 +130,7 @@ describe("submitComposerDraft", () => {
 
       expect(providerInput.length).toBeLessThan(PROVIDER_SEND_TURN_MAX_INPUT_CHARS);
       const result = submitComposerDraft({
+        gt,
         prompt: source === "draft" ? providerInput : "Explain the quote",
         ...(source === "composed provider input" ? { providerInput } : {}),
         submissionTarget: "provider-turn",
@@ -153,6 +163,7 @@ describe("submitComposerDraft", () => {
       PROVIDER_SEND_TURN_MAX_INPUT_CHARS,
     );
     const result = submitComposerDraft({
+      gt,
       prompt: draft,
       submissionTarget: "provider-turn",
       event: undefined,
@@ -175,6 +186,7 @@ describe("submitComposerDraft", () => {
     const dispatchedDrafts: string[] = [];
 
     const result = submitComposerDraft({
+      gt,
       prompt: draft,
       submissionTarget: "provider-turn",
       event: undefined,
@@ -198,6 +210,7 @@ describe("submitComposerDraft", () => {
       PROVIDER_SEND_TURN_MAX_INPUT_CHARS,
     );
     const result = submitComposerDraft({
+      gt,
       prompt: answer,
       submissionTarget: "pending-user-input",
       event: undefined,

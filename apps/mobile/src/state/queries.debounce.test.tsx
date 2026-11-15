@@ -14,6 +14,10 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
 }));
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("./session", () => ({
   environmentSession: { sessionStateAtom: () => mocks.sessionAtom },
 }));

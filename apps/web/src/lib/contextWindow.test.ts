@@ -3,6 +3,11 @@ import type { ThreadStructureTurnItem } from "@t3tools/client-runtime/state/shel
 import { OrchestrationV2ProviderTurnTokenUsage } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
 import { formatContextWindowCompactionMessage } from "../components/chat/compaction.logic";
+
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_, key: string) => String(values?.[key] ?? ""))) as Parameters<
+  typeof formatContextWindowCompactionMessage
+>[0];
 import * as DateTime from "effect/DateTime";
 import {
   ContextTransferId,
@@ -89,7 +94,7 @@ describe("live provider-turn usage (#8144)", () => {
     expect(snapshot?.remainingTokens).toBe(158_000);
     expect(snapshot?.usedPercentage).toBe(21);
     expect(snapshot?.autoCompactThreshold).toBe(150_000);
-    expect(formatContextWindowCompactionMessage(snapshot?.autoCompactThreshold)).toBe(
+    expect(formatContextWindowCompactionMessage(gt, snapshot?.autoCompactThreshold)).toBe(
       "Compacts automatically at about 150,000 tokens.",
     );
   });

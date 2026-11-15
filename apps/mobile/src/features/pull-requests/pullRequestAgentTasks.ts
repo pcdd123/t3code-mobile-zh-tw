@@ -4,6 +4,9 @@ import {
 } from "@t3tools/client-runtime/source-control-clients";
 import type { MenuAction } from "@react-native-menu/menu";
 import type { PullRequestDetail, PullRequestLinkedThreadsResult } from "@t3tools/contracts";
+import type { useGT } from "gt-react-native";
+
+type Translate = ReturnType<typeof useGT>;
 
 export type PullRequestAgentTask = "ask" | "explain" | "feedback" | "conflicts" | "watch";
 
@@ -21,6 +24,7 @@ export function pullRequestAgentThreadActions(
   threads: PullRequestLinkedThreadsResult["threads"],
   task: PullRequestAgentTask,
   canAsk: boolean,
+  gt: Translate,
 ): MenuAction[] {
   const active: MenuAction[] = [];
   const settled: MenuAction[] = [];
@@ -29,20 +33,20 @@ export function pullRequestAgentThreadActions(
       id: `${task}:${thread.id}`,
       title: thread.title,
       subtitle: thread.archivedAt
-        ? "Archived thread"
+        ? gt("Archived thread")
         : thread.settled
-          ? "Settled thread"
-          : "Continue thread",
+          ? gt("Settled thread")
+          : gt("Continue thread"),
       image: "bubble.left.and.bubble.right",
       attributes: { disabled: task !== "ask" && Boolean(thread.archivedAt) },
     };
     (thread.settled ? settled : active).push(action);
   }
   return [
-    ...(canAsk ? [{ id: `${task}:new`, title: "Start a new thread", image: "plus" }] : []),
+    ...(canAsk ? [{ id: `${task}:new`, title: gt("Start a new thread"), image: "plus" }] : []),
     ...active,
     ...(settled.length
-      ? [{ id: `${task}:settled`, title: "Settled threads", subactions: settled }]
+      ? [{ id: `${task}:settled`, title: gt("Settled threads"), subactions: settled }]
       : []),
   ];
 }
@@ -66,31 +70,36 @@ export function pullRequestAgentPrompt(
   }
 }
 
-export function pullRequestAgentActions(pr: PullRequestDetail, canWatch: boolean) {
+export function pullRequestAgentActions(pr: PullRequestDetail, canWatch: boolean, gt: Translate) {
   const { shortLabel } = sourceControlClients.get(pr.provider).changeRequest;
   return [
     {
       task: "ask",
-      title: "Ask a question",
+      title: gt("Ask a question"),
       icon: "bubble.left.and.text.bubble.right",
       disabled: false,
     },
-    { task: "explain", title: `Explain this ${shortLabel}`, icon: "book", disabled: false },
+    {
+      task: "explain",
+      title: gt("Explain this {term}", { term: shortLabel }),
+      icon: "book",
+      disabled: false,
+    },
     {
       task: "feedback",
-      title: "Address feedback",
+      title: gt("Address feedback"),
       icon: "wrench.and.screwdriver",
       disabled: pr.state !== "open",
     },
     {
       task: "conflicts",
-      title: "Resolve conflicts",
+      title: gt("Resolve conflicts"),
       icon: "arrow.triangle.branch",
       disabled: pr.state !== "open" || pr.mergeability !== "conflicting",
     },
     {
       task: "watch",
-      title: `Watch ${shortLabel}`,
+      title: gt("Watch {term}", { term: shortLabel }),
       icon: "eye",
       disabled: pr.state !== "open" || !canWatch,
     },

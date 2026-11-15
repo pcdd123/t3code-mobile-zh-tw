@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import type { EnvironmentMachineKind } from "@t3tools/contracts";
 import { SymbolView, type AppSymbolName } from "./ui/AppSymbol";
 
@@ -11,24 +12,34 @@ export const ENVIRONMENT_MACHINE_SYMBOLS = {
   "mac-studio": "macstudio",
 } as const satisfies Record<EnvironmentMachineKind, AppSymbolName>;
 
-const ENVIRONMENT_MACHINE_KIND_LABELS: Record<EnvironmentMachineKind, string> = {
-  server: "Server",
-  cloud: "Cloud VM",
-  linux: "Linux/WSL",
-  desktop: "Desktop",
-  laptop: "Laptop",
-  "mac-mini": "Mini PC",
-  "mac-studio": "Workstation",
-};
+function machineKindLabel(kind: EnvironmentMachineKind, gt: ReturnType<typeof useGT>): string {
+  switch (kind) {
+    case "server":
+      return gt("Server");
+    case "cloud":
+      return gt("Cloud VM");
+    case "linux":
+      return gt("Linux/WSL");
+    case "desktop":
+      return gt("Desktop");
+    case "laptop":
+      return gt("Laptop");
+    case "mac-mini":
+      return gt("Mini PC");
+    case "mac-studio":
+      return gt("Workstation");
+  }
+}
 
 export function EnvironmentMachineSymbol(props: {
   readonly kind: EnvironmentMachineKind;
   readonly size: number;
   readonly tintColorClassName: string;
 }) {
+  const gt = useGT();
   return (
     <SymbolView
-      accessibilityLabel={ENVIRONMENT_MACHINE_KIND_LABELS[props.kind]}
+      accessibilityLabel={machineKindLabel(props.kind, gt)}
       name={ENVIRONMENT_MACHINE_SYMBOLS[props.kind]}
       size={props.size}
       tintColorClassName={props.tintColorClassName}

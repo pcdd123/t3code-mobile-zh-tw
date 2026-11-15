@@ -13,6 +13,7 @@ import {
   type ReviewerTruncation,
 } from "@t3tools/client-runtime/pull-request-reviewers";
 import type { PullRequestReviewerCandidate } from "@t3tools/contracts";
+import { useGT } from "gt-react-native";
 import { useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { NativeScrollView } from "../../native/NativeScrollViewMarker";
@@ -28,17 +29,29 @@ import { useAtomCommand } from "../../state/use-atom-command";
 import { PullRequestAvatar } from "./PullRequestPresentation";
 import { pullRequestTarget, type PullRequestParams } from "./usePullRequestDiff";
 
-const TRUNCATED_LABELS: Record<ReviewerTruncation, (error: string | null) => string> = {
-  unsearchable: () =>
-    "The provider has more reviewers than it returned. Find additional reviewers on the provider.",
-  searchable: () => "The provider has more reviewers than are listed here. Search to find them.",
-  "search-failed": (error) =>
-    `Only listed reviewers are matched: the provider search failed. ${error ?? ""}`,
-  "search-truncated": () =>
-    "More reviewers match than the provider returned. Keep typing to narrow it down.",
-};
+function truncationLabel(
+  truncation: ReviewerTruncation,
+  error: string | null,
+  gt: ReturnType<typeof useGT>,
+): string {
+  switch (truncation) {
+    case "unsearchable":
+      return gt(
+        "The provider has more reviewers than it returned. Find additional reviewers on the provider.",
+      );
+    case "searchable":
+      return gt("The provider has more reviewers than are listed here. Search to find them.");
+    case "search-failed":
+      return gt("Only listed reviewers are matched: the provider search failed. {error}", {
+        error: error ?? "",
+      });
+    case "search-truncated":
+      return gt("More reviewers match than the provider returned. Keep typing to narrow it down.");
+  }
+}
 
 export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequestParams>) {
+  const gt = useGT();
   const navigation = useNavigation();
   const contentTopInset = useContentTopInset();
   const listRef = useRef<LegendListRef>(null);
@@ -120,7 +133,9 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
     if (AsyncResult.isFailure(response)) {
       const cause = squashAtomCommandFailure(response);
       setError(
-        cause instanceof Error ? cause.message : "Couldn't update this review request. Try again.",
+        cause instanceof Error
+          ? cause.message
+          : gt("Couldn't update this review request. Try again."),
       );
       return;
     }
@@ -137,17 +152,17 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
         compactToolbar: true,
         value: query,
         onChangeText: search,
-        placeholder: "Search reviewers",
+        placeholder: gt("Search reviewers"),
       }
     : undefined;
   const searchToolbarInset = useSearchToolbarInset(reviewerSearch);
   return (
     <View className="flex-1 bg-sheet">
       <AppBar
-        title="Request review"
+        title={gt("Request review")}
         subtitle={`#${route.params.number} · ${route.params.repository}`}
         onClose={() => navigation.goBack()}
-        closeAccessibilityLabel="Close request review"
+        closeAccessibilityLabel={gt("Close request review")}
         search={reviewerSearch}
       />
       {listCandidates ? (
@@ -167,11 +182,15 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
           ListHeaderComponent={
             <View className="gap-3 px-4 py-4">
               <Text className="text-xs text-foreground-muted">
-                Tap someone to request a review. Tap a requested reviewer to remove the request.
+                {gt(
+                  "Tap someone to request a review. Tap a requested reviewer to remove the request.",
+                )}
               </Text>
               {!allowed ? (
                 <Text className="text-xs text-foreground-muted">
-                  Requesting reviews requires write access and an open {singular}.
+                  {gt("Requesting reviews requires write access and an open {term}.", {
+                    term: singular,
+                  })}
                 </Text>
               ) : null}
               {error ? (
@@ -186,7 +205,15 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
             return (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${item.isRequested ? "Remove review request from" : "Request review from"} ${item.login}${item.kind === "team" ? " team" : ""}`}
+                accessibilityLabel={
+                  item.isRequested
+                    ? item.kind === "team"
+                      ? gt("Remove review request from {login} team", { login: item.login })
+                      : gt("Remove review request from {login}", { login: item.login })
+                    : item.kind === "team"
+                      ? gt("Request review from {login} team", { login: item.login })
+                      : gt("Request review from {login}", { login: item.login })
+                }
                 accessibilityState={{ disabled: !allowed || pending !== null }}
                 disabled={!allowed || pending !== null}
                 onPress={() => void update(item)}
@@ -199,14 +226,14 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
                   </Text>
                   <Text className="text-xs text-foreground-muted" numberOfLines={1}>
                     {item.login}
-                    {item.kind === "team" ? " · Team" : ""}
+                    {item.kind === "team" ? ` · ${gt("Team")}` : ""}
                   </Text>
                 </View>
                 {pending === id ? (
                   <AppActivityIndicator />
                 ) : item.isRequested ? (
                   <View className="flex-row items-center gap-1.5">
-                    <Text className="text-xs text-foreground-muted">Requested</Text>
+                    <Text className="text-xs text-foreground-muted">{gt("Requested")}</Text>
                     <SymbolView name="checkmark" size={14} tintColorClassName="accent-icon" />
                   </View>
                 ) : (
@@ -223,17 +250,19 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
                 <EmptyState
                   title={
                     queryError
-                      ? "Couldn't load reviewers"
+                      ? gt("Couldn't load reviewers")
                       : query.trim()
-                        ? "No matching reviewers"
-                        : "No reviewers available"
+                        ? gt("No matching reviewers")
+                        : gt("No reviewers available")
                   }
-                  detail={queryError ?? "Search people and teams with access to this repository."}
+                  detail={
+                    queryError ?? gt("Search people and teams with access to this repository.")
+                  }
                   variant="plain"
                 />
                 {queryError ? (
                   <Button
-                    label="Retry"
+                    label={gt("Retry")}
                     onPress={result.error ? result.refresh : searchResult.refresh}
                   />
                 ) : null}
@@ -243,7 +272,7 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
           ListFooterComponent={
             view.truncation ? (
               <Text className="px-4 py-4 text-xs text-foreground-muted">
-                {TRUNCATED_LABELS[view.truncation](view.searchError)}
+                {truncationLabel(view.truncation, view.searchError, gt)}
               </Text>
             ) : undefined
           }
@@ -260,17 +289,17 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
               <AppActivityIndicator />
             ) : (
               <Text className="text-danger-foreground">
-                {detail.error ?? `Couldn't load this ${singular}.`}
+                {detail.error ?? gt("Couldn't load this {term}.", { term: singular })}
               </Text>
             )
           ) : (
             <>
               <Text className="text-sm text-foreground-muted">
-                This provider accepts a reviewer ID but cannot list candidates.
+                {gt("This provider accepts a reviewer ID but cannot list candidates.")}
               </Text>
               <TextInput
-                accessibilityLabel="Reviewer ID"
-                placeholder="Reviewer login or ID"
+                accessibilityLabel={gt("Reviewer ID")}
+                placeholder={gt("Reviewer login or ID")}
                 placeholderTextColorClassName="accent-foreground-muted"
                 value={query}
                 onChangeText={search}
@@ -279,13 +308,13 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
                 className="min-h-12 rounded-xl bg-grouped-card px-3 text-base"
               />
               <Button
-                label="Request review"
+                label={gt("Request review")}
                 fullWidth
                 disabled={!allowed || !query.trim() || pending !== null}
                 onPress={() => void update({ id: query.trim(), kind: "user", isRequested: false })}
               />
               <Button
-                label="Remove review request"
+                label={gt("Remove review request")}
                 fullWidth
                 tone="text"
                 disabled={!allowed || !query.trim() || pending !== null}

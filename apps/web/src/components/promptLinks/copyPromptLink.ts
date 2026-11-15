@@ -1,3 +1,4 @@
+import { localized } from "../Localized";
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
 import { isAttachmentOnlyBootstrapPrompt } from "@t3tools/shared/composerContextReferences";
 import {
@@ -77,8 +78,9 @@ export async function copyPromptLink(link: string): Promise<void> {
     toastManager.add(
       stackedThreadToast({
         type: "error",
-        title: "Could not copy the prompt link",
-        description: error instanceof Error ? error.message : "An error occurred.",
+        title: localized((gt) => gt("Could not copy the prompt link")),
+        description:
+          error instanceof Error ? error.message : localized((gt) => gt("An error occurred.")),
       }),
     );
   }

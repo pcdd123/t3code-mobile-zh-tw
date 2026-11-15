@@ -3,43 +3,47 @@ import { BotIcon, type LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { shouldShowInstanceBadge, type ProviderInstanceEntry } from "../../providerInstances";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";
+import type { useGT } from "gt-react";
 
-export function threadRelationshipStatusLabel(status: string | null): string {
+export function threadRelationshipStatusLabel(
+  gt: ReturnType<typeof useGT>,
+  status: string | null,
+): string {
   switch (status) {
     case "preparing":
     case "starting":
-      return "Starting";
+      return gt("Starting");
     case "running":
     case "in_progress":
-      return "Running";
+      return gt("Running");
     case "pending":
     case "queued":
-      return "Queued";
+      return gt("Queued");
     case "waiting":
     case "blocked":
-      return "Waiting";
+      return gt("Waiting");
     case "completed":
-      return "Done";
+      return gt("Done");
     case "failed":
     case "error":
-      return "Failed";
+      return gt("Failed");
     case "cancelled":
     case "interrupted":
-      return "Stopped";
+      return gt("Stopped");
     case "rolled_back":
-      return "Reverted";
+      return gt("Reverted");
     case "resolved_native":
-      return "Resolved (native)";
+      return gt("Resolved (native)");
     case "resolved_portable":
-      return "Resolved (portable)";
+      return gt("Resolved (portable)");
     case "consumed":
-      return "Consumed";
+      return gt("Consumed");
     case "superseded":
-      return "Superseded";
+      return gt("Superseded");
     case "idle":
-      return "Idle";
+      return gt("Idle");
     default:
-      return "Unknown";
+      return gt("Unknown");
   }
 }
 

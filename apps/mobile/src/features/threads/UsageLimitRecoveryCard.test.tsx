@@ -35,6 +35,10 @@ vi.mock("../../components/ui/Button", () => ({
 }));
 vi.mock("../../state/threads", () => ({ threadEnvironment: { updateMetadata: {} } }));
 vi.mock("../../state/use-atom-command", () => ({ useAtomCommand: () => vi.fn() }));
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 
 import { UsageLimitRecoveryCard } from "./UsageLimitRecoveryCard";
 

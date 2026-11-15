@@ -1,4 +1,5 @@
 import type { VoiceInputState } from "@t3tools/client-runtime/voice-input";
+import type { useGT } from "gt-react-native";
 
 export type VoiceComposerPresentation = {
   readonly leadingAction: "cancel" | null;
@@ -8,6 +9,21 @@ export type VoiceComposerPresentation = {
   readonly statusLabel: string | null;
   readonly confirmationEnabled: boolean;
 };
+
+/** Translates the English status labels below; error labels pass through unchanged. */
+export function localizeVoiceStatusLabel(
+  presentation: VoiceComposerPresentation,
+  gt: ReturnType<typeof useGT>,
+): string | null {
+  const label = presentation.statusLabel;
+  if (label === null || presentation.statusKind === "error") return label;
+  if (label === "Preparing") return gt("Preparing");
+  if (label === "Transcribing") return gt("Transcribing");
+  if (label.startsWith("Recording ")) {
+    return gt("Recording {time}", { time: label.slice("Recording ".length) });
+  }
+  return label;
+}
 
 export function resolveVoiceComposerPresentation(
   state: VoiceInputState,

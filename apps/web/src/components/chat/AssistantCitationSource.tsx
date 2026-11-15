@@ -7,6 +7,7 @@ import {
 } from "~/lib/assistantTextSelection";
 import { toastManager } from "../ui/toast";
 import { observeResize } from "~/lib/observeResize";
+import { useGT } from "gt-react";
 
 const CITATION_PULSE_DURATION_MS = 650;
 const CITATION_HIGHLIGHT_HOLD_MS = 1575;
@@ -104,11 +105,13 @@ function observeAssistantCitationSource({
   itemKey,
   request,
   list,
+  gt,
 }: {
   root: HTMLElement;
   itemKey: string;
   request: AssistantCitationTarget;
   list: LegendListRef;
+  gt: ReturnType<typeof useGT>;
 }) {
   const activation = request.activationRef.current;
   if (activation.dismissed) return;
@@ -194,8 +197,8 @@ function observeAssistantCitationSource({
             request.onComplete();
             toastManager.add({
               type: "warning",
-              title: "Could not open the cited response",
-              description: "Click the citation to try again.",
+              title: gt("Could not open the cited response"),
+              description: gt("Click the citation to try again."),
             });
           },
         );
@@ -207,8 +210,8 @@ function observeAssistantCitationSource({
       if (!range) {
         toastManager.add({
           type: "warning",
-          title: "The quoted text has changed",
-          description: "Showing the source response. The saved quote is unchanged.",
+          title: gt("The quoted text has changed"),
+          description: gt("Showing the source response. The saved quote is unchanged."),
         });
       }
     }
@@ -347,14 +350,15 @@ export function AssistantCitationSource({
   listRef: RefObject<LegendListRef | null>;
   children: ReactNode;
 }) {
+  const gt = useGT();
   const rootRef = useRef<HTMLDivElement>(null);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- observes this message's DOM for a citation reveal request and scrolls the LegendList to it
   useEffect(() => {
     const root = rootRef.current;
     const list = listRef.current;
     if (!root || !list || !request || request.citation.messageId !== messageId) return;
-    return observeAssistantCitationSource({ root, itemKey, request, list });
-  }, [itemKey, listRef, messageId, request]);
+    return observeAssistantCitationSource({ root, itemKey, request, list, gt });
+  }, [gt, itemKey, listRef, messageId, request]);
 
   return (
     <div

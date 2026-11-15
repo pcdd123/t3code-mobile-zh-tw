@@ -5,6 +5,7 @@ import type {
   ScopedThreadRef,
 } from "@t3tools/contracts";
 import { useNavigate } from "@tanstack/react-router";
+import { useGT } from "gt-react";
 import { useEffect, useRef } from "react";
 
 import { resolveSpeechPresentation } from "~/components/chat/ComposerSpeechButton";
@@ -32,6 +33,7 @@ export function PreviewAnnotationSpeech({
   config: DesktopPreviewAnnotationVoiceConfig;
   keybindings: Parameters<typeof useDictationShortcut>[0]["keybindings"];
 }) {
+  const gt = useGT();
   const navigate = useNavigate();
   const thread = useThreadShell(threadRef);
   const draftThread = useComposerDraftStore((store) => store.getDraftThreadByRef(threadRef));
@@ -92,7 +94,7 @@ export function PreviewAnnotationSpeech({
     available,
     phase: state.phase,
     errorAction: state.errorAction,
-    status: resolveSpeechPresentation(state, null).status,
+    status: resolveSpeechPresentation(gt, state, null).status,
     preview: preview ? preview.committed + preview.tentative : null,
     level,
     shortcutLabel,
@@ -112,7 +114,7 @@ export function PreviewAnnotationSpeech({
         current.current.speech.cancel();
         toastManager.add({
           type: "error",
-          title: "Could not update annotation voice input",
+          title: gt("Could not update annotation voice input"),
           description: error instanceof Error ? error.message : String(error),
         });
       }

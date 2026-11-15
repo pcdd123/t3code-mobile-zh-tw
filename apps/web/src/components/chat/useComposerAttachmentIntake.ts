@@ -55,6 +55,7 @@ import {
   isPreparingComposerImage,
   removePreparingComposerImages,
 } from "./preparingComposerImages";
+import { useGT } from "gt-react";
 
 /**
  * Takes files into the draft: validates and reserves slots, compresses images, inserts
@@ -88,6 +89,7 @@ export function useComposerAttachmentIntake(input: {
     pendingInsertion?: ComposerAttachmentInsertion,
   ) => boolean;
 }) {
+  const gt = useGT();
   const {
     activeThreadId,
     activePendingProgress,
@@ -134,7 +136,7 @@ export function useComposerAttachmentIntake(input: {
     ) {
       toastManager.add({
         type: "error",
-        title: "This question cannot accept attachments.",
+        title: gt("This question cannot accept attachments."),
       });
       return false;
     }
@@ -181,22 +183,27 @@ export function useComposerAttachmentIntake(input: {
         replacedReattachMarkerIds.add(matchingReattachMarker.id);
       }
       if (!matchingReattachMarker && reservedCount >= PROVIDER_SEND_TURN_MAX_ATTACHMENTS) {
-        error = `You can attach up to ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS} files per message.`;
+        error = gt("You can attach up to {count} files per message.", {
+          count: PROVIDER_SEND_TURN_MAX_ATTACHMENTS,
+        });
         continue;
       }
       if (attachmentKind === "unsupported-image") {
-        error = `'${file.name}' is not a supported image type. Attach GIF, HEIC, HEIF, JPEG, PNG, or WebP images.`;
+        error = gt(
+          "'{name}' is not a supported image type. Attach GIF, HEIC, HEIF, JPEG, PNG, or WebP images.",
+          { name: file.name },
+        );
         continue;
       }
       if (attachmentKind === "image") {
         acceptedImages.push(normalizeComposerImageFileMimeType(file));
       } else {
         if (fileStagingLimit === null) {
-          error = "This server does not support file attachments.";
+          error = gt("This server does not support file attachments.");
           continue;
         }
         if (file.size <= 0) {
-          error = `'${file.name}' is empty or could not be read.`;
+          error = gt("'{name}' is empty or could not be read.", { name: file.name });
           continue;
         }
         if (file.size > fileStagingLimit) {
@@ -236,10 +243,11 @@ export function useComposerAttachmentIntake(input: {
         const attached = storedFiles[0]!;
         toastManager.add({
           type: "info",
-          title: `Large paste attached as ${attached.name}`,
-          description: `${formatAttachmentSize(attached.sizeBytes)} · Use ${
-            isMacPlatform(navigator.platform) ? "⌘⇧V" : "Ctrl+Shift+V"
-          } to keep a large paste inline.`,
+          title: gt("Large paste attached as {name}", { name: attached.name }),
+          description: gt("{size} · Use {shortcut} to keep a large paste inline.", {
+            size: formatAttachmentSize(attached.sizeBytes),
+            shortcut: isMacPlatform(navigator.platform) ? "⌘⇧V" : "Ctrl+Shift+V",
+          }),
           data: { hideCopyButton: true },
         });
       }
@@ -283,8 +291,8 @@ export function useComposerAttachmentIntake(input: {
         compressionErrors.set(
           id,
           result.reason === "unreadable"
-            ? `'${file.name}' could not be read as an image.`
-            : `'${file.name}' is too large to attach, even after compression.`,
+            ? gt("'{name}' could not be read as an image.", { name: file.name })
+            : gt("'{name}' is too large to attach, even after compression.", { name: file.name }),
         );
         continue;
       }
@@ -366,7 +374,11 @@ export function useComposerAttachmentIntake(input: {
       return;
     }
     const confirmation = requestConfirmDialog(
-      `Remove ${image?.name ?? "this image"} from the message?\nIt is referenced in your text; removing it also removes every reference.`,
+      `${
+        image?.name
+          ? gt("Remove {name} from the message?", { name: image.name })
+          : gt("Remove this image from the message?")
+      }\n${gt("It is referenced in your text; removing it also removes every reference.")}`,
       { variant: "destructive" },
     );
     if (!confirmation) {
@@ -419,8 +431,8 @@ export function useComposerAttachmentIntake(input: {
       }
       toastManager.add({
         type: "error",
-        title: "Pasted text is too large for this message",
-        description: "Remove some text or an attachment, then paste again.",
+        title: gt("Pasted text is too large for this message"),
+        description: gt("Remove some text or an attachment, then paste again."),
         data: { hideCopyButton: true },
       });
       return true;
@@ -441,8 +453,8 @@ export function useComposerAttachmentIntake(input: {
       if (!wouldExceedInputLimit) return false;
       toastManager.add({
         type: "error",
-        title: "Pasted text is too large to attach",
-        description: "Reduce the clipboard contents or save a smaller excerpt as a file.",
+        title: gt("Pasted text is too large to attach"),
+        description: gt("Reduce the clipboard contents or save a smaller excerpt as a file."),
         data: { hideCopyButton: true },
       });
       return true;

@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { ThreadDetailsControl } from "./chat/ThreadDetailsControl";
 import { ComposerContextLabel } from "./ComposerContextLabel";
 import { useRightPanelStore } from "../rightPanelStore";
@@ -95,10 +96,8 @@ interface BranchToolbarBranchSelectorProps {
   onComposerFocusRequest?: () => void;
 }
 
-const WORKTREE_CHANGE_BLOCKED_MESSAGE = "Stop the current turn to switch worktrees.";
-
-function toBranchActionErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "An error occurred.";
+function toBranchActionErrorMessage(error: unknown, gt: ReturnType<typeof useGT>): string {
+  return error instanceof Error ? error.message : gt("An error occurred.");
 }
 
 export function BranchToolbarBranchSelector({
@@ -118,6 +117,7 @@ export function BranchToolbarBranchSelector({
   onCheckoutPullRequestRequest,
   onComposerFocusRequest,
 }: BranchToolbarBranchSelectorProps) {
+  const gt = useGT();
   const composerFloatingLayerProps = useComposerMenuProps();
   const canWriteSourceControl = useEnvironmentScope(environmentId, AuthSourceControlWriteScope);
   const canOperateThread = useEnvironmentScope(environmentId, AuthOrchestrationOperateScope);
@@ -205,7 +205,10 @@ export function BranchToolbarBranchSelector({
       })
     ) {
       toastManager.add(
-        stackedThreadToast({ type: "warning", title: WORKTREE_CHANGE_BLOCKED_MESSAGE }),
+        stackedThreadToast({
+          type: "warning",
+          title: gt("Stop the current turn to switch worktrees."),
+        }),
       );
       return false;
     }
@@ -375,11 +378,11 @@ export function BranchToolbarBranchSelector({
   const [isBranchActionPending, startBranchActionTransition] = useTransition();
   const totalBranchCount = branchRefState.data?.totalCount ?? 0;
   const branchStatusText = isInitialBranchesLoadPending
-    ? "Loading refs..."
+    ? gt("Loading refs...")
     : isFetchingNextPage
-      ? "Loading more refs..."
+      ? gt("Loading more refs...")
       : hasNextPage
-        ? `Showing ${refs.length} of ${totalBranchCount} refs`
+        ? gt("Showing {shown} of {total} refs", { shown: refs.length, total: totalBranchCount })
         : null;
 
   const copyBranchName = (branchName: string) => {
@@ -387,8 +390,8 @@ export function BranchToolbarBranchSelector({
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Failed to copy branch name",
-          description: toBranchActionErrorMessage(error),
+          title: gt("Failed to copy branch name"),
+          description: toBranchActionErrorMessage(error, gt),
         }),
       );
     });
@@ -401,7 +404,7 @@ export function BranchToolbarBranchSelector({
     event.preventDefault();
     event.stopPropagation();
     const items: ContextMenuItem<"copy-branch-name">[] = [
-      { id: "copy-branch-name", label: "Copy branch name", icon: "copy" },
+      { id: "copy-branch-name", label: gt("Copy branch name"), icon: "copy" },
     ];
     void api.contextMenu.show(items, { x: event.clientX, y: event.clientY }).then((action) => {
       if (action === "copy-branch-name") copyBranchName(branchName);
@@ -416,8 +419,8 @@ export function BranchToolbarBranchSelector({
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Action unavailable",
-          description: "This connection cannot change the thread's branch.",
+          title: gt("Action unavailable"),
+          description: gt("This connection cannot change the thread's branch."),
         }),
       );
       return;
@@ -542,8 +545,8 @@ export function BranchToolbarBranchSelector({
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Failed to switch ref.",
-            description: toBranchActionErrorMessage(squashAtomCommandFailure(checkoutResult)),
+            title: gt("Failed to switch ref."),
+            description: toBranchActionErrorMessage(squashAtomCommandFailure(checkoutResult), gt),
           }),
         );
       }
@@ -588,8 +591,11 @@ export function BranchToolbarBranchSelector({
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Failed to create and switch ref.",
-            description: toBranchActionErrorMessage(squashAtomCommandFailure(createBranchResult)),
+            title: gt("Failed to create and switch ref."),
+            description: toBranchActionErrorMessage(
+              squashAtomCommandFailure(createBranchResult),
+              gt,
+            ),
           }),
         );
       }
@@ -666,6 +672,7 @@ export function BranchToolbarBranchSelector({
     resolvedActiveBranch,
     resolvedActiveBranchIsRemote,
     startFromOrigin,
+    gt,
   });
 
   const branchPrBranch = resolveBranchToolbarPrBranch({
@@ -783,7 +790,7 @@ export function BranchToolbarBranchSelector({
       statusText={branchStatusText}
       notice={
         refs.some((refName) => isWorktreeChangeBlockedForRef(refName))
-          ? WORKTREE_CHANGE_BLOCKED_MESSAGE
+          ? gt("Stop the current turn to switch worktrees.")
           : null
       }
       renderItem={renderPickerItem}
@@ -847,7 +854,7 @@ export function BranchToolbarBranchSelector({
             className="min-w-0 max-w-full active:scale-100"
             disabled={isInitialBranchesLoadPending || isBranchActionPending}
             // NVDA browse mode re-reads a combobox when its attributes change, not when its text does.
-            aria-label={`Branch: ${triggerLabel}`}
+            aria-label={gt("Branch: {ref}", { ref: triggerLabel })}
           >
             <GitBranchIcon
               className={cn(

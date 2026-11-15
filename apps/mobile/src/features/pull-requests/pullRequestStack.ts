@@ -1,11 +1,14 @@
 import type { ChangeRequestTerminology } from "@t3tools/client-runtime/source-control-clients";
 import type { PullRequestRef, PullRequestStack, ThreadPullRequestLink } from "@t3tools/contracts";
+import type { useGT } from "gt-react-native";
 
 export function pullRequestStackMerge(
   stack: PullRequestStack,
   number: number,
   terminology: ChangeRequestTerminology,
+  gt: ReturnType<typeof useGT>,
 ) {
+  const term = terminology.singular;
   const position = stack.layers.findIndex((layer) => layer.number === number);
   const layers = stack.layers.slice(0, position + 1).filter((layer) => layer.state !== "merged");
   const heads = layers.flatMap((layer) =>
@@ -13,15 +16,15 @@ export function pullRequestStackMerge(
   );
   const reason =
     position < 0
-      ? `This ${terminology.singular} is no longer in the stack. Refresh it.`
+      ? gt("This {term} is no longer in the stack. Refresh it.", { term })
       : stack.layers[position]?.state !== "open" || layers.length === 0
-        ? `There are no open layers to merge through this ${terminology.singular}.`
+        ? gt("There are no open layers to merge through this {term}.", { term })
         : layers.some((layer) => layer.state !== "open")
-          ? "Reopen the closed layers before merging this stack."
+          ? gt("Reopen the closed layers before merging this stack.")
           : layers.some((layer) => layer.isDraft)
-            ? "Mark every layer being merged ready for review."
+            ? gt("Mark every layer being merged ready for review.")
             : heads.length !== layers.length
-              ? "Refresh the stack to load its latest revisions before merging."
+              ? gt("Refresh the stack to load its latest revisions before merging.")
               : null;
   return { position: position + 1, layers, heads, reason };
 }

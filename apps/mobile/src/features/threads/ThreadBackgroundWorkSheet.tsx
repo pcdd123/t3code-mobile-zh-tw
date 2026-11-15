@@ -7,6 +7,7 @@ import {
 } from "@t3tools/client-runtime/state/thread-execution";
 import type { EnvironmentId, ThreadId } from "@t3tools/contracts";
 import * as Haptics from "expo-haptics";
+import { useGT } from "gt-react-native";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -16,16 +17,23 @@ import { AppText as Text } from "../../components/ui/AppText";
 import { ScreenContent } from "../../components/ui/ScreenContent";
 import { environmentThreadShells } from "../../state/threads";
 
-const KIND_LABELS = {
-  subagent: "Subagent",
-  command: "Command",
-  monitor: "Monitor",
-  background_task: "Background task",
-} as const;
+function kindLabel(kind: PendingBackgroundWorkItem["kind"], gt: ReturnType<typeof useGT>): string {
+  switch (kind) {
+    case "subagent":
+      return gt("Subagent");
+    case "command":
+      return gt("Command");
+    case "monitor":
+      return gt("Monitor");
+    case "background_task":
+      return gt("Background task");
+  }
+}
 
 type BackgroundWorkTarget = { readonly environmentId: EnvironmentId; readonly threadId: ThreadId };
 
 export function ThreadBackgroundWorkSheet({ route }: StaticScreenProps<BackgroundWorkTarget>) {
+  const gt = useGT();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const target = route.params;
@@ -50,7 +58,7 @@ export function ThreadBackgroundWorkSheet({ route }: StaticScreenProps<Backgroun
     >
       {presentation === null ? (
         <Text className="pt-6 text-center text-sm text-foreground-muted">
-          Nothing running in the background.
+          {gt("Nothing running in the background.")}
         </Text>
       ) : (
         presentation.items.map((item) => (
@@ -61,7 +69,7 @@ export function ThreadBackgroundWorkSheet({ route }: StaticScreenProps<Backgroun
   );
   return (
     <View collapsable={false} className="flex-1 bg-sheet">
-      <SheetHeader title="Background work" onClose={() => navigation.goBack()} />
+      <SheetHeader title={gt("Background work")} onClose={() => navigation.goBack()} />
       <ScreenContent>{content}</ScreenContent>
     </View>
   );
@@ -71,6 +79,7 @@ function BackgroundWorkRow(props: {
   readonly item: PendingBackgroundWorkItem;
   readonly onOpen: (threadId: ThreadId) => void;
 }) {
+  const gt = useGT();
   const { item } = props;
   const childThreadId = item.childThreadId;
   const row = (
@@ -85,7 +94,7 @@ function BackgroundWorkRow(props: {
       />
       <View className="min-w-0 flex-1">
         <Text className="font-t3-medium text-sm text-foreground">{item.label}</Text>
-        <Text className="text-xs text-foreground-muted">{KIND_LABELS[item.kind]}</Text>
+        <Text className="text-xs text-foreground-muted">{kindLabel(item.kind, gt)}</Text>
       </View>
       {childThreadId === undefined ? null : (
         <SymbolView name="chevron.right" size={12} tintColorClassName="accent-icon-subtle" />
@@ -97,7 +106,8 @@ function BackgroundWorkRow(props: {
   ) : (
     <Pressable
       accessibilityRole="link"
-      accessibilityLabel={`Open subagent ${item.label}`}
+      accessibilityLabel={gt("Open subagent {name}", { name: item.label })}
+
       onPress={() => props.onOpen(childThreadId)}
       className="active:opacity-70"
     >

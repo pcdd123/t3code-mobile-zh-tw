@@ -40,6 +40,7 @@ describe("device host connection checks", () => {
         return new Promise((resolve, reject) => pending.set(environmentId, { resolve, reject }));
       },
       (environmentId, result) => results.set(environmentId, result),
+      (message) => message,
     );
     expect(calls).toEqual(ids.slice(0, 3));
     expect(results.get(ids[0]!)).toEqual({ status: "pending" });

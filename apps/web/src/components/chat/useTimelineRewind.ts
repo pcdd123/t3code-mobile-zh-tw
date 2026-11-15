@@ -33,6 +33,7 @@ import { useOrchestrationCommand } from "../../state/use-orchestration-command";
 import { useAtomQueryRunner } from "../../state/use-atom-query-runner";
 import { rewindToMessage } from "./chatViewSend";
 import { makeThreadErrorSetter } from "../ChatView.logic";
+import { useGT } from "gt-react";
 interface TimelineRewindInput {
   readonly environmentId: EnvironmentId;
   readonly routeThreadRef: ScopedThreadRef;
@@ -58,6 +59,7 @@ interface TimelineRewindInput {
  * the composer) and forking a new thread from a run.
  */
 export function useTimelineRewind(input: TimelineRewindInput) {
+  const gt = useGT();
   const {
     environmentId,
     routeThreadRef,
@@ -109,19 +111,26 @@ export function useTimelineRewind(input: TimelineRewindInput) {
     if (!supportsConversationRollback) {
       setThreadError(
         activeThread.id,
-        "This provider does not support reverting conversation history. Start a new thread instead.",
+        gt(
+          "This provider does not support reverting conversation history. Start a new thread instead.",
+        ),
       );
       return;
     }
     if (activeEnvironmentUnavailable && activeEnvironmentUnavailableLabel) {
       setThreadError(
         activeThread.id,
-        `Reconnect ${activeEnvironmentUnavailableLabel} before reverting checkpoints.`,
+        gt("Reconnect {environment} before reverting checkpoints.", {
+          environment: activeEnvironmentUnavailableLabel,
+        }),
       );
       return;
     }
     if (phase === "running" || isSendBusy) {
-      setThreadError(activeThread.id, "Interrupt the current turn before reverting checkpoints.");
+      setThreadError(
+        activeThread.id,
+        gt("Interrupt the current turn before reverting checkpoints."),
+      );
       return;
     }
     if (restoreFiles === undefined) {
@@ -134,6 +143,7 @@ export function useTimelineRewind(input: TimelineRewindInput) {
     }));
     setThreadError(activeThread.id, null);
     const rewind = await rewindToMessage({
+      gt,
       message,
       environmentId,
       routeThreadRef,
@@ -192,7 +202,7 @@ export function useTimelineRewind(input: TimelineRewindInput) {
         const error = squashAtomCommandFailure(result);
         setThreadError(
           activeThread.id,
-          error instanceof Error ? error.message : "Failed to fork this response.",
+          error instanceof Error ? error.message : gt("Failed to fork this response."),
         );
       }
       return;
@@ -201,7 +211,9 @@ export function useTimelineRewind(input: TimelineRewindInput) {
     if (!targetThreadReady) {
       setThreadError(
         activeThread.id,
-        "The fork was created, but its thread data did not reach this client. Reconnect and try opening it from the sidebar.",
+        gt(
+          "The fork was created, but its thread data did not reach this client. Reconnect and try opening it from the sidebar.",
+        ),
       );
       return;
     }

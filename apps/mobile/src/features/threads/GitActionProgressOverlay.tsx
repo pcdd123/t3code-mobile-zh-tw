@@ -1,5 +1,6 @@
 import { tryOpenExternalUrl } from "../../lib/openExternalUrl";
 import Animated, { FadeIn, FadeOut, ReduceMotion } from "react-native-reanimated";
+import { useGT } from "gt-react-native";
 import { Toast } from "../../components/ui/Toast";
 import { useBarInset } from "../../components/ui/useBarInset";
 import { MOBILE_MOTION } from "../../lib/designTokens";
@@ -10,6 +11,7 @@ export function GitActionProgressOverlay(props: {
   readonly onDismiss: () => void;
   readonly onOpenPullRequest?: (url: string) => Promise<boolean>;
 }) {
+  const gt = useGT();
   const { progress, onDismiss } = props;
   const openPullRequest = props.onOpenPullRequest;
   const top = useBarInset() + 8;
@@ -37,7 +39,7 @@ export function GitActionProgressOverlay(props: {
     >
       <Toast
         singleLine
-        message={progress.label ?? "Source control"}
+        message={progress.label ?? gt("Source control")}
         description={progress.description ?? undefined}
         tone={
           progress.phase === "error"
@@ -47,7 +49,7 @@ export function GitActionProgressOverlay(props: {
               : "default"
         }
         busy={progress.phase === "running"}
-        action={progress.prUrl ? { label: "View", onPress: handlePress } : undefined}
+        action={progress.prUrl ? { label: gt("View"), onPress: handlePress } : undefined}
       />
     </Animated.View>
   );

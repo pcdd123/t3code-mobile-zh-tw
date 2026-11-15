@@ -1,4 +1,5 @@
 import { EnvironmentId } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
 import { describe, expect, it } from "vite-plus/test";
 import {
   usagePriceCell,
@@ -7,6 +8,11 @@ import {
   type UsagePriceDraft,
 } from "./usagePriceTable";
 import type { UsagePriceTarget } from "./usagePriceTargets";
+
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) =>
+    String(values?.[key] ?? ""),
+  )) as unknown as ReturnType<typeof useGT>;
 
 const price = { inputCostPerMillionTokens: 2, outputCostPerMillionTokens: 8 };
 const target = (
@@ -36,13 +42,17 @@ describe("price table edits", () => {
         value: "",
         placeholder: "Automatic",
       });
-      const result = usagePriceTableChanges(environment, [
-        {
-          ...draft({ inputCostPerMillionTokens: "2", outputCostPerMillionTokens: "8" }),
-          model,
-          isNew: true,
-        },
-      ]);
+      const result = usagePriceTableChanges(
+        environment,
+        [
+          {
+            ...draft({ inputCostPerMillionTokens: "2", outputCostPerMillionTokens: "8" }),
+            model,
+            isNew: true,
+          },
+        ],
+        gt,
+      );
       expect(result.changes).toEqual([{ model, price }]);
       expect(
         usagePriceCell([target("a", { [model]: price })], model, "inputCostPerMillionTokens").value,
@@ -55,10 +65,12 @@ describe("price table edits", () => {
     const a = usagePriceTableChanges(
       target("a", { example: { ...price, cacheReadCostPerMillionTokens: 0 }, untouched: price }),
       edits,
+      gt,
     );
     const b = usagePriceTableChanges(
       target("b", { example: { ...price, outputCostPerMillionTokens: 10 } }),
       edits,
+      gt,
     );
     expect(a.changes).toEqual([
       {
@@ -72,20 +84,24 @@ describe("price table edits", () => {
   });
 
   it("batches new rows and resets, and distinguishes blank cache rates from explicit zero", () => {
-    const plan = usagePriceTableChanges(target("a", { example: price }), [
-      { ...draft({}), removed: true },
-      {
-        id: "new:1",
-        model: "  vendor/Model  ",
-        isNew: true,
-        values: {
-          inputCostPerMillionTokens: "2",
-          outputCostPerMillionTokens: "8",
-          cacheReadCostPerMillionTokens: "0",
-          cacheWriteCostPerMillionTokens: "",
+    const plan = usagePriceTableChanges(
+      target("a", { example: price }),
+      [
+        { ...draft({}), removed: true },
+        {
+          id: "new:1",
+          model: "  vendor/Model  ",
+          isNew: true,
+          values: {
+            inputCostPerMillionTokens: "2",
+            outputCostPerMillionTokens: "8",
+            cacheReadCostPerMillionTokens: "0",
+            cacheWriteCostPerMillionTokens: "",
+          },
         },
-      },
-    ]);
+      ],
+      gt,
+    );
     expect(plan.errors.size).toBe(0);
     expect(plan.changes).toEqual([
       { model: "example", price: null },
@@ -95,15 +111,17 @@ describe("price table edits", () => {
 
   it("requires complete prices before turning automatic pricing into an override", () => {
     const edits = [draft({ inputCostPerMillionTokens: "3" })];
-    expect(usagePriceTableChanges(target("a", { example: price }), edits).errors.size).toBe(0);
-    const missing = usagePriceTableChanges(target("b", {}), edits);
+    expect(usagePriceTableChanges(target("a", { example: price }), edits, gt).errors.size).toBe(0);
+    const missing = usagePriceTableChanges(target("b", {}), edits, gt);
     expect(missing.changes).toEqual([]);
     expect(missing.errors.has("model:example")).toBe(true);
   });
 
   it("mapping a model drops its own price and resetting removes the mapping", () => {
     const priced = target("a", { example: price });
-    expect(usagePriceTableChanges(priced, [{ ...draft({}), alias: " example-model " }])).toEqual({
+    expect(
+      usagePriceTableChanges(priced, [{ ...draft({}), alias: " example-model " }], gt),
+    ).toEqual({
       changes: [
         { model: "example", alias: "example-model" },
         { model: "example", price: null },
@@ -111,11 +129,11 @@ describe("price table edits", () => {
       errors: new Map(),
     });
     const mapped = target("b", {}, { example: "example-model" });
-    expect(usagePriceTableChanges(mapped, [{ ...draft({}), removed: true }]).changes).toEqual([
+    expect(usagePriceTableChanges(mapped, [{ ...draft({}), removed: true }], gt).changes).toEqual([
       { model: "example", alias: null },
     ]);
     expect(
-      usagePriceTableChanges(mapped, [{ ...draft({}), alias: "example" }]).errors.get(
+      usagePriceTableChanges(mapped, [{ ...draft({}), alias: "example" }], gt).errors.get(
         "model:example",
       ),
     ).toBe("Map to a different model.");
@@ -125,18 +143,18 @@ describe("price table edits", () => {
     const mapped = target("mapped", {}, { example: "example-model" });
     const priced = target("priced", { example: price });
     const edit = draft({ inputCostPerMillionTokens: "3", outputCostPerMillionTokens: "8" });
-    expect(usagePriceTableErrors([mapped, priced], [edit]).get(edit.id)).toBe(
+    expect(usagePriceTableErrors([mapped, priced], [edit], gt).get(edit.id)).toBe(
       'mapped maps this model. Remove it from "Apply to" or clear its mapping first.',
     );
-    expect(usagePriceTableChanges(mapped, [edit]).changes).toEqual([]);
+    expect(usagePriceTableChanges(mapped, [edit], gt).changes).toEqual([]);
 
     const cleared = { ...edit, alias: "" };
-    expect(usagePriceTableErrors([mapped, priced], [cleared]).size).toBe(0);
-    expect(usagePriceTableChanges(mapped, [cleared]).changes).toEqual([
+    expect(usagePriceTableErrors([mapped, priced], [cleared], gt).size).toBe(0);
+    expect(usagePriceTableChanges(mapped, [cleared], gt).changes).toEqual([
       { model: "example", alias: null },
       { model: "example", price: { inputCostPerMillionTokens: 3, outputCostPerMillionTokens: 8 } },
     ]);
-    expect(usagePriceTableChanges(priced, [cleared]).changes).toEqual([
+    expect(usagePriceTableChanges(priced, [cleared], gt).changes).toEqual([
       { model: "example", price: { inputCostPerMillionTokens: 3, outputCostPerMillionTokens: 8 } },
     ]);
   });
@@ -153,7 +171,7 @@ describe("model mapping validation", () => {
 
   it("rejects a cycle created by several mappings in one save", () => {
     const edits = [mapping("a", "b"), mapping("b", "c"), mapping("c", "a")];
-    const result = usagePriceTableChanges(target("local", {}), edits);
+    const result = usagePriceTableChanges(target("local", {}), edits, gt);
     expect([...result.errors.keys()]).toEqual(["model:a", "model:b", "model:c"]);
   });
 
@@ -161,8 +179,8 @@ describe("model mapping validation", () => {
     const edits = [mapping("c", "a")];
     const acyclic = target("one", {}, { a: "b" });
     const cyclic = target("two", {}, { a: "b", b: "c" });
-    expect(usagePriceTableChanges(acyclic, edits).errors.size).toBe(0);
-    expect(usagePriceTableErrors([acyclic, cyclic], edits).get("model:c")).toBe(
+    expect(usagePriceTableChanges(acyclic, edits, gt).errors.size).toBe(0);
+    expect(usagePriceTableErrors([acyclic, cyclic], edits, gt).get("model:c")).toBe(
       "Model mappings cannot form a cycle on two.",
     );
   });
@@ -175,7 +193,7 @@ describe("model mapping validation", () => {
       [reverse, clear],
       [clear, reverse],
     ]) {
-      const result = usagePriceTableChanges(environment, edits);
+      const result = usagePriceTableChanges(environment, edits, gt);
       expect(result.errors.size).toBe(0);
       expect(result.changes).toEqual(
         edits.map(({ model, alias }) => ({ model, alias: alias || null })),

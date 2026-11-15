@@ -28,16 +28,17 @@ import { SettingsScreen } from "./components/SettingsScreen";
 import { planAutoSettleSettingsSync, type AutoSettleSettings } from "./autoSettleSettingsSync";
 import { useSettingsEnvironmentFilter } from "./settings-environment-filter";
 import {
-  managedSettingReason,
+  managedSettingOrganization,
   resolveMobileSettingsTargets,
   uniformMobileSetting,
 } from "./settings-scoped-server";
 
 export function SettingsLabsRouteScreen() {
+  const gt = useGT();
   const insets = useSafeAreaInsets();
 
   return (
-    <SettingsScreen title="Labs">
+    <SettingsScreen title={gt("Labs")}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
@@ -46,18 +47,22 @@ export function SettingsLabsRouteScreen() {
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 18) + 18 }}
       >
         <MachineBetaSection
-          title="Linked environments"
+          title={gt("Linked environments")}
           icon="link"
           capability="peerLinks"
           setting="linkedEnvironmentsEnabled"
-          description="Let agents on a machine work on your other machines, and theirs on it. Turn it on for each machine. While off, nothing new starts over a link; running tasks finish."
+          description={gt(
+            "Let agents on a machine work on your other machines, and theirs on it. Turn it on for each machine. While off, nothing new starts over a link; running tasks finish.",
+          )}
         />
         <MachineBetaSection
-          title="Fast worktree checkout"
+          title={gt("Fast worktree checkout")}
           icon="bolt.circle"
           capability="fastWorktreeCheckout"
           setting="fastWorktreeCheckout"
-          description="On a Mac, clone new worktrees from a checkout cached in the T3 home folder instead of writing every file. Uses Git’s normal checkout when it can’t. Turning it off deletes the cache."
+          description={gt(
+            "On a Mac, clone new worktrees from a checkout cached in the T3 home folder instead of writing every file. Uses Git’s normal checkout when it can’t. Turning it off deletes the cache.",
+          )}
         />
       </ScrollView>
     </SettingsScreen>
@@ -123,7 +128,7 @@ export function AutoSettleSettingsRows(props: {
 
   const disabled = !canWriteSettings || props.pending;
   const disabledFor = (...keys: string[]) =>
-    disabled || managedSettingReason(displayTargets, ...keys) !== undefined;
+    disabled || managedSettingOrganization(displayTargets, ...keys) !== undefined;
   const afterDays = referenceSettings.sidebarAutoSettleAfterDays;
 
   return (
@@ -265,6 +270,7 @@ function MachineBetaSection({
   readonly setting: MachineBetaSetting;
   readonly description: string;
 }) {
+  const gt = useGT();
   const { environments } = useEnvironments();
   const supported = environments.filter(
     (environment) =>
@@ -279,7 +285,7 @@ function MachineBetaSection({
   if (supported.length === 0) return null;
   return (
     <View className="gap-3">
-      <SettingsSection title={`Beta: ${title}`}>
+      <SettingsSection title={gt("Beta: {title}", { title })}>
         {supported.map((environment) => {
           const policy = environment.serverConfig?.managedPolicy;
           const managed = isManagedSettingPath(policy, setting);
@@ -288,7 +294,13 @@ function MachineBetaSection({
               key={environment.environmentId}
               icon={icon}
               label={environment.label}
-              {...(managed ? { subtitle: `Managed by ${policy?.organization}.` } : {})}
+              {...(managed
+                ? {
+                    subtitle: gt("Managed by {organization}.", {
+                      organization: policy?.organization ?? "",
+                    }),
+                  }
+                : {})}
               value={environment.serverConfig?.settings[setting] === true}
               disabled={managed || !writable.has(environment.environmentId)}
               onValueChange={(value) =>

@@ -9,6 +9,7 @@ import {
   threadPullRequestKeyOf,
   type PullRequestListLine,
 } from "@t3tools/client-runtime/thread-pull-requests";
+import { useGT } from "gt-react-native";
 import { memo, useMemo } from "react";
 import { Pressable, useWindowDimensions, View } from "react-native";
 
@@ -22,7 +23,10 @@ import type { EnvironmentRuntimeState } from "../../state/remote-runtime-types";
 import { useScaledTextRole } from "../settings/appearance/useScaledTextRole";
 import { PullRequestGlyph } from "../pull-requests/pullRequestGlyphs";
 import type { LinkedPullRequestActions } from "./useLinkedPullRequestActions";
-import { pullRequestListReviewStatus } from "../pull-requests/pullRequestList";
+import {
+  pullRequestListReviewStatus,
+  pullRequestListReviewStatusLabel,
+} from "../pull-requests/pullRequestList";
 import {
   PullRequestAvatar,
   PullRequestConflictBadge,
@@ -31,7 +35,9 @@ import {
 import {
   pullRequestChecksStatus,
   pullRequestConflict,
+  pullRequestConflictLabel,
   pullRequestStatus,
+  pullRequestStatusLabel,
 } from "../pull-requests/pullRequestStatus";
 
 export function useLinkedPullRequestLines(
@@ -63,6 +69,7 @@ export const LinkedPullRequestRow = memo(function LinkedPullRequestRow(props: {
   readonly openPullRequest: (url: string) => Promise<boolean>;
   readonly actions: LinkedPullRequestActions | null;
 }) {
+  const gt = useGT();
   const { link, depth, stack } = props.line;
   const snapshot = link.snapshot;
   const status = snapshot === null ? null : pullRequestStatus(snapshot);
@@ -77,6 +84,14 @@ export const LinkedPullRequestRow = memo(function LinkedPullRequestRow(props: {
           viewerReviewRequested: false,
         })
       : null;
+  const checksLabel =
+    checks === null
+      ? null
+      : snapshot?.checksState === "passing"
+        ? gt("Checks passing")
+        : snapshot?.checksState === "failing"
+          ? gt("Checks failing")
+          : gt("Checks pending");
   const watching = open && link.watch !== undefined;
   const additions = snapshot?.additions ?? 0;
   const deletions = snapshot?.deletions ?? 0;
@@ -87,12 +102,27 @@ export const LinkedPullRequestRow = memo(function LinkedPullRequestRow(props: {
   const row = (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${capitalizeTerm(singular)} ${link.number}, ${snapshot?.title ?? "waiting for host state"}${status ? `, ${status.label}` : ""}${conflict ? `, ${conflict.label.toLowerCase()}` : ""}, ${link.repository}${stack ? `, stack of ${stack.size}` : ""}${watching ? ", watching" : ""}${checks ? `, checks ${snapshot?.checksState}` : ""}${review ? `, ${review.accessibleLabel}` : ""}`}
-      accessibilityHint={props.actions ? "Touch and hold for actions." : undefined}
+      accessibilityLabel={[
+        `${capitalizeTerm(singular)} ${link.number}`,
+        snapshot?.title ?? gt("waiting for host state"),
+        snapshot === null ? undefined : pullRequestStatusLabel(snapshot, gt),
+        snapshot === null ? undefined : pullRequestConflictLabel(snapshot, gt)?.toLowerCase(),
+        link.repository,
+        stack ? gt("stack of {count}", { count: stack.size }) : undefined,
+        watching ? gt("watching") : undefined,
+        checksLabel?.toLowerCase(),
+        review ? pullRequestListReviewStatusLabel(review.kind, gt) : undefined,
+      ]
+        .filter((part) => part !== undefined)
+        .join(", ")}
+      accessibilityHint={props.actions ? gt("Touch and hold for actions.") : undefined}
       onPress={() => {
         void props.openPullRequest(link.url).then((opened) => {
           if (!opened)
-            Dialog.alert(`Unable to open ${shortLabel}`, `The ${singular} could not be opened.`);
+            Dialog.alert(
+              gt("Unable to open {name}", { name: shortLabel }),
+              gt("The {name} could not be opened.", { name: singular }),
+            );
         });
       }}
       style={{ paddingLeft: 16 + Math.min(depth, 3) * 16 }}
@@ -161,7 +191,7 @@ export const LinkedPullRequestRow = memo(function LinkedPullRequestRow(props: {
           numberOfLines={2}
           ellipsizeMode="tail"
         >
-          {snapshot?.title ?? "Waiting for host state"}
+          {snapshot?.title ?? gt("Waiting for host state")}
         </Text>
       </View>
     </Pressable>

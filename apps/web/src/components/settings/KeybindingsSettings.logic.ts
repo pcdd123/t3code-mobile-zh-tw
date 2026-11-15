@@ -12,10 +12,13 @@ import {
   parseKeybindingWhenExpression,
   US_SHIFTED_TO_UNSHIFTED_KEYS,
 } from "@t3tools/shared/keybindings";
+import type { useGT } from "gt-react";
 
 import { shortcutConflictKey, shortcutKeyFromEvent } from "../../keybindings";
 import { isMacPlatform } from "../../lib/utils";
 import { METRIC_OPTIONS, WINDOW_OPTIONS } from "../usage/usageShortcuts";
+
+type Translate = ReturnType<typeof useGT>;
 
 // Rank every usage command; mixing rank and alphabetical comparisons makes order input-dependent.
 const usageCommandOrder = new Map<KeybindingCommand, number>(
@@ -103,12 +106,16 @@ export function whenAstToExpression(node: KeybindingWhenNode | undefined): strin
   }
 }
 
-export function whenNodeRemoveLabel(node: KeybindingWhenNode, depth: number): string {
-  if (depth === 0) return "Clear all conditions";
+export function whenNodeRemoveLabel(
+  node: KeybindingWhenNode,
+  depth: number,
+  gt: Translate,
+): string {
+  if (depth === 0) return gt("Clear all conditions");
   if (node.type === "identifier" || (node.type === "not" && node.node.type === "identifier")) {
-    return "Remove condition";
+    return gt("Remove condition");
   }
-  return "Remove group and its conditions";
+  return gt("Remove group and its conditions");
 }
 
 function wrapWhenExpression(node: KeybindingWhenNode): string {
@@ -181,9 +188,15 @@ function conflictsWithWhen(leftWhen: string, rightWhen: string): boolean {
 
 export function keybindingConflictLabels(
   rows: ReadonlyArray<KeybindingRow>,
-  input: { readonly rowId: string; readonly key: string; readonly when: string },
+  input: {
+    readonly rowId: string;
+    readonly key: string;
+    readonly when: string;
+    readonly labelFor?: (command: KeybindingCommand) => string;
+  },
   platform = navigator.platform,
 ): ReadonlyArray<string> {
+  const labelFor = input.labelFor ?? commandLabel;
   if (input.key.trim().length === 0) return [];
   const shortcut = parseKeybindingShortcut(input.key);
   if (!shortcut) return [];
@@ -196,7 +209,7 @@ export function keybindingConflictLabels(
       shortcutConflictKey(candidate.binding.shortcut, platform) === conflictKey &&
       conflictsWithWhen(candidate.when, input.when)
     ) {
-      conflicts.push(commandLabel(candidate.command));
+      conflicts.push(labelFor(candidate.command));
     }
   }
   return [...new Set(conflicts)].toSorted();
@@ -222,6 +235,29 @@ const KEYBINDING_GROUPS = [
   { id: "scripts", title: "Project scripts", prefixes: ["script"] },
 ] as const;
 const OTHER_KEYBINDING_GROUP = { id: "other", title: "Other" } as const;
+
+export function localizedKeybindingGroupTitle(group: KeybindingGroup, gt: Translate): string {
+  switch (group.id) {
+    case "navigation":
+      return gt("Navigation");
+    case "threads":
+      return gt("Threads");
+    case "composer":
+      return gt("Composer");
+    case "terminal":
+      return gt("Terminal");
+    case "preview":
+      return gt("Preview & diff");
+    case "appearance":
+      return gt("Appearance");
+    case "scripts":
+      return gt("Project scripts");
+    case "other":
+      return gt("Other");
+    default:
+      return group.title;
+  }
+}
 
 function keybindingGroupFor(command: KeybindingCommand): { id: string; title: string } {
   const prefix = String(command).split(".")[0] ?? "";
@@ -298,6 +334,7 @@ export function buildKeybindingRows(
 export function filterKeybindingRows(
   rows: ReadonlyArray<KeybindingRow>,
   query: string,
+  labelFor?: (command: KeybindingCommand) => string,
 ): ReadonlyArray<KeybindingRow> {
   const normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.length === 0) return rows;
@@ -305,6 +342,7 @@ export function filterKeybindingRows(
     return (
       row.command.toLowerCase().includes(normalizedQuery) ||
       commandLabel(row.command).toLowerCase().includes(normalizedQuery) ||
+      (labelFor?.(row.command).toLowerCase().includes(normalizedQuery) ?? false) ||
       row.key.toLowerCase().includes(normalizedQuery) ||
       row.when.toLowerCase().includes(normalizedQuery) ||
       row.source.toLowerCase().includes(normalizedQuery)
@@ -390,6 +428,166 @@ export function commandLabel(command: KeybindingCommand): string {
     return `Run Script: ${titleCaseCommandSegment(raw.slice("script.".length, -".run".length))}`;
   }
   return raw.split(".").map(titleCaseCommandSegment).join(": ");
+}
+
+/** The label shown to the viewer; `commandLabel` stays English for sorting, ids and search. */
+export function localizedCommandLabel(command: KeybindingCommand, gt: Translate): string {
+  const raw = String(command);
+  const threadJump = /^thread\.jump\.(\d)$/.exec(raw);
+  if (threadJump) return gt("Thread: Jump: {number}", { number: threadJump[1] });
+  const modelPickerJump = /^modelPicker\.jump\.(\d)$/.exec(raw);
+  if (modelPickerJump) return gt("Model Picker: Jump: {number}", { number: modelPickerJump[1] });
+  if (raw.startsWith("script.") && raw.endsWith(".run")) {
+    return gt("Run Script: {name}", {
+      name: titleCaseCommandSegment(raw.slice("script.".length, -".run".length)),
+    });
+  }
+  switch (raw) {
+    case "workspace.focusNext":
+      return gt("Focus Next Workspace Area");
+    case "workspace.focusPrevious":
+      return gt("Focus Previous Workspace Area");
+    case "sidebar.toggle":
+      return gt("Sidebar: Toggle");
+    case "navigation.back":
+      return gt("Navigation: Back");
+    case "navigation.forward":
+      return gt("Navigation: Forward");
+    case "terminal.toggle":
+      return gt("Terminal: Toggle");
+    case "terminal.split":
+      return gt("Terminal: Split");
+    case "terminal.splitVertical":
+      return gt("Terminal: Split Vertical");
+    case "terminal.new":
+      return gt("Terminal: New");
+    case "terminal.close":
+      return gt("Terminal: Close");
+    case "rightPanel.toggle":
+      return gt("Right Panel: Toggle");
+    case "rightPanel.new":
+      return gt("Right Panel: New");
+    case "threadPanel.toggle":
+      return gt("Thread Panel: Toggle");
+    case "rightPanel.toggleMaximized":
+      return gt("Right Panel: Toggle Maximized");
+    case "rightPanel.close":
+      return gt("Right Panel: Close");
+    case "view.reopenClosed":
+      return gt("Reopen Closed Tab");
+    case "pullRequest.copyNumber":
+      return gt("Pull Request: Copy Number");
+    case "diff.toggle":
+      return gt("Diff: Toggle");
+    case "preview.toggle":
+      return gt("Preview: Toggle");
+    case "preview.refresh":
+      return gt("Preview: Refresh");
+    case "preview.focusUrl":
+      return gt("Preview: Focus URL");
+    case "preview.zoomIn":
+      return gt("Preview: Zoom In");
+    case "preview.zoomOut":
+      return gt("Preview: Zoom Out");
+    case "preview.resetZoom":
+      return gt("Preview: Reset Zoom");
+    case "preview.find":
+      return gt("Preview: Find on Page");
+    case "commandPalette.toggle":
+      return gt("Command Palette: Toggle");
+    case "filePicker.toggle":
+      return gt("File Picker: Toggle");
+    case "projectSearch.toggle":
+      return gt("Project Search: Toggle");
+    case "usage.open":
+      return gt("Usage: Open");
+    case "theme.select":
+      return gt("Theme: Select");
+    case "appearance.cycle":
+      return gt("Appearance: Cycle");
+    case "themeEditor.toggle":
+      return gt("Theme Editor: Toggle");
+    case "composer.stash":
+      return gt("Composer: Stash");
+    case "composer.sendAlternate":
+      return gt("Composer: Opposite Queue or Steer Action");
+    case "composer.sendBackground":
+      return gt("Composer: Start in Background");
+    case "composer.sendAndNewThread":
+      return gt("Composer: Send and Start New Thread");
+    case "composer.dictation":
+      return gt("Composer: Start or Finish Dictation");
+    case "composer.host":
+      return gt("Composer: Host");
+    case "composer.cycleHost":
+      return gt("Composer: Cycle Host");
+    case "composer.effort":
+      return gt("Composer: Effort");
+    case "composer.increaseEffort":
+      return gt("Composer: Increase Effort");
+    case "composer.decreaseEffort":
+      return gt("Composer: Decrease Effort");
+    case "composer.mode":
+      return gt("Composer: Mode");
+    case "composer.workspace":
+      return gt("Composer: Workspace");
+    case "composer.previousWorktree":
+      return gt("Composer: Previous Worktree");
+    case "composer.branch":
+      return gt("Composer: Branch");
+    case "chat.new":
+      return gt("Chat: New");
+    case "chat.newLocal":
+      return gt("Chat: New Local");
+    case "chat.newWithoutProject":
+      return gt("Chat: New Without Project");
+    case "chat.find":
+      return gt("Chat: Find");
+    case "editor.openFavorite":
+      return gt("Editor: Open Favorite");
+    case "usage.cost":
+      return gt("Usage: Cost");
+    case "usage.tokens":
+      return gt("Usage: Tokens");
+    case "usage.limits":
+      return gt("Usage: Limits");
+    case "usage.period.day":
+      return gt("Usage: Period: Past 24h");
+    case "usage.period.week":
+      return gt("Usage: Period: 7 days");
+    case "usage.period.month":
+      return gt("Usage: Period: 30 days");
+    case "usage.period.quarter":
+      return gt("Usage: Period: 90 days");
+    case "modelPicker.toggle":
+      return gt("Model Picker: Toggle");
+    case "modelPicker.previousProvider":
+      return gt("Model Picker: Previous Provider");
+    case "modelPicker.nextProvider":
+      return gt("Model Picker: Next Provider");
+    case "thread.stop":
+      return gt("Thread: Stop");
+    case "thread.steerQueuedMessage":
+      return gt("Queue: Send First Queued Message");
+    case "thread.editQueuedMessage":
+      return gt("Queue: Edit Last Queued Message");
+    case "thread.previous":
+      return gt("Thread: Previous");
+    case "thread.next":
+      return gt("Thread: Next");
+    case "thread.copyReference":
+      return gt("Pull Request: Copy Link or Thread");
+    case "thread.settle":
+      return gt("Thread: Settle");
+    case "thread.pin":
+      return gt("Thread: Pin");
+    case "thread.regenerateTitle":
+      return gt("Thread: Regenerate Title");
+    case "thread.undo":
+      return gt("Thread: Undo");
+    default:
+      return commandLabel(command);
+  }
 }
 
 function titleCaseCommandSegment(segment: string): string {

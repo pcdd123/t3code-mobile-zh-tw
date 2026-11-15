@@ -23,7 +23,9 @@ describe("file preview read errors", () => {
       _tag: "ProjectReadFileError",
       message: "Legacy file read failure.",
     });
-    expect(filePreviewReadErrorMessage(error)).toBe("Legacy file read failure.");
+    expect(filePreviewReadErrorMessage(error, (message) => message)).toBe(
+      "Legacy file read failure.",
+    );
   });
 });
 

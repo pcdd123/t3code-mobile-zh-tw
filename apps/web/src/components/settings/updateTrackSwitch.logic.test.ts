@@ -7,6 +7,9 @@ import {
   prepareLocalTrackSwitch,
 } from "./updateTrackSwitch.logic";
 
+const gt = (message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? ""));
+
 const STABLE = "0.1.3";
 
 /** Like the desktop app, saving a track re-checks the feed and reports what it offers. */
@@ -48,7 +51,7 @@ function fakeBridge(offer: string | null | Error) {
 }
 
 const prepare = (bridge: ReturnType<typeof fakeBridge>["bridge"], reinstall = true) =>
-  prepareLocalTrackSwitch(bridge, { channel: "latest", version: STABLE, reinstall });
+  prepareLocalTrackSwitch(bridge, { channel: "latest", version: STABLE, reinstall }, gt);
 
 describe("prepareLocalTrackSwitch", () => {
   it("installs the checked release or a newer one on the track, never an older one", async () => {
@@ -94,7 +97,7 @@ describe("nothingToMove", () => {
   };
 
   it("disables a switch that would neither move a machine nor save a track", () => {
-    expect(nothingToMove(stableSwitch)).toEqual({
+    expect(nothingToMove(stableSwitch, gt)).toEqual({
       note: null,
       disabledReason: "No machine can switch to Stable now.",
     });
@@ -102,28 +105,28 @@ describe("nothingToMove", () => {
 
   it("says a switch only saves the track when no machine moves", () => {
     const onlySaves = { note: "No machine can switch to Stable now. This only saves the track." };
-    expect(nothingToMove({ ...stableSwitch, savedChannel: "nightly" })).toEqual({
+    expect(nothingToMove({ ...stableSwitch, savedChannel: "nightly" }, gt)).toEqual({
       ...onlySaves,
       disabledReason: null,
     });
     // Before the desktop reports its saved track, confirming may still need to save it.
-    expect(nothingToMove({ ...stableSwitch, savedChannel: null })).toEqual({
+    expect(nothingToMove({ ...stableSwitch, savedChannel: null }, gt)).toEqual({
       ...onlySaves,
       disabledReason: null,
     });
     // A desktop host already on the track still gets its saved track changed.
-    expect(nothingToMove({ ...stableSwitch, hasTargets: true })).toEqual({
+    expect(nothingToMove({ ...stableSwitch, hasTargets: true }, gt)).toEqual({
       ...onlySaves,
       disabledReason: null,
     });
     // With its updater off, this app stays on the other track.
     expect(
-      nothingToMove({ ...stableSwitch, rows: [], crossesLocal: true, savedChannel: "nightly" }),
+      nothingToMove({ ...stableSwitch, rows: [], crossesLocal: true, savedChannel: "nightly" }, gt),
     ).toEqual({
       ...onlySaves,
       disabledReason: null,
     });
-    expect(nothingToMove({ ...stableSwitch, rows: [], savedChannel: "nightly" })).toEqual({
+    expect(nothingToMove({ ...stableSwitch, rows: [], savedChannel: "nightly" }, gt)).toEqual({
       note: "Every connected machine is already on Stable. This only saves the track.",
       disabledReason: null,
     });
@@ -131,12 +134,12 @@ describe("nothingToMove", () => {
 
   it("stays out of a switch that moves a machine", () => {
     const none = { note: null, disabledReason: null };
-    expect(nothingToMove({ ...stableSwitch, switchesLocal: true, crossesLocal: true })).toEqual(
+    expect(nothingToMove({ ...stableSwitch, switchesLocal: true, crossesLocal: true }, gt)).toEqual(
       none,
     );
-    expect(nothingToMove({ ...stableSwitch, rows: [skippedRemote, { skipped: null }] })).toEqual(
-      none,
-    );
+    expect(
+      nothingToMove({ ...stableSwitch, rows: [skippedRemote, { skipped: null }] }, gt),
+    ).toEqual(none);
   });
 });
 

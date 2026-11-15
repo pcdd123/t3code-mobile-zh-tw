@@ -502,7 +502,7 @@ export const ThreadListV2PendingRow = memo(function ThreadListV2PendingRow(props
                   : "text-adaptive-amber-700-300",
               )}
             >
-              Draft
+              {gt("Draft")}
             </Text>
           </View>
         ) : null}
@@ -517,7 +517,7 @@ export const ThreadListV2PendingRow = memo(function ThreadListV2PendingRow(props
                 : rowAppearance.tertiaryForegroundClassName,
             )}
           >
-            Sends on reconnect
+            {gt("Sends on reconnect")}
           </Text>
         </View>
       ) : null}
@@ -1026,6 +1026,8 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
     ];
     if (snoozedRow) {
       return layoutThreadListV2RowMenuActions({
+        moreLabel: gt("More"),
+        arrangeLabel: gt("Arrange"),
         nested,
         direct: [...direct, SNOOZED_MENU_ACTIONS[0]!],
         reorder: [],
@@ -1040,6 +1042,8 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
     }
     if (!props.settlementSupported) {
       return layoutThreadListV2RowMenuActions({
+        moreLabel: gt("More"),
+        arrangeLabel: gt("Arrange"),
         nested,
         direct: [...direct, LEGACY_MENU_ACTIONS[0]!],
         reorder: reorderMenuItems,
@@ -1049,6 +1053,8 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
     }
     if (canUnsettle) {
       return layoutThreadListV2RowMenuActions({
+        moreLabel: gt("More"),
+        arrangeLabel: gt("Arrange"),
         nested,
         direct: [...direct, SLIM_MENU_ACTIONS[0]!],
         reorder: reorderMenuItems.filter(
@@ -1064,6 +1070,8 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
       });
     }
     return layoutThreadListV2RowMenuActions({
+      moreLabel: gt("More"),
+      arrangeLabel: gt("Arrange"),
       nested,
       direct: [
         ...direct,
@@ -1114,14 +1122,15 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
       if (nativeEvent.event === "archive") handleArchive();
       if (nativeEvent.event === "rename") handleRename();
       if (nativeEvent.event === "regenerate-title") handleRegenerateTitle();
-      if (nativeEvent.event === "turn-into-project") void turnThreadIntoProject(thread);
+      if (nativeEvent.event === "turn-into-project") void turnThreadIntoProject(thread, gt);
       if (nativeEvent.event === "copy-thread") {
         const target = threadChipCopyTarget(
           { environmentId: thread.environmentId, threadId: thread.id },
           thread.title,
         );
         void copyThreadReference(target).then((didCopy) => {
-          if (!didCopy) Dialog.alert(target.failureTitle, "Try copying this thread again.");
+          if (!didCopy)
+            Dialog.alert(gt("Failed to copy thread"), gt("Try copying this thread again."));
         });
       }
       if (nativeEvent.event === "copy-thread-id") {
@@ -1142,8 +1151,8 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
         handleSnooze(snoozeSelection.preset.snoozedUntil);
       } else if (snoozeSelection._tag === "expired") {
         Dialog.alert(
-          "Could not snooze thread",
-          "That snooze time has passed. Choose another time.",
+          gt("Could not snooze thread"),
+          gt("That snooze time has passed. Choose another time."),
         );
       }
     },
@@ -1166,6 +1175,7 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
       setCustomSnoozeOpen,
       snoozePresets,
       props.snoozePresets,
+      gt,
     ],
   );
   const primaryAction = useMemo(() => {

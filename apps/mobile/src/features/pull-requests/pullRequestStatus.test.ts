@@ -6,6 +6,9 @@ import {
   pullRequestReviewSummary,
 } from "./pullRequestStatus";
 
+const gt = (message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? ""));
+
 const author = { login: "julius", name: null, avatarUrl: null };
 function review(state: string, at: string): PullRequestComment {
   return {
@@ -36,6 +39,7 @@ describe("mobile overview review status", () => {
         review("CHANGES_REQUESTED", "2026-10-10T10:00:00Z"),
         review("APPROVED", "2026-10-10T09:00:00Z"),
       ]),
+      gt,
     );
     expect(result.title).toBe("Changes requested");
     expect(result.reviews).toHaveLength(1);
@@ -47,6 +51,7 @@ describe("mobile overview review status", () => {
       pullRequestReviewSummary(
         { reviewers: [] },
         activity([approved, review("DISMISSED", "2026-10-10T10:00:00Z")]),
+        gt,
       ).reviews,
     ).toEqual([]);
     const result = pullRequestReviewSummary(
@@ -57,6 +62,7 @@ describe("mobile overview review status", () => {
           { oid: "abc123", messageHeadline: "Update", committedDate: "2026-10-10T10:00:00Z" },
         ],
       },
+      gt,
     );
     expect(result.title).toBe("Awaiting review");
   });
@@ -68,6 +74,7 @@ describe("mobile overview review status", () => {
         review("approved", "2026-10-10T09:00:00Z"),
         review("COMMENTED", "2026-10-10T10:00:00Z"),
       ]),
+      gt,
     );
     expect(result.title).toBe("Approved by julius");
     expect(result.reviews).toHaveLength(1);
@@ -75,6 +82,7 @@ describe("mobile overview review status", () => {
       pullRequestReviewSummary(
         { reviewers: [] },
         activity([review("changes-requested", "2026-10-10T11:00:00Z")]),
+        gt,
       ).title,
     ).toBe("Changes requested");
   });
@@ -95,10 +103,13 @@ describe("mobile review state spelling", () => {
 describe("mobile overview check status", () => {
   it("prioritizes failed checks while others are running", () => {
     expect(
-      pullRequestChecksSummary({ checks: [check("success"), check("pending"), check("failure")] }),
+      pullRequestChecksSummary(
+        { checks: [check("success"), check("pending"), check("failure")] },
+        gt,
+      ),
     ).toMatchObject({ title: "1 check failing", count: "1 of 3" });
     expect(
-      pullRequestChecksSummary({ checks: [check("success"), check("cancelled")] }),
+      pullRequestChecksSummary({ checks: [check("success"), check("cancelled")] }, gt),
     ).toMatchObject({ title: "1 check failing", tint: "accent-danger-foreground" });
   });
 });

@@ -3,6 +3,7 @@ import {
   type EasDeviceHostConfig as EasDeviceHostConfigType,
 } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
+import type { useGT } from "gt-react";
 
 export const parseEasDeviceHostDraft = Schema.decodeUnknownOption(EasDeviceHostConfig);
 
@@ -35,8 +36,15 @@ export function updateEasDeviceHosts(
     : [...hosts, next];
 }
 
-export function easSessionLimits(host: EasDeviceHostConfigType) {
-  const sessions =
-    host.maxConcurrentSessions === 1 ? "1 session" : `${host.maxConcurrentSessions} sessions`;
-  return `Up to ${sessions} at once, each stopped after ${host.maxSessionMinutes} min or ${host.idleMinutes} idle min`;
+export function easSessionLimits(host: EasDeviceHostConfigType, gt: ReturnType<typeof useGT>) {
+  const values = { minutes: host.maxSessionMinutes, idleMinutes: host.idleMinutes };
+  return host.maxConcurrentSessions === 1
+    ? gt(
+        "Up to 1 session at once, each stopped after {minutes} min or {idleMinutes} idle min",
+        values,
+      )
+    : gt(
+        "Up to {count} sessions at once, each stopped after {minutes} min or {idleMinutes} idle min",
+        { ...values, count: host.maxConcurrentSessions },
+      );
 }

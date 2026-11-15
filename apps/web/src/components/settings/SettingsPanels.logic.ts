@@ -21,6 +21,7 @@ import {
 } from "@t3tools/shared/backgroundActivitySettings";
 import * as Duration from "effect/Duration";
 import * as Equal from "effect/Equal";
+import type { useGT } from "gt-react";
 
 export function isProjectGroupingEnabled(mode: SidebarProjectGroupingMode): boolean {
   return mode !== "separate";
@@ -170,6 +171,42 @@ export function getChangedBrowserSettingLabels(settings: BrowserDefaultSettings)
       ? ["Open pull requests in T3 Code"]
       : []),
   ];
+}
+
+/** Translates a label from `getChanged*SettingLabels`, whose English values tests assert. */
+export function localizeChangedSettingLabel(label: string, gt: ReturnType<typeof useGT>): string {
+  switch (label) {
+    case "Interface font":
+      return gt("Interface font");
+    case "Prompt font":
+      return gt("Prompt font");
+    case "Code font":
+      return gt("Code font");
+    case "Terminal font":
+      return gt("Terminal font");
+    case "Browser viewport":
+      return gt("Browser viewport");
+    case "Browser zoom":
+      return gt("Browser zoom");
+    case "Browser appearance":
+      return gt("Browser appearance");
+    case "Recording frame rate":
+      return gt("Recording frame rate");
+    case "Recording key presses":
+      return gt("Recording key presses");
+    case "Recording mouse presses":
+      return gt("Recording mouse presses");
+    case "Open links in":
+      return gt("Open links in");
+    case "Search engine":
+      return gt("Search engine");
+    case "Floating preview":
+      return gt("Floating preview");
+    case "Open pull requests in T3 Code":
+      return gt("Open pull requests in T3 Code");
+    default:
+      return label;
+  }
 }
 
 export function resolveBackgroundActivityProfileOption(

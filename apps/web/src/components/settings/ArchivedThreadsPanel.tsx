@@ -20,16 +20,22 @@ import { SettingsPageContainer, SettingsRow, SettingsSection } from "./settingsL
 import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 
+import { useGT } from "gt-react";
 import { useRef, useState } from "react";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 
 const ARCHIVE_ACTIONS = [
-  { action: "unarchive", label: "Unarchive", Icon: ArchiveX },
-  { action: "delete", label: "Delete", Icon: Trash2Icon },
+  { action: "unarchive", Icon: ArchiveX },
+  { action: "delete", Icon: Trash2Icon },
 ] as const;
 type ArchiveAction = (typeof ARCHIVE_ACTIONS)[number]["action"];
 
+function archiveActionLabel(action: ArchiveAction, gt: ReturnType<typeof useGT>): string {
+  return action === "unarchive" ? gt("Unarchive") : gt("Delete");
+}
+
 export function ArchivedThreadsPanel() {
+  const gt = useGT();
   const { scope, groups: projectGroups, environments } = useSettingsScope();
   const { unarchiveThread, confirmAndDeleteThread } = useThreadActions();
   const pendingActionsRef = useRef(new Set<string>());
@@ -142,7 +148,7 @@ export function ArchivedThreadsPanel() {
       stackedThreadToast({
         type: "error",
         title,
-        description: error instanceof Error ? error.message : "An error occurred.",
+        description: error instanceof Error ? error.message : gt("An error occurred."),
       }),
     );
   };
@@ -165,7 +171,10 @@ export function ArchivedThreadsPanel() {
       pending.delete(key);
       setPendingKeys(new Set(pending));
     });
-    reportFailure(result._tag === "Failure" ? result : result.value, `Failed to ${action} thread`);
+    reportFailure(
+      result._tag === "Failure" ? result : result.value,
+      action === "unarchive" ? gt("Failed to unarchive thread") : gt("Failed to delete thread"),
+    );
   };
 
   const handleContextMenu = async (thread: ArchivedThread, position: { x: number; y: number }) => {
@@ -173,9 +182,9 @@ export function ArchivedThreadsPanel() {
     if (pending.has(scopedThreadKey(scopeThreadRef(thread.environmentId, thread.id)))) return;
     const result = await settlePromise(async () => {
       const clicked = await readLocalApi()?.contextMenu.show(
-        ARCHIVE_ACTIONS.map(({ action, label }) => ({
+        ARCHIVE_ACTIONS.map(({ action }) => ({
           id: action,
-          label,
+          label: archiveActionLabel(action, gt),
           destructive: action === "delete",
         })),
         position,
@@ -183,7 +192,7 @@ export function ArchivedThreadsPanel() {
       if (clicked === "unarchive" || clicked === "delete")
         await handleThreadAction(clicked, thread);
     });
-    reportFailure(result, "Archived thread action failed");
+    reportFailure(result, gt("Archived thread action failed"));
   };
 
   return (
@@ -202,16 +211,16 @@ export function ArchivedThreadsPanel() {
                   <ArchiveIcon className="size-3.5 text-muted-foreground" />
                 )}
                 {isLoadingArchive
-                  ? "Loading archived threads"
+                  ? gt("Loading archived threads")
                   : archiveError
-                    ? "Could not load archived threads"
-                    : "No archived threads"}
+                    ? gt("Could not load archived threads")
+                    : gt("No archived threads")}
               </span>
             }
             description={
               isLoadingArchive
-                ? "Checking connected environments."
-                : (archiveError ?? "Archived threads will appear here.")
+                ? gt("Checking connected environments.")
+                : (archiveError ?? gt("Archived threads will appear here."))
             }
           />
         </SettingsSection>
@@ -236,14 +245,15 @@ export function ArchivedThreadsPanel() {
                   description={
                     <span className={hasMultipleEnvironments ? "block truncate" : undefined}>
                       {hasMultipleEnvironments ? `${thread.environmentLabel} · ` : null}
-                      Archived <RelativeTime timestamp={thread.archivedAt ?? thread.createdAt} />
-                      {" \u00b7 Created "}
-                      <RelativeTime timestamp={thread.createdAt} />
+                      {gt("Archived")}{" "}
+                      <RelativeTime timestamp={thread.archivedAt ?? thread.createdAt} />
+                      {" \u00b7 "}
+                      {gt("Created")} <RelativeTime timestamp={thread.createdAt} />
                     </span>
                   }
                   control={
                     <div className="flex shrink-0 items-center gap-2">
-                      {ARCHIVE_ACTIONS.map(({ action, label, Icon }) => (
+                      {ARCHIVE_ACTIONS.map(({ action, Icon }) => (
                         <Tooltip key={action}>
                           <TooltipTrigger
                             render={
@@ -251,7 +261,11 @@ export function ArchivedThreadsPanel() {
                                 type="button"
                                 variant={action === "delete" ? "destructive-outline" : "outline"}
                                 size="icon-sm"
-                                aria-label={`${label} ${thread.title}`}
+                                aria-label={
+                                  action === "unarchive"
+                                    ? gt("Unarchive {title}", { title: thread.title })
+                                    : gt("Delete {title}", { title: thread.title })
+                                }
                                 disabled={pendingKeys.has(threadKey)}
                                 onClick={() => void handleThreadAction(action, thread)}
                               />
@@ -259,7 +273,7 @@ export function ArchivedThreadsPanel() {
                           >
                             <Icon className="size-3.5" />
                           </TooltipTrigger>
-                          <TooltipPopup>{label}</TooltipPopup>
+                          <TooltipPopup>{archiveActionLabel(action, gt)}</TooltipPopup>
                         </Tooltip>
                       ))}
                     </div>

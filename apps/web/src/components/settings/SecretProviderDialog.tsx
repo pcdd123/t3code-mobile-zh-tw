@@ -1,5 +1,6 @@
 import type { EnvironmentId, SecretProviderConfig, SecretProviderId } from "@t3tools/contracts";
 import * as Result from "effect/Result";
+import { useGT } from "gt-react";
 import { useState } from "react";
 
 import { useUpdateEnvironmentSettings } from "../../hooks/useSettings";
@@ -21,6 +22,21 @@ import {
   type SecretProviderDraft,
 } from "./SecretProviderDialog.logic";
 
+function draftIssueLabel(gt: ReturnType<typeof useGT>, issue: string | undefined) {
+  switch (issue) {
+    case "Enter a name.":
+      return gt("Enter a name.");
+    case "Enter the 1Password account.":
+      return gt("Enter the 1Password account.");
+    case "The name needs at least one letter or digit.":
+      return gt("The name needs at least one letter or digit.");
+    case "A secret provider with this name exists.":
+      return gt("A secret provider with this name exists.");
+    default:
+      return issue;
+  }
+}
+
 /** Mounted per open, so each open starts from a fresh draft. */
 export function SecretProviderDialog({
   onClose,
@@ -35,6 +51,7 @@ export function SecretProviderDialog({
   readonly existingIds: ReadonlySet<string>;
   readonly existing?: { readonly id: SecretProviderId; readonly config: SecretProviderConfig };
 }) {
+  const gt = useGT();
   const updateSettings = useUpdateEnvironmentSettings(environmentId);
   const [draft, setDraft] = useState<SecretProviderDraft>(
     existing ? draftFromSecretProvider(existing.config) : { name: "", account: "" },
@@ -46,8 +63,8 @@ export function SecretProviderDialog({
     existing ? { mode: "edit", id: existing.id } : { mode: "add" },
   );
   const issues = Result.isFailure(result) ? result.failure : {};
-  const nameError = submitted ? issues.name : undefined;
-  const accountError = submitted ? issues.account : undefined;
+  const nameError = submitted ? draftIssueLabel(gt, issues.name) : undefined;
+  const accountError = submitted ? draftIssueLabel(gt, issues.account) : undefined;
 
   const update = (patch: Partial<SecretProviderDraft>) => setDraft({ ...draft, ...patch });
   const save = () => {
@@ -67,11 +84,15 @@ export function SecretProviderDialog({
       <DialogPopup className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {existing ? `Edit ${existing.config.label}` : "Add a 1Password provider"}
+            {existing
+              ? gt("Edit {name}", { name: existing.config.label })
+              : gt("Add a 1Password provider")}
           </DialogTitle>
           <DialogDescription>
-            Provider variables on {environmentLabel} can read values from it by name. Values are
-            read with the op CLI on that server when a provider starts.
+            {gt(
+              "Provider variables on {environment} can read values from it by name. Values are read with the op CLI on that server when a provider starts.",
+              { environment: environmentLabel },
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogPanel>
@@ -84,10 +105,10 @@ export function SecretProviderDialog({
             }}
           >
             <div className="grid gap-1.5">
-              <Label htmlFor="secret-provider-name">Name</Label>
+              <Label htmlFor="secret-provider-name">{gt("Name")}</Label>
               <Input
                 id="secret-provider-name"
-                placeholder="Personal"
+                placeholder={gt("Personal")}
                 value={draft.name}
                 onChange={(event) => update({ name: event.target.value })}
                 maxLength={64}
@@ -108,7 +129,7 @@ export function SecretProviderDialog({
               ) : null}
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="secret-provider-account">Account</Label>
+              <Label htmlFor="secret-provider-account">{gt("Account")}</Label>
               <Input
                 id="secret-provider-account"
                 placeholder="my.1password.com"
@@ -131,22 +152,23 @@ export function SecretProviderDialog({
                 </p>
               ) : null}
               <p className="text-xs text-muted-foreground">
-                The account shorthand, sign-in address without https://, or ID that op account list
-                shows.
+                {gt(
+                  "The account shorthand, sign-in address without https://, or ID that op account list shows.",
+                )}
               </p>
             </div>
           </form>
         </DialogPanel>
         <DialogFooter variant="bare">
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {gt("Cancel")}
           </Button>
           <Button
             type="submit"
             form="secret-provider-form"
             disabled={submitted && Result.isFailure(result)}
           >
-            {existing ? "Save changes" : "Add provider"}
+            {existing ? gt("Save changes") : gt("Add provider")}
           </Button>
         </DialogFooter>
       </DialogPopup>

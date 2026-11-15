@@ -189,7 +189,11 @@ function PendingSecretRequestForm(props: {
       ) : (
         <TextInput
           key={source.id}
-          accessibilityLabel={`${item.label} reference in ${source.label}`}
+          accessibilityLabel={gt("{label} reference in {source}", {
+            label: item.label,
+            source: source.label,
+          })}
+
           placeholder={source.referencePlaceholder}
           value={reference}
           onChangeText={(next) => {

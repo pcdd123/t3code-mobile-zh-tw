@@ -94,6 +94,10 @@ vi.mock("../../components/ui/NativePresentation", () => ({
 }));
 vi.mock("../../state/mediaActions", () => ({ useMediaActions: () => ({ actions: [] }) }));
 vi.mock("../../state/assets", () => ({ useAssetUrlState: vi.fn() }));
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 
 import { RegistryContext } from "@effect/atom-react";
 import { AtomRegistry } from "effect/reactivity";

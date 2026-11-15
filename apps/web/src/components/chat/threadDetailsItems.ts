@@ -1,4 +1,5 @@
 import type { ClientSettings } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
 
 // Ids are stored in client settings, so never rename one.
 export const THREAD_DETAILS_ITEMS = [
@@ -18,6 +19,39 @@ export const THREAD_DETAILS_ITEMS = [
 
 export type ThreadDetailsItemId = (typeof THREAD_DETAILS_ITEMS)[number]["id"];
 export type ThreadDetailsVisibility = Readonly<Record<ThreadDetailsItemId, boolean>>;
+
+/** The items keep English labels; this is what a menu shows. */
+export function threadDetailsItemLabel(
+  gt: ReturnType<typeof useGT>,
+  id: ThreadDetailsItemId,
+): string {
+  switch (id) {
+    case "environment":
+      return gt("Environment and worktree");
+    case "openIn":
+      return gt("Open in editor");
+    case "scripts":
+      return gt("Project scripts");
+    case "branch":
+      return gt("Branch and pull request");
+    case "gitActions":
+      return gt("Git actions");
+    case "changes":
+      return gt("Changes");
+    case "servers":
+      return gt("Servers");
+    case "automations":
+      return gt("Automations");
+    case "lineage":
+      return gt("Lineage");
+    case "sideChats":
+      return gt("Side chats");
+    case "usage":
+      return gt("Usage limits");
+    case "context":
+      return gt("Context window");
+  }
+}
 
 type ThreadDetailsItem = (typeof THREAD_DETAILS_ITEMS)[number];
 type ThreadDetailsItemSettings = Pick<

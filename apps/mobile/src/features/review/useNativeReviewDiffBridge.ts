@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { useMemo, useRef, useState } from "react";
 import type { NativeSyntheticEvent } from "react-native";
 
@@ -7,6 +8,7 @@ import { useAppearancePreferences } from "../settings/appearance/AppearancePrefe
 import { useNativeReviewDiffHighlighting } from "./useNativeReviewDiffHighlighting";
 import { buildNativeReviewTokensResetKey } from "./reviewDiffBridgeKeys";
 import { useUniwindTheme } from "../../lib/useUniwindTheme";
+import { localizeReviewText } from "./reviewModel";
 
 export function useNativeReviewDiffBridge(input: {
   readonly threadKey: string | null;
@@ -28,6 +30,7 @@ export function useNativeReviewDiffBridge(input: {
     threadKey,
     viewedFileIds,
   } = input;
+  const gt = useGT();
   const { nativeReviewDiffStyle } = useAppearanceCodeSurface();
   const { themeAppearance: scheme, themeId } = useAppearancePreferences();
   const appTheme = useUniwindTheme();
@@ -42,7 +45,17 @@ export function useNativeReviewDiffBridge(input: {
     [appTheme, scheme, themeId],
   );
   const collapsedFileIdsSet = useMemo(() => new Set(collapsedFileIds), [collapsedFileIds]);
-  const rowsJson = useMemo(() => JSON.stringify(data.rows), [data.rows]);
+  const rowsJson = useMemo(
+    () =>
+      JSON.stringify(
+        data.rows.map((row) =>
+          row.kind === "notice" && row.text !== undefined
+            ? { ...row, text: localizeReviewText(row.text, gt) }
+            : row,
+        ),
+      ),
+    [data.rows, gt],
+  );
   const collapsedFileIdsJson = useMemo(() => JSON.stringify(collapsedFileIds), [collapsedFileIds]);
   const viewedFileIdsJson = useMemo(() => JSON.stringify(viewedFileIds), [viewedFileIds]);
   const selectedRowIdsJson = useMemo(() => JSON.stringify(selectedRowIds), [selectedRowIds]);

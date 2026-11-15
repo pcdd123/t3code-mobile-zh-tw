@@ -2,6 +2,7 @@ import { startPaletteThreadDrag } from "./CommandPalette.drag";
 import { useLegendListRef } from "~/hooks/useLegendListRef";
 import { type ResolvedKeybindingsConfig } from "@t3tools/contracts";
 import { LegendList, type LegendListRef } from "@legendapp/list/react";
+import { useGT } from "gt-react";
 import { ChevronRightIcon } from "lucide-react";
 import { type ReactNode, type RefObject, useState } from "react";
 import { cn } from "~/lib/utils";
@@ -36,18 +37,47 @@ interface CommandPaletteResultsProps {
   onExecuteItem: (item: CommandPaletteActionItem | CommandPaletteSubmenuItem) => void;
 }
 
+/** Group labels built in `CommandPalette.logic` stay English ids; they translate here. */
+function useGroupLabel() {
+  const gt = useGT();
+  return (label: string): string => {
+    switch (label) {
+      case "Actions":
+        return gt("Actions");
+      case "Recent Threads":
+        return gt("Recent Threads");
+      case "Suggestions":
+        return gt("Suggestions");
+      case "Threads":
+        return gt("Threads");
+      case "Projects":
+        return gt("Projects");
+      case "Settings":
+        return gt("Settings");
+      case "In messages":
+        return gt("In messages");
+      case "Directories":
+        return gt("Directories");
+      default:
+        return label;
+    }
+  };
+}
+
 function CommandPaletteEmptyState(props: { emptyStateMessage?: string; isActionsOnly: boolean }) {
+  const gt = useGT();
   return (
     <div className="py-10 text-center text-sm text-muted-foreground">
       {props.emptyStateMessage ??
         (props.isActionsOnly
-          ? "No matching actions."
-          : "No matching commands, projects, or threads.")}
+          ? gt("No matching actions.")
+          : gt("No matching commands, projects, or threads."))}
     </div>
   );
 }
 
 export function CommandPaletteResults(props: CommandPaletteResultsProps) {
+  const groupLabel = useGroupLabel();
   if (props.groups.length === 0) {
     return <CommandPaletteEmptyState {...props} />;
   }
@@ -56,7 +86,7 @@ export function CommandPaletteResults(props: CommandPaletteResultsProps) {
     <CommandList>
       {props.groups.map((group) => (
         <CommandGroup items={group.items} key={group.value}>
-          {group.label ? <CommandGroupLabel>{group.label}</CommandGroupLabel> : null}
+          {group.label ? <CommandGroupLabel>{groupLabel(group.label)}</CommandGroupLabel> : null}
           <CommandCollection>
             {(item) =>
               item.disabled ? (
@@ -103,6 +133,7 @@ interface CommandPaletteVirtualizedResultsProps extends Omit<CommandPaletteResul
  * unmounted rows. */
 export function CommandPaletteVirtualizedResults(props: CommandPaletteVirtualizedResultsProps) {
   const { listRef } = props;
+  const groupLabel = useGroupLabel();
   const [scrollFade, setScrollFade] = useState({ top: false, bottom: false });
   const updateScrollFade = () => {
     const metrics = listRef.current?.getState();
@@ -131,7 +162,7 @@ export function CommandPaletteVirtualizedResults(props: CommandPaletteVirtualize
         renderItem={({ item: row }) =>
           row.kind === "label" ? (
             <div className={row.first ? undefined : "pt-1.5"}>
-              <CommandListHeading>{row.label}</CommandListHeading>
+              <CommandListHeading>{groupLabel(row.label)}</CommandListHeading>
             </div>
           ) : row.itemIndex === null ? (
             <DisabledCommandPaletteResultRow item={row.item} />
@@ -241,6 +272,7 @@ function CommandPaletteResultRow(props: {
   keybindings: ResolvedKeybindingsConfig;
   onExecuteItem: (item: CommandPaletteActionItem | CommandPaletteSubmenuItem) => void;
 }) {
+  const gt = useGT();
   const shortcutLabel = props.item.shortcutCommand
     ? shortcutLabelForCommand(props.keybindings, props.item.shortcutCommand)
     : null;
@@ -259,7 +291,7 @@ function CommandPaletteResultRow(props: {
             event.nativeEvent,
             props.item.threadRef,
             props.item.searchTitle ??
-              (typeof props.item.title === "string" ? props.item.title : "Thread"),
+              (typeof props.item.title === "string" ? props.item.title : gt("Thread")),
           );
         }
       }}

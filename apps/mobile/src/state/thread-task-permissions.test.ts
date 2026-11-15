@@ -66,6 +66,10 @@ const state = vi.hoisted(() => ({
   },
 }));
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("react", () => ({
   useCallback: <A>(callback: A) => callback,
   useEffect: () => {},

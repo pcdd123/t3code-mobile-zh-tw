@@ -39,6 +39,10 @@ vi.mock("../state/session", async (original) => ({
   ...(await original<typeof import("../state/session")>()),
   readEnvironmentScope: () => true,
 }));
+vi.mock("gt-react", () => ({
+  useGT: () => (m: string, v?: Record<string, unknown>) =>
+    m.replace(/\{(\w+)\}/g, (_: string, k: string) => String(v?.[k] ?? "")),
+}));
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
   useCallback: (callback: unknown) => callback,

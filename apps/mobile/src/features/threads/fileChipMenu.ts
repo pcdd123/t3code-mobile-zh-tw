@@ -1,6 +1,7 @@
 import { formatFilePathForClipboard } from "@t3tools/client-runtime/media-actions";
 import { fileBasename } from "@t3tools/shared/path";
 import type { ThreadId } from "@t3tools/contracts";
+import type { useGT } from "gt-react-native";
 import { resolveMarkdownLinkPresentation } from "../../lib/markdownLinks";
 import type { MarkdownFileContextMenu } from "../../native/SelectableMarkdownText.types";
 import { hostPreviewMimeTypeFromExtension } from "@t3tools/shared/filePreview";
@@ -67,18 +68,23 @@ export function fileChipShareSource(target: FileChipTarget, threadId: ThreadId) 
     : null;
 }
 
-export function fileChipMenu(target: FileChipTarget): MarkdownFileContextMenu {
+export function fileChipMenu(
+  target: FileChipTarget,
+  gt: ReturnType<typeof useGT>,
+): MarkdownFileContextMenu {
   return {
     title: target.fullPath ?? target.relativePath ?? "",
     actions: [
-      ...(target.fullPath ? [{ id: "copy-full-path", title: "Copy full path" }] : []),
-      ...(target.relativePath ? [{ id: "copy-relative-path", title: "Copy relative path" }] : []),
-      { id: "open-file", title: "Open in file viewer" },
+      ...(target.fullPath ? [{ id: "copy-full-path", title: gt("Copy full path") }] : []),
+      ...(target.relativePath
+        ? [{ id: "copy-relative-path", title: gt("Copy relative path") }]
+        : []),
+      { id: "open-file", title: gt("Open in file viewer") },
       ...(fileChipMetadata(target)
         ? [
             {
               id: "save",
-              title: "Save or share",
+              title: gt("Save or share"),
             },
           ]
         : []),

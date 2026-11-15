@@ -7,6 +7,10 @@ import { expect, it, vi } from "vite-plus/test";
 type ScreenProps = ComponentProps<typeof NativeStack.Screen>;
 const screens = vi.hoisted(() => new Map<string, ScreenProps>());
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("react-native", () => ({
   StyleSheet: { flatten: (style: unknown) => style },
   View: ({ children }: { children?: ReactNode }) => children,

@@ -1,3 +1,4 @@
+import type { useGT } from "gt-react-native";
 import type { WorkspaceState } from "../../state/workspaceModel";
 
 export interface WorkspaceConnectionStatusPresentation {
@@ -16,30 +17,39 @@ function shouldShowWorkspaceConnectionStatus(state: WorkspaceState): boolean {
   );
 }
 
-function workspaceConnectionStatusLabel(state: WorkspaceState): string {
-  if (state.networkStatus === "offline") return "You are offline";
+function workspaceConnectionStatusLabel(
+  state: WorkspaceState,
+  gt: ReturnType<typeof useGT>,
+): string {
+  if (state.networkStatus === "offline") return gt("You are offline");
   if (state.hasReadyEnvironment && state.hasSyncingConnectedEnvironment) {
-    return state.hasLoadedShellSnapshot ? "Syncing threads..." : "Loading threads...";
+    return state.hasLoadedShellSnapshot ? gt("Syncing threads...") : gt("Loading threads...");
   }
   if (state.connectingEnvironments.length === 1) {
-    return `Reconnecting to ${state.connectingEnvironments[0]!.environmentLabel}`;
+    return gt("Reconnecting to {environment}", {
+      environment: state.connectingEnvironments[0]!.environmentLabel,
+    });
   }
   if (state.connectingEnvironments.length > 1) {
-    return `Reconnecting ${state.connectingEnvironments.length} environments`;
+    return gt("Reconnecting {count} environments", {
+      count: state.connectingEnvironments.length,
+    });
   }
   if (state.connectionError !== null) return state.connectionError;
   if (state.hasPendingShellSnapshot) {
-    return state.hasLoadedShellSnapshot ? "Syncing threads..." : "Loading threads...";
+    return state.hasLoadedShellSnapshot ? gt("Syncing threads...") : gt("Loading threads...");
   }
-  return "Not connected";
+  return gt("Not connected");
 }
 
 export function workspaceConnectionStatusPresentation(
   state: WorkspaceState,
+  gt: ReturnType<typeof useGT>,
 ): WorkspaceConnectionStatusPresentation | null {
   if (!shouldShowWorkspaceConnectionStatus(state)) return null;
   return {
-    label: workspaceConnectionStatusLabel(state),
+    label: workspaceConnectionStatusLabel(state, gt),
+
     showsProgress:
       state.networkStatus !== "offline" &&
       (state.hasReadyEnvironment || state.connectionError === null) &&

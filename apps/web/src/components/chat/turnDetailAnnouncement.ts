@@ -4,10 +4,12 @@ import * as DateTime from "effect/DateTime";
 import type { TimelineEntry, WorkLogEntry } from "../../session-logic";
 import {
   liveWorkEntryLabel,
+  localizeLiveWorkEntryLabel,
   timelineEntryRunId,
   timelineEntryStartsResponse,
 } from "./MessagesTimeline.logic";
 import { markdownPlainText } from "./timelineMinimapItems";
+import type { useGT } from "gt-react";
 
 export interface TurnMessage {
   readonly id: string;
@@ -149,6 +151,28 @@ export function turnDetail(
     ).reverse(),
     tailId: entries.at(-1)?.id ?? null,
   };
+}
+
+/** Steps and messages stay English for comparison; the announcer translates them as it speaks. */
+export function localizeTurnActivity(gt: ReturnType<typeof useGT>, activity: string): string {
+  if (activity === "Thinking") return gt("Thinking");
+  const editing = /^Editing ([\s\S]+)$/.exec(activity);
+  if (editing?.[1] !== undefined) return gt("Editing {target}", { target: editing[1] });
+  const webSearch = /^Searching the web for ([\s\S]+)$/.exec(activity);
+  if (webSearch?.[1] !== undefined) {
+    return gt("Searching the web for {query}", { query: webSearch[1] });
+  }
+  const search = /^Searching for ([\s\S]+)$/.exec(activity);
+  if (search?.[1] !== undefined) return gt("Searching for {query}", { query: search[1] });
+  return localizeLiveWorkEntryLabel(gt, activity);
+}
+
+export function localizeTurnMessage(gt: ReturnType<typeof useGT>, message: string): string {
+  const match = /^T3 Code: ([\s\S]*?)( More in the thread\.)?$/.exec(message);
+  if (match?.[1] === undefined) return message;
+  return match[2] === undefined
+    ? gt("T3 Code: {text}", { text: match[1] })
+    : gt("T3 Code: {text} More in the thread.", { text: match[1] });
 }
 
 export interface TurnDetailSnapshot extends TurnDetail {

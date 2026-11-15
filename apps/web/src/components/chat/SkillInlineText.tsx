@@ -9,6 +9,7 @@ import { SKILL_CHIP_ICON_SVG } from "../composerInlineChip";
 import { ContextChipPopover } from "../contextChipParts";
 import { Button } from "../ui/button";
 import { ModelMentionChip } from "./ModelMentionChip";
+import { useGT } from "gt-react";
 
 function SkillInlineText(props: {
   text: string;
@@ -123,20 +124,21 @@ export function SkillChipPopover(props: {
   copyMarkdown?: string | undefined;
   onViewInstructions: (() => void) | undefined;
 }) {
+  const gt = useGT();
   return (
     <ContextChipPopover
       kind="skill"
       icon={<SkillChipIcon />}
       label={props.label}
-      accessibleLabel={`Skill ${props.label}`}
+      accessibleLabel={gt("Skill {name}", { name: props.label })}
       copyMarkdown={props.copyMarkdown}
     >
       <div className="space-y-3 p-2 text-sm">
         <p className="font-medium">{props.label}</p>
-        <p>{props.description || "No description is available for this skill."}</p>
+        <p>{props.description || gt("No description is available for this skill.")}</p>
         {props.onViewInstructions ? (
           <Button variant="outline" size="sm" onClick={props.onViewInstructions}>
-            View instructions
+            {gt("View instructions")}
           </Button>
         ) : null}
       </div>

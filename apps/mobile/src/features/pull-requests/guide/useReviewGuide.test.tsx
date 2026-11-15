@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
 vi.mock("@react-navigation/native", async () => {
   const { createRequire } = await import("node:module");
   const { realpathSync } = await import("node:fs");

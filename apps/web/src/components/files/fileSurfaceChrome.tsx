@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import type { ReactNode } from "react";
 
 import { Spinner } from "~/components/ui/spinner";
@@ -6,6 +7,8 @@ import { Toggle } from "~/components/ui/toggle";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 import { DIFF_SURFACE_THEME_UNSAFE_CSS } from "~/lib/diffRendering";
 import { cn } from "~/lib/utils";
+
+import { localizeFilePreviewError } from "./filePreviewErrors";
 
 export const FILE_SURFACE_SUBHEADER_CLASS =
   "flex h-10 min-h-10 shrink-0 items-center gap-2 border-b border-border/60 bg-background px-3 in-data-[preview-panel-mode=inline]:mb-3 in-data-[preview-panel-mode=inline]:h-7 in-data-[preview-panel-mode=inline]:min-h-7 in-data-[preview-panel-mode=inline]:border-b-transparent";
@@ -114,10 +117,11 @@ export function FileSurfaceNotice(props: { readonly children: ReactNode }) {
 }
 
 export function FileSurfaceLoading(props: { readonly className?: string }) {
+  const gt = useGT();
   return (
     <div
       role="status"
-      aria-label="Loading file"
+      aria-label={gt("Loading file")}
       className={cn(
         "flex min-h-0 flex-1 items-center justify-center text-muted-foreground",
         props.className,
@@ -132,19 +136,20 @@ export function FileSurfaceFailure(props: {
   readonly message: string;
   readonly onRetry?: () => void;
 }) {
+  const gt = useGT();
   return (
     <div
       role="alert"
       className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center text-xs leading-relaxed"
     >
-      <p className="text-destructive">{props.message}</p>
+      <p className="text-destructive">{localizeFilePreviewError(props.message, gt)}</p>
       {props.onRetry ? (
         <button
           type="button"
           onClick={props.onRetry}
           className="rounded-md border border-input px-2.5 py-1 text-xs text-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
-          Try again
+          {gt("Try again")}
         </button>
       ) : null}
     </div>

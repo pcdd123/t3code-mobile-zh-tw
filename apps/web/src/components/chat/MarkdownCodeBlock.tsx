@@ -26,6 +26,7 @@ import {
 } from "./MarkdownCodeBlock.logic";
 import { reportMarkdownActionFailure } from "./markdownActionFailure";
 import { PierreEntryIcon } from "./PierreEntryIcon";
+import { useGT } from "gt-react";
 
 const MAX_HIGHLIGHT_CACHE_ENTRIES = 500;
 const MAX_HIGHLIGHT_CACHE_MEMORY_BYTES = 50 * 1024 * 1024;
@@ -99,6 +100,7 @@ function MarkdownCodeBlockTitleContent({
   language: string;
   theme: "light" | "dark";
 }) {
+  const gt = useGT();
   if (fenceTitle) {
     return (
       <>
@@ -116,7 +118,10 @@ function MarkdownCodeBlockTitleContent({
     <Tooltip>
       <TooltipTrigger
         render={
-          <span className="inline-flex shrink-0 rounded-sm" aria-label={`Language: ${language}`} />
+          <span
+            className="inline-flex shrink-0 rounded-sm"
+            aria-label={gt("Language: {language}", { language })}
+          />
         }
       >
         <PierreEntryIcon pathValue={fileName} kind="file" theme={theme} className="size-3.5" />
@@ -161,11 +166,12 @@ export function MarkdownCodeBlock({
         cause,
       ),
   });
+  const gt = useGT();
   const defaultWrapped = useClientSettings((settings) => settings.wordWrap);
   const [wrapOverride, setWrapOverride] = useState<boolean | null>(null);
   const wrapped = wrapOverride ?? defaultWrapped;
-  const wrapLabel = wrapped ? "Disable line wrap" : "Wrap lines";
-  const copyLabel = copied ? "Copied" : "Copy code";
+  const wrapLabel = wrapped ? gt("Disable line wrap") : gt("Wrap lines");
+  const copyLabel = copied ? gt("Copied") : gt("Copy code");
   const command = code.trim();
   const canRun =
     onRunShellCommand !== undefined &&
@@ -219,7 +225,11 @@ export function MarkdownCodeBlock({
       wrapped={wrapped}
       headerProps={THREAD_FIND_IGNORE_PROPS}
       actions={
-        <span className="flex items-center gap-0.5" role="toolbar" aria-label="Code block actions">
+        <span
+          className="flex items-center gap-0.5"
+          role="toolbar"
+          aria-label={gt("Code block actions")}
+        >
           {canWrap ? (
             <Tooltip>
               <TooltipTrigger
@@ -248,13 +258,13 @@ export function MarkdownCodeBlock({
                     variant="ghost-muted"
                     size="icon-xs"
                     onClick={() => onRunShellCommand(command)}
-                    aria-label="Run in terminal"
+                    aria-label={gt("Run in terminal")}
                   />
                 }
               >
                 <PlayIcon className="size-3" />
               </TooltipTrigger>
-              <TooltipPopup side="top">Run in terminal</TooltipPopup>
+              <TooltipPopup side="top">{gt("Run in terminal")}</TooltipPopup>
             </Tooltip>
           ) : null}
           {viewToggle}

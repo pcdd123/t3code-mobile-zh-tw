@@ -1,4 +1,5 @@
 import { scopedThreadKey, scopeThreadRef } from "@t3tools/client-runtime/environment";
+import { useGT } from "gt-react";
 import { findForMessageMatch, openThreadFindOnQuery } from "./chat/threadFindStore";
 import {
   claimThreadOpen,
@@ -98,6 +99,7 @@ export function useCommandPaletteThreadItems(input: {
   readonly threadSearchQuery: string;
 }) {
   const { activeThread, threadSearchQuery } = input;
+  const gt = useGT();
   const navigate = useNavigate();
   const threads = useVisibleThreadShells();
   const { projectEnvironmentLocationById } = useEnvironmentLookups();
@@ -110,6 +112,7 @@ export function useCommandPaletteThreadItems(input: {
 
   const { environments } = useEnvironments();
   const threadItems = buildThreadActionItems({
+    gt,
     threads,
     ...(environments.length > 1
       ? {
@@ -142,7 +145,7 @@ export function useCommandPaletteThreadItems(input: {
           project={projectByKey.get(`${thread.environmentId}:${thread.projectId}`) ?? null}
           projectTitle={projectTitle ?? null}
           environmentLabel={
-            projectEnvironmentLocationById.get(thread.environmentId)?.label ?? "Remote"
+            projectEnvironmentLocationById.get(thread.environmentId)?.label ?? gt("Remote")
           }
           branch={thread.branch}
           worktreePath={thread.worktreePath}
@@ -209,7 +212,7 @@ export function useCommandPaletteThreadItems(input: {
         ...rest,
         // When the matching message was written, not when the thread last moved.
         ...(match.messageCreatedAt
-          ? { timestamp: formatRelativeTimeLabel(match.messageCreatedAt) }
+          ? { timestamp: formatRelativeTimeLabel(match.messageCreatedAt, undefined, gt) }
           : {}),
         threadContentMatch: {
           source: match.source,

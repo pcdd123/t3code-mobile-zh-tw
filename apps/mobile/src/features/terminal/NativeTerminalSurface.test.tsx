@@ -46,6 +46,10 @@ function RawView({ ref: nativeRef, initialBuffer, onResize, onPaste }: NativeTer
   return null;
 }
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("expo", () => ({
   requireNativeView: () => RawView,
   requireOptionalNativeModule: () =>

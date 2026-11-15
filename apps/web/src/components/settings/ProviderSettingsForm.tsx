@@ -13,6 +13,7 @@ import {
   type SecretReference,
 } from "@t3tools/contracts";
 import { PlusIcon, XIcon } from "lucide-react";
+import { useGT } from "gt-react";
 
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
@@ -220,6 +221,7 @@ function ProviderCommandArguments({
 }: Pick<ProviderSettingsFormProps, "value" | "onChange"> & {
   readonly managedReason: string | undefined;
 }) {
+  const gt = useGT();
   const args = configuredCommandArgs(value);
   const [storedDraft, setDraft] = useState(() => seedRowsDraft(args, toCommandArgumentRows));
   const draft = reconcileRowsDraft(storedDraft, args, commandArgumentsEqual, toCommandArgumentRows);
@@ -236,8 +238,8 @@ function ProviderCommandArguments({
 
   return (
     <SettingsRow
-      title="Arguments"
-      description="One literal argument per row, in launch order."
+      title={gt("Arguments")}
+      description={gt("One literal argument per row, in launch order.")}
       managed={managedReason}
       control={
         <Button
@@ -247,7 +249,7 @@ function ProviderCommandArguments({
           onClick={() => updateArguments([...rows, makeCommandArgumentDraftRow("")])}
         >
           <PlusIcon />
-          Add argument
+          {gt("Add argument")}
         </Button>
       }
     >
@@ -271,7 +273,7 @@ function ProviderCommandArguments({
                       ),
                     )
                   }
-                  aria-label={`Argument ${index + 1}`}
+                  aria-label={gt("Argument {number}", { number: index + 1 })}
                   spellCheck={false}
                 />
                 <Button
@@ -281,7 +283,7 @@ function ProviderCommandArguments({
                   onClick={() =>
                     updateArguments(rows.filter((current) => current.id !== argument.id))
                   }
-                  aria-label={`Remove argument ${index + 1}`}
+                  aria-label={gt("Remove argument {number}", { number: index + 1 })}
                 >
                   <XIcon />
                 </Button>
@@ -365,6 +367,7 @@ function SecretSettingsControl({
   readonly environmentId: EnvironmentId;
   readonly onChange: ProviderSettingsFormProps["onChange"];
 }) {
+  const gt = useGT();
   const sources = useSecretSources(environmentId);
   const saved =
     value !== null && typeof value === "object"
@@ -395,7 +398,7 @@ function SecretSettingsControl({
           size="icon-sm"
           variant="ghost-destructive"
           onClick={() => onChange(nextProviderConfigWithFieldValue(value, field, ""))}
-          aria-label={`Clear ${field.label}`}
+          aria-label={gt("Clear {field}", { field: field.label })}
         >
           <XIcon className="size-3.5" />
         </Button>
@@ -458,6 +461,7 @@ function ProviderSettingsTextInput({
   readonly descriptionId: string | undefined;
   readonly onChange: ProviderSettingsFormProps["onChange"];
 }) {
+  const gt = useGT();
   const [rejected, setRejected] = useState<string | null>(null);
   return (
     <div className="flex w-full min-w-0 flex-col gap-1 @min-[32rem]/settings-row:w-56">
@@ -483,7 +487,7 @@ function ProviderSettingsTextInput({
         spellCheck={false}
       />
       {rejected !== null ? (
-        <p className="text-2xs text-destructive">Enter a valid value. It was not saved.</p>
+        <p className="text-2xs text-destructive">{gt("Enter a valid value. It was not saved.")}</p>
       ) : null}
     </div>
   );
@@ -518,6 +522,7 @@ function ProviderSettingsFieldRow({
   managedReason,
   environmentId,
 }: ProviderSettingsFieldRowProps) {
+  const gt = useGT();
   const inputId = `${idPrefix}-${field.key}`;
   const descriptionClassName =
     variant === "dialog"
@@ -589,7 +594,7 @@ function ProviderSettingsFieldRow({
               size="icon-sm"
               variant="ghost-destructive"
               onClick={() => onChange(nextProviderConfigWithFieldValue(value, field, ""))}
-              aria-label={`Clear ${field.label}`}
+              aria-label={gt("Clear {field}", { field: field.label })}
             >
               <XIcon className="size-3.5" />
             </Button>
@@ -726,7 +731,18 @@ export function ProviderSettingsForm({
   managed,
   environmentId,
 }: ProviderSettingsFormProps) {
-  const fields = deriveProviderSettingsFields(definition, value);
+  const gt = useGT();
+  const fields = deriveProviderSettingsFields(definition, value).map((field) =>
+    field.key === "commandPath" &&
+    field.description === "Executable name or path on this environment."
+      ? {
+          ...field,
+          label: gt("Executable"),
+          description: gt("Executable name or path on this environment."),
+          placeholder: gt("e.g. dsh"),
+        }
+      : field,
+  );
   const isLocalAcp =
     definition.driverKind === "acpRegistry" &&
     readProviderConfigString(value, "source") === "local";

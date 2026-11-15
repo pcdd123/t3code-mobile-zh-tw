@@ -214,6 +214,7 @@ vi.mock("../AdaptiveWorkspaceLayout", () => ({
   }),
 }));
 vi.mock("@react-navigation/native", () => ({ useIsFocused: () => true }));
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
 vi.mock("../adaptive-workspace-context", () => ({
   useAdaptiveWorkspaceLayout: () => ({ openWorkspaceTab: mocks.openWorkspaceTab }),
 }));

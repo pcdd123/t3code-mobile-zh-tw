@@ -1,4 +1,5 @@
 import type { ClientSettingsPatch, DesktopSnapShotState, SnapShotSound } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
 import {
   captureSetupBackend,
   captureSetupDesktopName,
@@ -135,4 +136,86 @@ export function createRecordingRequestTracker() {
       return currentRequest === request;
     },
   };
+}
+
+/** Status text above is English ids; text from the desktop app passes through unchanged. */
+export function localizeSnapShotText(
+  gt: ReturnType<typeof useGT>,
+  text: string | null | undefined,
+): string | undefined {
+  if (text === null || text === undefined) return undefined;
+  const setUp = /^Set up (.+) capture$/.exec(text);
+  if (setUp) return gt("Set up {desktop} capture", { desktop: setUp[1] });
+  switch (text) {
+    case "Checking snapshots…":
+      return gt("Checking snapshots…");
+    case "Not supported on this platform.":
+      return gt("Not supported on this platform.");
+    case "Turn this on to set up snapshots.":
+      return gt("Turn this on to set up snapshots.");
+    case "Capture needs attention":
+      return gt("Capture needs attention");
+    case "Check capture access in setup":
+      return gt("Check capture access in setup");
+    case "Install the capture helper to continue":
+      return gt("Install the capture helper to continue");
+    case "Set up active-window snapshots":
+      return gt("Set up active-window snapshots");
+    case "Manual capture only. You'll choose a window each time":
+      return gt("Manual capture only. You'll choose a window each time");
+    case "Enable capture to continue":
+      return gt("Enable capture to continue");
+    case "Connecting your shortcut…":
+      return gt("Connecting your shortcut…");
+    case "Waiting for shortcut permission":
+      return gt("Waiting for shortcut permission");
+    case "Ready to capture":
+      return gt("Ready to capture");
+    case "Use your shortcut from another app":
+      return gt("Use your shortcut from another app");
+    case "Shortcut saved":
+      return gt("Shortcut saved");
+    case "Finish shortcut setup":
+      return gt("Finish shortcut setup");
+    case "Approve the shortcut permission prompt to continue.":
+      return gt("Approve the shortcut permission prompt to continue.");
+    case "Shortcut saved.":
+      return gt("Shortcut saved.");
+    case "Continue setup":
+      return gt("Continue setup");
+    case "Manage capture":
+      return gt("Manage capture");
+    case "Capture effects aren't available on this desktop.":
+      return gt("Capture effects aren't available on this desktop.");
+    case "Install or update the capture helper to enable effects.":
+      return gt("Install or update the capture helper to enable effects.");
+    case "Capture effects aren't available on Niri.":
+      return gt("Capture effects aren't available on Niri.");
+    case "Update the GNOME extension, then sign out and back in to enable effects.":
+      return gt("Update the GNOME extension, then sign out and back in to enable effects.");
+    case "Finish extension setup to enable effects.":
+      return gt("Finish extension setup to enable effects.");
+    case "Automatic capture isn't available here. Choose a window instead.":
+      return gt("Automatic capture isn't available here. Choose a window instead.");
+    case "Capture a window and attach it to your current draft.":
+      return gt("Capture a window and attach it to your current draft.");
+    case "This desktop only provides a screenshot.":
+      return gt("This desktop only provides a screenshot.");
+    case "Update the desktop app to use snapshots.":
+      return gt("Update the desktop app to use snapshots.");
+    case "Only available in the desktop app.":
+      return gt("Only available in the desktop app.");
+    case "Still unable to check access. See Advanced for help.":
+      return gt("Still unable to check access. See Advanced for help.");
+    case "Ready. You'll choose a window each time.":
+      return gt("Ready. You'll choose a window each time.");
+    case "Still waiting for you to sign out and back in.":
+      return gt("Still waiting for you to sign out and back in.");
+    case "Ready. Continue to choose your shortcut.":
+      return gt("Ready. Continue to choose your shortcut.");
+    case "Not ready yet. Finish the step above.":
+      return gt("Not ready yet. Finish the step above.");
+    default:
+      return text;
+  }
 }

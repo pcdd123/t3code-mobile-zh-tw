@@ -1,8 +1,14 @@
 import { DEFAULT_SERVER_SETTINGS, EnvironmentId, ProjectId } from "@t3tools/contracts";
 import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
+import type { useGT } from "gt-react";
 import { describe, expect, it } from "vite-plus/test";
 
 import { settingInheritanceLayers } from "./SettingInheritance";
+
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, name: string) =>
+    String(values?.[name] ?? ""),
+  )) as unknown as ReturnType<typeof useGT>;
 
 const environmentId = EnvironmentId.make("laptop");
 const projectId = ProjectId.make("project");
@@ -28,6 +34,7 @@ describe("worktree cleanup inheritance", () => {
       },
       settings,
       "worktreeCleanup",
+      gt,
     );
     expect(layers.map((layer) => [layer.key, layer.value, layer.effective])).toEqual([
       ["project", "Off", true],
@@ -56,6 +63,7 @@ describe("settingInheritanceLayers", () => {
       },
       settings,
       "backgroundActivity",
+      gt,
     );
     expect(layers.map((layer) => [layer.key, layer.value, layer.effective])).toEqual([
       ["environment", "Performance", true],
@@ -74,6 +82,7 @@ describe("settingInheritanceLayers", () => {
       },
       DEFAULT_SERVER_SETTINGS,
       "defaultThreadEnvMode",
+      gt,
     );
     expect(fromFile.map((layer) => [layer.label, layer.value, layer.effective])).toEqual([
       ["Project", "Inherits", false],
@@ -91,6 +100,7 @@ describe("settingInheritanceLayers", () => {
       },
       settings,
       "defaultThreadEnvMode",
+      gt,
     );
     expect(fromEnvironment.map((layer) => [layer.value, layer.effective])).toEqual([
       ["Inherits", false],

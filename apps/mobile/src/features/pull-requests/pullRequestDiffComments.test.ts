@@ -2,6 +2,9 @@ import { describe, expect, it } from "vite-plus/test";
 import type { PullRequestReviewThread } from "@t3tools/contracts";
 import type { NativeReviewDiffData } from "../review/nativeReviewDiffAdapter";
 import { annotatePullRequestDiff, reviewPositionLabel } from "./pullRequestDiffComments";
+
+const gt = (message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? ""));
 const data: NativeReviewDiffData = {
   rows: [
     { kind: "file", id: "header", fileId: "f", filePath: "a.ts" },
@@ -31,8 +34,8 @@ describe("PR comments in continuous native diffs", () => {
         throw new Error("Empty annotation must not read rows");
       },
     };
-    expect(annotatePullRequestDiff(unannotated, [], [], undefined)).toBe(unannotated);
-    expect(annotatePullRequestDiff(data, [], [], undefined).rows).toBe(data.rows);
+    expect(annotatePullRequestDiff(unannotated, [], [], undefined, gt)).toBe(unannotated);
+    expect(annotatePullRequestDiff(data, [], [], undefined, gt).rows).toBe(data.rows);
   });
 
   it("anchors old/new lines separately despite identical line numbers", () => {
@@ -41,6 +44,7 @@ describe("PR comments in continuous native diffs", () => {
       [thread, { ...thread, id: "right", side: "right" }],
       [],
       "abc",
+      gt,
     );
     expect(annotated.rows.map((row) => row.id)).toEqual([
       "header",
@@ -68,6 +72,7 @@ describe("PR comments in continuous native diffs", () => {
         },
       ],
       "new",
+      gt,
     );
     expect(annotated.rows).toEqual(data.rows);
   });
@@ -86,6 +91,7 @@ describe("PR comments in continuous native diffs", () => {
         },
       ],
       "abc",
+      gt,
     );
     expect(annotated.rows.map((row) => row.id)).toEqual([
       "header",
@@ -105,6 +111,7 @@ describe("PR comments in continuous native diffs", () => {
       ],
       [],
       "abc",
+      gt,
     );
     expect(
       annotated.rows
@@ -125,8 +132,9 @@ describe("PR comments in continuous native diffs", () => {
       [],
       [{ id: "left", path: "a.ts", position, headSha: "abc", code: "", body: "Feedback" }],
       "abc",
+      gt,
     );
     expect(annotated.rows.at(-1)?.id).toBe("draft:left");
-    expect(reviewPositionLabel(position)).toBe("Old line 7");
+    expect(reviewPositionLabel(position, gt)).toBe("Old line 7");
   });
 });

@@ -1,3 +1,4 @@
+import { englishGt, type Translate } from "../Localized";
 import {
   GUEST_ATTACHMENT_ROUTE,
   GUEST_MEDIA_ROUTE,
@@ -193,10 +194,16 @@ export function unplacedGuestMessages(
 }
 
 /** "23h left" or "5m left", rounded down, for the guest page header. */
-export function formatGuestExpiry(expiresAt: string, nowMs: number): string {
+export function formatGuestExpiry(
+  expiresAt: string,
+  nowMs: number,
+  gt: Translate = englishGt,
+): string {
   const minutes = Math.floor((Date.parse(expiresAt) - nowMs) / 60_000);
-  if (minutes <= 0) return "Expired";
-  return minutes >= 60 ? `${Math.floor(minutes / 60)}h left` : `${minutes}m left`;
+  if (minutes <= 0) return gt("Expired");
+  return minutes >= 60
+    ? gt("{hours}h left", { hours: Math.floor(minutes / 60) })
+    : gt("{minutes}m left", { minutes });
 }
 
 /**
@@ -222,12 +229,15 @@ export const guestMediaUrl = (shareId: string, path: string) =>
  */
 export function guestFilesProblem(
   files: ReadonlyArray<Pick<File, "type" | "size">>,
+  gt: Translate = englishGt,
 ): string | null {
   if (files.length > GUEST_MESSAGE_MAX_ATTACHMENTS) {
-    return `Attach up to ${GUEST_MESSAGE_MAX_ATTACHMENTS} files to a message.`;
+    return gt("Attach up to {count} files to a message.", {
+      count: GUEST_MESSAGE_MAX_ATTACHMENTS,
+    });
   }
   if (files.reduce((total, file) => total + file.size, 0) > GUEST_MESSAGE_MAX_ATTACHMENT_BYTES) {
-    return "Attached files can total up to 10 MB per message.";
+    return gt("Attached files can total up to 10 MB per message.");
   }
   const unsupported = files.some(
     (file) =>
@@ -236,7 +246,7 @@ export function guestFilesProblem(
         !isProviderSendTurnSupportedImageMimeType(file.type)),
   );
   return unsupported
-    ? "This file cannot be attached. Images must be PNG, JPEG, GIF, or WebP."
+    ? gt("This file cannot be attached. Images must be PNG, JPEG, GIF, or WebP.")
     : null;
 }
 

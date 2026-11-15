@@ -1,4 +1,5 @@
 import type { EnvironmentId } from "@t3tools/contracts";
+import type { useGT } from "gt-react-native";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
@@ -19,9 +20,12 @@ export class EnvironmentUpdateCheckError extends Schema.TaggedError<EnvironmentU
   },
 ) {}
 
+const CHECK_FAILED_MESSAGE = "Could not check for updates.";
+const CHECK_TIMED_OUT_MESSAGE = "Checking for updates timed out. Try again.";
+
 const asError = (cause: unknown) =>
   new EnvironmentUpdateCheckError({
-    message: cause instanceof Error ? cause.message : "Could not check for updates.",
+    message: cause instanceof Error ? cause.message : CHECK_FAILED_MESSAGE,
     cause,
   });
 
@@ -44,7 +48,7 @@ export const environmentReleaseCheckAtom = Atom.family((environmentId: Environme
           orElse: () =>
             Effect.fail(
               new EnvironmentUpdateCheckError({
-                message: "Checking for updates timed out. Try again.",
+                message: CHECK_TIMED_OUT_MESSAGE,
               }),
             ),
         }),
@@ -58,6 +62,13 @@ export function releaseCheckValue(
   result: AsyncResult.AsyncResult<EnvironmentReleaseCheck, Error>,
 ): EnvironmentReleaseCheck | null {
   return AsyncResult.getOrElse(result, () => null);
+}
+
+/** Translates this module's own messages; other causes keep their message. */
+export function localizeReleaseCheckMessage(message: string, gt: ReturnType<typeof useGT>): string {
+  if (message === CHECK_FAILED_MESSAGE) return gt("Could not check for updates.");
+  if (message === CHECK_TIMED_OUT_MESSAGE) return gt("Checking for updates timed out. Try again.");
+  return message;
 }
 
 export function releaseCheckError(

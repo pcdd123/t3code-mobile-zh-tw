@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { resolveFilesystemReadAccess } from "@t3tools/client-runtime/state/filesystem";
 import { environmentSession } from "../../state/session";
 import type { EnvironmentId } from "@t3tools/contracts";
@@ -20,6 +21,7 @@ export function ThreadFileNavigatorPane(props: {
   readonly selectedPath: string | null;
   readonly onSelectFile: (path: string) => void;
 }) {
+  const gt = useGT();
   const workspaceKey = JSON.stringify([props.environmentId, props.cwd]);
   // The pane stays mounted across thread switches; a query only filters the workspace it was typed in.
   const [search, setSearch] = useState({ workspaceKey, query: "" });
@@ -64,7 +66,7 @@ export function ThreadFileNavigatorPane(props: {
           ? entriesQuery.error
           : fileAccess.isPending
             ? null
-            : (fileAccess.error ?? "This connection cannot read host files.")
+            : (fileAccess.error ?? gt("This connection cannot read host files."))
       }
       isPending={fileAccess.isPending || entriesQuery.isPending}
       isRefreshing={entriesQuery.isRefreshing}
@@ -84,14 +86,14 @@ export function ThreadFileNavigatorPane(props: {
   return (
     <SheetPane>
       <AppBar
-        title="Files"
+        title={gt("Files")}
         subtitle={props.projectName}
         search={{
           value: searchQuery,
           onChangeText: setSearchQuery,
-          placeholder: "Search files",
+          placeholder: gt("Search files"),
         }}
-        refresh={{ accessibilityLabel: "Refresh files", onPress: entriesQuery.refresh }}
+        refresh={{ accessibilityLabel: gt("Refresh files"), onPress: entriesQuery.refresh }}
       />
       <ScreenContent insetHorizontal>{fileTree}</ScreenContent>
     </SheetPane>

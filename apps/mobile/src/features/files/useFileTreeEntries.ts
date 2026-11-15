@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { useAtomMount, useAtomSubscribe } from "@effect/atom-react";
 import { executeAtomQuery } from "@t3tools/client-runtime/state/runtime";
 import { ProjectListEntriesError, type EnvironmentId, type ProjectEntry } from "@t3tools/contracts";
@@ -107,6 +108,7 @@ export function useFileTreeEntries(input: {
   readonly environmentId: EnvironmentId | null;
   readonly searchQuery: string;
 }) {
+  const gt = useGT();
   const { cwd, environmentId } = input;
   const searching = input.searchQuery.trim().length > 0;
   const query = input.searchQuery.trim().slice(0, 256);
@@ -269,7 +271,7 @@ export function useFileTreeEntries(input: {
           validatedDirectories,
           errors: new Map(current.errors).set(
             directoryPath,
-            error instanceof Error ? error.message : "Files unavailable",
+            error instanceof Error ? error.message : gt("Files unavailable"),
           ),
         };
       });

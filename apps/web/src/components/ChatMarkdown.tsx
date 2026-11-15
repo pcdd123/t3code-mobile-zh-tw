@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { clientHostEnvironmentAtom } from "../state/clientHostEnvironment";
 import { buildFileLinkParentSuffixByPath, fileLinkLabel } from "@t3tools/shared/fileLinks";
 import {
@@ -294,13 +295,14 @@ function CodexArtifactTemplateCard(props: {
   readonly template: CodexArtifactTemplate;
   readonly onUse?: ((template: CodexArtifactTemplate) => void) | undefined;
 }) {
+  const gt = useGT();
   const Icon = ARTIFACT_TEMPLATE_ICON_BY_KIND[props.template.artifactKind];
   const presentationLabel = codexArtifactTemplatePresentationLabel(props.template.artifactKind);
 
   return (
     <div
       role="group"
-      aria-label={`${props.template.displayName} template`}
+      aria-label={gt("{name} template", { name: props.template.displayName })}
       dir={textDirection(props.template.displayName)}
       data-chat-markdown-artifact-template
       className="my-[0.65rem] flex w-full min-w-0 items-center gap-3 rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-foreground shadow-xs"
@@ -328,7 +330,7 @@ function CodexArtifactTemplateCard(props: {
           className="shrink-0"
           onClick={() => props.onUse?.(props.template)}
         >
-          Use template
+          {gt("Use template")}
         </Button>
       ) : null}
     </div>
@@ -395,6 +397,25 @@ const GITHUB_ALERT_PRESENTATIONS: Record<
     titleClassName: "text-red-600 dark:text-red-400",
   },
 };
+
+function githubAlertLabel(kind: string, fallback: string, gt: ReturnType<typeof useGT>): string {
+  switch (kind) {
+    case "insight":
+      return gt("Insight");
+    case "note":
+      return gt("Note");
+    case "tip":
+      return gt("Tip");
+    case "important":
+      return gt("Important");
+    case "warning":
+      return gt("Warning");
+    case "caution":
+      return gt("Caution");
+    default:
+      return fallback;
+  }
+}
 
 function normalizeMarkdownLinkHrefKey(href: string): string {
   const normalizedHref = normalizeMarkdownLinkDestination(href);
@@ -527,6 +548,7 @@ function useChatMarkdownState({
   sourceControlMedia = false,
   sourceControlMediaRepository,
 }: ChatMarkdownProps) {
+  const gt = useGT();
   const resolvedTheme = useRenderedAppearance();
   const markdownRef = useRef<HTMLElement>(null);
   const mediaRequestId = useRef(0);
@@ -619,7 +641,7 @@ function useChatMarkdownState({
         let description =
           error instanceof Error
             ? error.message
-            : "The file could not be loaded. It may have been moved or deleted.";
+            : gt("The file could not be loaded. It may have been moved or deleted.");
         if (
           isAssetNotFoundError(error) &&
           error.resource._tag === "media-file" &&
@@ -637,13 +659,16 @@ function useChatMarkdownState({
               hostEnvironmentId: appAtomRegistry.get(hostEnvironmentIdAtom),
             }).mode !== "local-exec"
           ) {
-            description = `The file was not found on ${target.label} at ${error.checkedPath ?? error.resource.path}.`;
+            description = gt("The file was not found on {machine} at {path}.", {
+              machine: target.label,
+              path: error.checkedPath ?? error.resource.path,
+            });
           }
         }
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Media unavailable",
+            title: gt("Media unavailable"),
             description,
           }),
         );
@@ -736,7 +761,7 @@ function useChatMarkdownState({
         AsyncResult.failure<void, BrowserPreviewUnavailableError>(
           Cause.fail(
             new BrowserPreviewUnavailableError({
-              message: "Preview access is unavailable for this client.",
+              message: gt("Preview access is unavailable for this client."),
             }),
           ),
         ),
@@ -750,7 +775,7 @@ function useChatMarkdownState({
           toastManager.add(
             stackedThreadToast({
               type: "error",
-              title: "Unable to open link in browser",
+              title: gt("Unable to open link in browser"),
               description: error.message,
             }),
           );
@@ -766,7 +791,7 @@ function useChatMarkdownState({
         AsyncResult.failure<void, BrowserPreviewUnavailableError>(
           Cause.fail(
             new BrowserPreviewUnavailableError({
-              message: "Environment is not connected.",
+              message: gt("Environment is not connected."),
             }),
           ),
         ),
@@ -950,7 +975,7 @@ function useChatMarkdownState({
             ? () => openMarkdownMedia(mediaPath, fileLinkMeta.filePath)
             : undefined
         }
-        openInEditorMenuLabel={canOpenApp ? "Open app" : preferredEditorMenuLabel}
+        openInEditorMenuLabel={canOpenApp ? gt("Open app") : preferredEditorMenuLabel}
         onReveal={
           canUseShellActions && revealInFileManagerLabel !== undefined
             ? async () => revealFileInFileManager((await resolveHostPath()).absolutePath)
@@ -1072,6 +1097,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
     );
   },
   blockquote: function MarkdownBlockquote({ node: _node, children, ...props }) {
+    const gt = useGT();
     const alertKind = String((props as Record<string, unknown>)["data-alert"] ?? "");
     const alert = GITHUB_ALERT_PRESENTATIONS[alertKind];
     if (!alert) {
@@ -1090,7 +1116,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
           className={cn("flex items-center gap-1.5 font-medium", alert.titleClassName)}
         >
           <alert.Icon aria-hidden className="size-3.5 shrink-0" />
-          {alert.label}
+          {githubAlertLabel(alertKind, alert.label, gt)}
         </p>
         {children}
       </div>
@@ -1117,6 +1143,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
     );
   },
   input: function MarkdownInput({ node: _node, type, checked, disabled: _disabled, ...props }) {
+    const gt = useGT();
     const { onTaskListChange } = use(ChatMarkdownRendererContext);
     const text = use(ChatMarkdownTextContext);
     if (type !== "checkbox" || !onTaskListChange) {
@@ -1135,7 +1162,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
         {...props}
         type="checkbox"
         name="markdown-task"
-        aria-label="Toggle task"
+        aria-label={gt("Toggle task")}
         checked={checked === true}
         onChange={(event) => {
           const listItemStart = Number(event.currentTarget.closest("li")?.dataset.listItemOffset);
@@ -1148,6 +1175,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
     );
   },
   a: function MarkdownAnchor({ node, href, children, title: _title, ...props }) {
+    const gt = useGT();
     const {
       canOperateHost,
       canOperatePreview,
@@ -1328,6 +1356,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
                   ? undefined
                   : "link-to-thread";
             void showExternalLinkContextMenu({
+              gt,
               href,
               canOpenInPreview,
               threadLinkAction,
@@ -1356,9 +1385,10 @@ const CHAT_MARKDOWN_COMPONENTS = {
                       type: "error",
                       title:
                         operation === "link-pull-request-to-thread"
-                          ? "Unable to link pull request"
-                          : "Unable to unlink pull request",
-                      description: cause instanceof Error ? cause.message : "The request failed.",
+                          ? gt("Unable to link pull request")
+                          : gt("Unable to unlink pull request"),
+                      description:
+                        cause instanceof Error ? cause.message : gt("The request failed."),
                     }),
                   );
                 }
@@ -1671,6 +1701,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
     );
   },
   pre: function MarkdownPre({ node, children, ...props }) {
+    const gt = useGT();
     const {
       resolvedTheme,
       diffThemeName,
@@ -1727,7 +1758,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
           isStreaming={isStreaming && !isClosedCodeFence(node, text, codeBlock.code)}
           onExpand={(src) =>
             expandMedia({
-              images: [{ src, name: "Mermaid diagram", mimeType: "image/svg+xml" }],
+              images: [{ src, name: gt("Mermaid diagram"), mimeType: "image/svg+xml" }],
               index: 0,
             })
           }

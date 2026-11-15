@@ -1,7 +1,13 @@
 import type { DeviceServiceState } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
 import { describe, expect, it } from "vite-plus/test";
 
 import { deviceHubReadiness, platformSetupStatus } from "./DeviceSetup";
+
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) =>
+    String(values?.[key] ?? ""),
+  )) as unknown as ReturnType<typeof useGT>;
 
 const deviceState = (overrides: Partial<DeviceServiceState> = {}): DeviceServiceState => ({
   hosts: [
@@ -35,16 +41,20 @@ describe("device setup guidance", () => {
       hosts: [{ ...deviceState().hosts[0]!, id: "remote", kind: "ssh" }],
       hostStatuses: { remote: { status: "ready", androidDiscoveryIncomplete: true } },
     });
-    expect(platformSetupStatus(state, "android").message).toContain("may be incomplete");
-    expect(platformSetupStatus(state, "ios").message).toContain("Xcode Settings");
+    expect(platformSetupStatus(state, "android", gt).message).toContain("may be incomplete");
+    expect(platformSetupStatus(state, "ios", gt).message).toContain("Xcode Settings");
     expect(
-      platformSetupStatus({ ...state, hostStatuses: { remote: { status: "ready" } } }, "android")
-        .message,
+      platformSetupStatus(
+        { ...state, hostStatuses: { remote: { status: "ready" } } },
+        "android",
+        gt,
+      ).message,
     ).toContain("Device Manager");
     expect(
       platformSetupStatus(
         { ...state, hostStatuses: { remote: { status: "ready", incompletePlatforms: ["ios"] } } },
         "ios",
+        gt,
       ).message,
     ).toContain("discovery reported a problem");
   });
@@ -86,10 +96,10 @@ describe("device setup guidance", () => {
       ],
     });
     expect(deviceHubReadiness(state).ready).toBe(true);
-    expect(platformSetupStatus(state, "ios")).toEqual({
+    expect(platformSetupStatus(state, "ios", gt)).toEqual({
       ready: true,
       message: "Xcode and iOS Simulator are available on Mac Mini.",
     });
-    expect(platformSetupStatus(state, "android").ready).toBe(false);
+    expect(platformSetupStatus(state, "android", gt).ready).toBe(false);
   });
 });

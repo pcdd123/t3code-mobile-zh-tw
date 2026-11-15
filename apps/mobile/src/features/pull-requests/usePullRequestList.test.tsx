@@ -11,6 +11,8 @@ import { expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => ({ failPage: false }));
 
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
+
 vi.mock("../../connection/catalog", async () => {
   const { Atom } = await import("effect/reactivity");
   return {

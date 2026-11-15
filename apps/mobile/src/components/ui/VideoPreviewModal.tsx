@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import * as Dialog from "./Dialog";
 import { requireNativeModule } from "expo";
 import { settlePromise, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
@@ -37,6 +38,7 @@ function NativeVideoPreview(props: {
   readonly source: VideoPreviewSource;
   readonly onRequestClose: () => void;
 }) {
+  const gt = useGT();
   const { source } = props;
   const localAttachment = source.type === "local" ? source.attachment : null;
   const identifier = useId();
@@ -48,15 +50,15 @@ function NativeVideoPreview(props: {
   // Mints a fresh URL for each presentation: AVKit retains the URL and offers no retry,
   // so a cached link that expired while the app was suspended would fail to play.
   const resolvePlaybackUrl = useEffectEvent(async (): Promise<string> => {
-    if (source.type !== "media") throw new Error("Could not load this video.");
+    if (source.type !== "media") throw new Error(gt("Could not load this video."));
     if (!("resource" in source)) return source.uri;
     const url = await refreshAssetUrl(source.environmentId, source.resource).catch(() => null);
     const playbackUrl = mediaVideoPreviewUri(source, url);
     if (playbackUrl !== null) return playbackUrl;
     throw new Error(
       preparedConnection._tag === "None"
-        ? "Reconnect to this environment and open the video again."
-        : "Could not load this video. Check the connection and try again.",
+        ? gt("Reconnect to this environment and open the video again.")
+        : gt("Could not load this video. Check the connection and try again."),
     );
   });
   const reauthorize = useEffectEvent(() => {
@@ -126,12 +128,14 @@ function NativeVideoPreview(props: {
       // AVKit gives no retry, so re-mint now; the minted URL may already be unusable.
       if (ready) reauthorize();
       Dialog.alert(
-        "Could not open video",
+        gt("Could not open video"),
         ready
-          ? "This video couldn't be loaded or played. Check the connection, or touch and hold the video to save or share the original."
+          ? gt(
+              "This video couldn't be loaded or played. Check the connection, or touch and hold the video to save or share the original.",
+            )
           : error instanceof Error
             ? error.message
-            : "Could not load this video.",
+            : gt("Could not load this video."),
       );
       onRequestClose();
     });
@@ -142,7 +146,7 @@ function NativeVideoPreview(props: {
       release();
       void NativeControls.dismissVideo(identifier).catch(() => undefined);
     };
-  }, [localAttachment, name, source.sourceIdentifier, identifier]);
+  }, [localAttachment, name, source.sourceIdentifier, identifier, gt]);
 
   return null;
 }

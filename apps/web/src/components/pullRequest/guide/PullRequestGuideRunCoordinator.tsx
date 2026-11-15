@@ -2,6 +2,7 @@ import type { AnyRouter } from "@tanstack/react-router";
 import type { PullRequestReviewGuideResult } from "@t3tools/contracts";
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react";
 import { AsyncResult, type AtomRegistry } from "effect/reactivity";
+import { useGT } from "gt-react";
 
 import { getClientSettings } from "~/hooks/useSettings";
 import { observedPullRequestTitle, pullRequestEnvironment } from "~/state/pullRequests";
@@ -14,6 +15,17 @@ import {
 import { toastManager } from "../../ui/toast";
 import { readPullRequestListPreferences } from "../pullRequestListPreferences";
 import { useGuideRunStore, type GuideRunWatch } from "./guideRunStore";
+
+// The coordinator runs outside React, so the toast translates through these small components.
+function GuideRunToastTitle({ failed }: { failed: boolean }) {
+  const gt = useGT();
+  return failed ? gt("Review guide failed") : gt("Review guide ready");
+}
+
+function OpenGuideLabel() {
+  const gt = useGT();
+  return gt("Open guide");
+}
 
 const RUN_POLL_MS = 5_000;
 const UNSEEN_RUN_MS = 60_000;
@@ -117,7 +129,7 @@ function watchGuideRun(
     if (looking) {
       const toastId = toastManager.add({
         type: failure === null ? "success" : "error",
-        title,
+        title: <GuideRunToastTitle failed={failure !== null} />,
         description: failure === null ? body : `${body}: ${failure}`,
         data: {
           hideCopyButton: true,
@@ -129,7 +141,7 @@ function watchGuideRun(
             ),
         },
         actionProps: {
-          children: "Open guide",
+          children: <OpenGuideLabel />,
           onClick: () => {
             toastManager.close(toastId);
             open();

@@ -14,6 +14,7 @@ import { openRemoteEditorUrl, useRemoteCapableEditors, useRemoteOpenState } from
 import { registerCommands } from "../../shortcuts/dispatcher";
 import { shellEnvironment } from "../../state/shell";
 import { useAtomCommand } from "../../state/use-atom-command";
+import { useGT } from "gt-react";
 
 /** Marks an OpenInPicker's primary button as the target of `editor.openFavorite`. */
 export const OPEN_FAVORITE_EDITOR_ATTRIBUTE = "data-open-favorite-editor";
@@ -53,6 +54,7 @@ export function useOpenFavoriteEditorShortcut({
   availableEditors: ReadonlyArray<EditorId>;
   openInCwd: string | null;
 }) {
+  const gt = useGT();
   const openInEditorMutation = useAtomCommand(shellEnvironment.openInEditor, "open in editor");
   const remote = useRemoteOpenState(environmentId);
   const remoteCapableEditors = useRemoteCapableEditors();
@@ -83,7 +85,7 @@ export function useOpenFavoriteEditorShortcut({
         });
         if (url === undefined) return;
         void openRemoteEditorUrl(url).then((opened) => {
-          if (opened) announce(`Opened in ${label}`);
+          if (opened) announce(gt("Opened in {editor}", { editor: label }));
         });
         return;
       }
@@ -94,7 +96,7 @@ export function useOpenFavoriteEditorShortcut({
           editor: preferredEditor,
         },
       }).then((result) => {
-        if (result._tag === "Success") announce(`Opened in ${label}`);
+        if (result._tag === "Success") announce(gt("Opened in {editor}", { editor: label }));
       });
     };
     window.addEventListener("keydown", handler);
@@ -102,6 +104,7 @@ export function useOpenFavoriteEditorShortcut({
   }, [
     enabled,
     environmentId,
+    gt,
     keybindings,
     openInCwd,
     openInEditorMutation,

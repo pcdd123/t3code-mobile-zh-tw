@@ -8,6 +8,8 @@ import type {
   PullRequestFilesViewedResult,
   PullRequestRef,
 } from "@t3tools/contracts";
+import { useGT } from "gt-react";
+import { createElement } from "react";
 
 import { appAtomRegistry } from "~/rpc/atomRegistry";
 import {
@@ -231,6 +233,12 @@ function filesViewedScopeKey({ environmentId, reference }: FilesViewedTarget): s
 const filesViewedAtom = ({ environmentId, reference }: FilesViewedTarget) =>
   pullRequestEnvironment.filesViewed({ environmentId, input: reference });
 
+// The store reports outside React, so the toast title renders the translation itself.
+function ViewedFilesFailureTitle() {
+  const gt = useGT();
+  return gt("Could not update viewed files");
+}
+
 const filesViewedStore = createFilesViewedStore({
   flushDelayMs: 400,
   subscribeAnswers: ({ environmentId, reference }, onAnswer) =>
@@ -243,7 +251,8 @@ const filesViewedStore = createFilesViewedStore({
       { reportFailure: false },
     ),
   refresh: (target) => appAtomRegistry.refresh(filesViewedAtom(target)),
-  reportFailure: () => toastManager.add({ type: "error", title: "Could not update viewed files" }),
+  reportFailure: () =>
+    toastManager.add({ type: "error", title: createElement(ViewedFilesFailureTitle) }),
 });
 
 export function filesViewedScope(target: FilesViewedTarget): FilesViewedScopeHandle {

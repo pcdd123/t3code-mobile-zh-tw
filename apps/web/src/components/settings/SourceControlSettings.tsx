@@ -2,6 +2,7 @@ import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { ChevronDownIcon } from "lucide-react";
 import { useAtomValue } from "@effect/atom-react";
 import * as Option from "effect/Option";
+import { useGT } from "gt-react";
 import { useState, type ReactNode } from "react";
 import type {
   SourceControlDiscoveryResult,
@@ -50,6 +51,7 @@ import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { isSourceControlProviderOffered } from "@t3tools/client-runtime/operations/projects";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { sourceControlIcon } from "~/sourceControlPresentation";
+import { keepPlaceholders, withNodes } from "../Localized";
 
 const EMPTY_DISCOVERY_RESULT: SourceControlDiscoveryResult = {
   versionControlSystems: [],
@@ -76,26 +78,30 @@ function isVcsNotReady(item: VcsDiscoveryItem | SourceControlProviderDiscoveryIt
   return !isProviderDiscoveryItem(item) && !item.implemented;
 }
 
-function authPresentation(auth: SourceControlProviderAuth): {
+function authPresentation(
+  auth: SourceControlProviderAuth,
+  gt: ReturnType<typeof useGT>,
+): {
   readonly label: string;
   readonly badge: "secondary" | null;
 } {
   if (auth.status === "authenticated") {
-    return { label: "Authenticated", badge: null };
+    return { label: gt("Authenticated"), badge: null };
   }
   if (auth.status === "unauthenticated") {
-    return { label: "Not authenticated", badge: "secondary" };
+    return { label: gt("Not authenticated"), badge: "secondary" };
   }
-  return { label: "Status unknown", badge: null };
+  return { label: gt("Status unknown"), badge: null };
 }
 
 function RedactedAccount(props: { readonly account: string | null }) {
+  const gt = useGT();
   return (
     <RedactedSensitiveText
       value={props.account}
-      ariaLabel="Toggle source control account visibility"
-      revealTooltip="Click to reveal account"
-      hideTooltip="Click to hide account"
+      ariaLabel={gt("Toggle source control account visibility")}
+      revealTooltip={gt("Click to reveal account")}
+      hideTooltip={gt("Click to hide account")}
     />
   );
 }
@@ -151,17 +157,19 @@ function itemSummary({
   item,
   auth,
   authAccount,
+  gt,
 }: {
   readonly item: VcsDiscoveryItem | SourceControlProviderDiscoveryItem;
   readonly auth: SourceControlProviderAuth | null;
   readonly authAccount: string | null;
+  readonly gt: ReturnType<typeof useGT>;
 }) {
   if (isVcsNotReady(item)) {
-    return <span>Support for {item.label} is coming soon.</span>;
+    return <span>{gt("Support for {name} is coming soon.", { name: item.label })}</span>;
   }
 
   if (item.status !== "available") {
-    return <span>Not available on this server: {item.installHint}</span>;
+    return <span>{gt("Not available on this server: {hint}", { hint: item.installHint })}</span>;
   }
 
   if (auth) {
@@ -169,10 +177,10 @@ function itemSummary({
       const authDetail = optionLabel(auth.detail);
       return (
         <>
-          <span>Authenticated</span>
+          <span>{gt("Authenticated")}</span>
           {authAccount ? (
             <>
-              <span aria-hidden>as</span>
+              <span aria-hidden>{gt("as")}</span>
               <RedactedAccount account={authAccount} />
             </>
           ) : null}
@@ -182,31 +190,44 @@ function itemSummary({
     }
 
     if (!item.executable && auth.status === "unauthenticated") {
-      return <span>Available. {item.installHint}</span>;
+      return <span>{gt("Available. {hint}", { hint: item.installHint })}</span>;
     }
 
     if (auth.status === "unauthenticated" && auth.accounts?.some((entry) => entry.authenticated)) {
-      return <span>{optionLabel(auth.detail) ?? `Every ${item.label} host is turned off.`}</span>;
+      return (
+        <span>
+          {optionLabel(auth.detail) ?? gt("Every {name} host is turned off.", { name: item.label })}
+        </span>
+      );
     }
 
     if (auth.status === "unauthenticated") {
       return (
         <span>
-          {item.label} is not authenticated on this server. Sign in or configure credentials using
-          the <code className="rounded bg-muted px-1 py-px text-2xs">{item.executable}</code> tool
-          on the server host to enable change request features.
+          {withNodes(
+            gt(
+              "{name} is not authenticated on this server. Sign in or configure credentials using the {tool} tool on the server host to enable change request features.",
+              { ...keepPlaceholders("tool"), name: item.label },
+            ),
+            {
+              tool: <code className="rounded bg-muted px-1 py-px text-2xs">{item.executable}</code>,
+            },
+          )}
         </span>
       );
     }
     const authDetail = optionLabel(auth.detail);
     return (
       <span>
-        Could not verify {item.label}. {authDetail ?? item.installHint}
+        {gt("Could not verify {name}. {detail}", {
+          name: item.label,
+          detail: authDetail ?? item.installHint,
+        })}
       </span>
     );
   }
 
-  return <span>Available</span>;
+  return <span>{gt("Available")}</span>;
 }
 
 function DiscoveryItemRow({
@@ -223,9 +244,10 @@ function DiscoveryItemRow({
   };
   readonly children?: ReactNode;
 }) {
+  const gt = useGT();
   const version = optionLabel(item.version);
   const auth = isProviderDiscoveryItem(item) ? item.auth : null;
-  const authStatus = auth ? authPresentation(auth) : null;
+  const authStatus = auth ? authPresentation(auth, gt) : null;
   const authAccount = auth ? optionLabel(auth.account) : null;
   const [isExpanded, setIsExpanded] = useState(false);
   const hasDetails = children !== undefined;
@@ -253,7 +275,7 @@ function DiscoveryItemRow({
               {version ? <code className="text-xs text-muted-foreground">{version}</code> : null}
               {isVcsNotReady(item) ? (
                 <Badge variant="warning" size="sm">
-                  Coming Soon
+                  {gt("Coming Soon")}
                 </Badge>
               ) : null}
               {authStatus?.badge ? (
@@ -263,7 +285,7 @@ function DiscoveryItemRow({
               ) : null}
             </div>
             <p className="flex min-w-0 flex-wrap items-center gap-x-1 text-xs leading-normal text-muted-foreground/80">
-              {itemSummary({ item, auth, authAccount })}
+              {itemSummary({ item, auth, authAccount, gt })}
             </p>
           </div>
           <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto sm:justify-end">
@@ -273,7 +295,7 @@ function DiscoveryItemRow({
                 variant="ghost-muted"
                 onClick={() => setIsExpanded((open) => !open)}
                 aria-expanded={isExpanded}
-                aria-label={`Toggle ${item.label} details`}
+                aria-label={gt("Toggle {name} details", { name: item.label })}
               >
                 <ChevronDownIcon
                   className={cn("size-3.5 transition-transform", isExpanded && "rotate-180")}
@@ -288,17 +310,21 @@ function DiscoveryItemRow({
                       checked={offered.checked}
                       disabled={offered.disabled}
                       onCheckedChange={offered.onChange}
-                      aria-label={`Offer ${item.label} when adding or publishing a project`}
+                      aria-label={gt("Offer {name} when adding or publishing a project", {
+                        name: item.label,
+                      })}
                     />
                   }
                 />
-                <TooltipPopup side="top">Offer when adding or publishing a project</TooltipPopup>
+                <TooltipPopup side="top">
+                  {gt("Offer when adding or publishing a project")}
+                </TooltipPopup>
               </Tooltip>
             ) : !isVcsNotReady(item) ? (
               <Switch
                 checked={item.status === "available"}
                 disabled
-                aria-label={`${item.label} availability`}
+                aria-label={gt("{name} availability", { name: item.label })}
               />
             ) : null}
           </div>
@@ -363,28 +389,31 @@ function EmptySourceControlDiscovery({
   readonly isPending: boolean;
   readonly onScan: () => void;
 }) {
+  const gt = useGT();
   const hasError = error !== null;
 
   return (
-    <SettingsSection id={searchableSetting("source-control").id} title="Server environment">
+    <SettingsSection id={searchableSetting("source-control").id} title={gt("Server environment")}>
       <Empty>
         <EmptyMedia variant="icon">
           <PullRequestGlyph.pullRequest />
         </EmptyMedia>
         <EmptyHeader>
           <EmptyTitle>
-            {hasError ? "Could not scan the server environment" : "Nothing detected yet"}
+            {hasError ? gt("Could not scan the server environment") : gt("Nothing detected yet")}
           </EmptyTitle>
           <EmptyDescription>
             {hasError
               ? error
-              : "Install Git on the server, add optional hosting integrations or credentials your workspace needs, then rescan."}
+              : gt(
+                  "Install Git on the server, add optional hosting integrations or credentials your workspace needs, then rescan.",
+                )}
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button size="sm" variant="outline" onClick={onScan} disabled={isPending}>
             <RefreshIcon size="sm" refreshing={isPending} />
-            Scan
+            {gt("Scan")}
           </Button>
         </EmptyContent>
       </Empty>
@@ -393,6 +422,7 @@ function EmptySourceControlDiscovery({
 }
 
 export function SourceControlSettingsPanel() {
+  const gt = useGT();
   const { scope, environment, connectedEnvironments } = useSettingsScope();
 
   const environmentId =
@@ -442,7 +472,7 @@ export function SourceControlSettingsPanel() {
             {credentials.appSignIn && item.appSignIn === true ? (
               <div className="flex items-center gap-3 text-2xs text-muted-foreground">
                 <span aria-hidden className="h-px flex-1 bg-border" />
-                Or use your own credentials
+                {gt("Or use your own credentials")}
                 <span aria-hidden className="h-px flex-1 bg-border" />
               </div>
             ) : null}
@@ -487,13 +517,13 @@ export function SourceControlSettingsPanel() {
             variant="ghost-muted"
             onClick={handleScan}
             disabled={discovery.isPending}
-            aria-label="Rescan server environment"
+            aria-label={gt("Rescan server environment")}
           >
             <RefreshIcon refreshing={discovery.isPending} />
           </Button>
         }
       />
-      <TooltipPopup side="top">Rescan Git and hosting integrations</TooltipPopup>
+      <TooltipPopup side="top">{gt("Rescan Git and hosting integrations")}</TooltipPopup>
     </Tooltip>
   );
 
@@ -501,25 +531,30 @@ export function SourceControlSettingsPanel() {
     <SettingsPageContainer>
       <ProjectDefaultsSettings category="source-control" />
       {environmentId === null ? (
-        <SettingsSection id={searchableSetting("source-control").id} title="Server environment">
+        <SettingsSection
+          id={searchableSetting("source-control").id}
+          title={gt("Server environment")}
+        >
           <p className="px-4 py-3 text-sm text-muted-foreground">
-            Connect an environment to inspect its version control tools and hosting integrations.
+            {gt(
+              "Connect an environment to inspect its version control tools and hosting integrations.",
+            )}
           </p>
         </SettingsSection>
       ) : isInitialScanPending ? (
         <>
           <SourceControlSectionSkeleton
-            title={`Version Control${environmentSuffix}`}
+            title={`${gt("Version Control")}${environmentSuffix}`}
             headerAction={scanButton}
           />
-          <SourceControlSectionSkeleton title="Source control providers" />
+          <SourceControlSectionSkeleton title={gt("Source control providers")} />
         </>
       ) : hasDiscoveryItems ? (
         <>
           {hasVersionControlSystems ? (
             <SettingsSection
               id={searchableSetting("source-control").id}
-              title={`Version Control${environmentSuffix}`}
+              title={`${gt("Version Control")}${environmentSuffix}`}
               headerAction={scanButton}
             >
               {result.versionControlSystems.map((item) => (
@@ -533,8 +568,8 @@ export function SourceControlSettingsPanel() {
               id={hasVersionControlSystems ? undefined : searchableSetting("source-control").id}
               title={
                 hasVersionControlSystems
-                  ? "Source control providers"
-                  : `Source control providers${environmentSuffix}`
+                  ? gt("Source control providers")
+                  : `${gt("Source control providers")}${environmentSuffix}`
               }
               headerAction={hasVersionControlSystems ? null : scanButton}
             >

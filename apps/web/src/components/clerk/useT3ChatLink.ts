@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { findErrorTraceId } from "@t3tools/client-runtime/errors";
 import {
   isAtomCommandInterrupted,
@@ -14,16 +15,16 @@ import { readLocalApi } from "../../localApi";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { toastManager } from "../ui/toast";
 
-function reportFailure(title: string, cause: unknown) {
+function reportFailure(title: string, cause: unknown, gt: ReturnType<typeof useGT>) {
   const traceId = findErrorTraceId(cause);
   toastManager.add({
     type: "error",
     title,
-    description: cause instanceof Error ? cause.message : "Try again.",
+    description: cause instanceof Error ? cause.message : gt("Try again."),
     data: traceId
       ? {
           secondaryActionProps: {
-            children: "Copy trace ID",
+            children: gt("Copy trace ID"),
             onClick: () => void navigator.clipboard?.writeText(traceId),
           },
         }
@@ -33,6 +34,7 @@ function reportFailure(title: string, cause: unknown) {
 
 /** Starts and removes the T3 Chat link that raises the T3 Connect tunnel cap. */
 export function useT3ChatLink() {
+  const gt = useGT();
   const linkState = useManagedRelayT3ChatLink();
   const createLinkRequest = useAtomCommand(createManagedRelayT3ChatLinkRequestCommand, {
     reportFailure: false,
@@ -53,7 +55,7 @@ export function useT3ChatLink() {
         ?.shell.openExternal(result.value)
         .catch(() => undefined);
     } else if (!isAtomCommandInterrupted(result)) {
-      reportFailure("Could not start linking", squashAtomCommandFailure(result));
+      reportFailure(gt("Could not start linking"), squashAtomCommandFailure(result), gt);
     }
     setPending(null);
   };
@@ -67,7 +69,7 @@ export function useT3ChatLink() {
       setLinkUrl(null);
       linkState.refresh();
     } else if (!isAtomCommandInterrupted(result)) {
-      reportFailure("Could not unlink T3 Chat", squashAtomCommandFailure(result));
+      reportFailure(gt("Could not unlink T3 Chat"), squashAtomCommandFailure(result), gt);
     }
     setPending(null);
   };

@@ -35,6 +35,7 @@ import {
 } from "../ThreadStatusIndicators";
 
 import { ThreadDetailsPrRow } from "./ThreadDetailsPrRow";
+import { useGT } from "gt-react";
 
 function ThreadDetailsPrLinkRow({
   environmentId,
@@ -51,6 +52,7 @@ function ThreadDetailsPrLinkRow({
   onStopWatching?: (() => void) | undefined;
   composerTarget?: ComposerThreadTarget | undefined;
 }) {
+  const gt = useGT();
   const projects = useProjects();
   const parsed = sourceControlClients.parseChangeRequestUrl(link.url)?.link;
   const project =
@@ -68,7 +70,7 @@ function ThreadDetailsPrLinkRow({
       pr={pr}
       number={link.number}
       reference={link}
-      status={prStatusIndicator(pr, linked?.sourceControlProvider)}
+      status={prStatusIndicator(pr, linked?.sourceControlProvider, gt)}
       project={project}
       label={`#${link.number}${link.snapshot === null ? "" : `: ${link.snapshot.title}`}`}
       openAriaLabel={link.url}
@@ -92,6 +94,7 @@ function ThreadDetailsPrRows({
   currentLink: ThreadPullRequestLink | null;
   onOpenLink: (event: ReactMouseEvent<HTMLElement>, url: string) => void;
 }) {
+  const gt = useGT();
   const [expanded, setExpanded] = useState(false);
   const watch = useAtomCommand(threadEnvironment.watchPullRequest, { reportFailure: true });
   const stopWatching = (link: ThreadPullRequestLink | null) =>
@@ -149,7 +152,7 @@ function ThreadDetailsPrRows({
         ) : (
           <ChevronDownIcon aria-hidden className="size-4 shrink-0" />
         )}
-        {expanded ? "Show less" : `Show ${rest.length} more`}
+        {expanded ? gt("Show less") : gt("Show {count} more", { count: rest.length })}
       </ThreadDetailsControl>
     </>
   );

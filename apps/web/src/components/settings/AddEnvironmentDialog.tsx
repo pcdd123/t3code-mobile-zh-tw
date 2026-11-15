@@ -1,4 +1,3 @@
-import { pipe } from "effect/Function";
 import { useGT } from "gt-react";
 import { ChevronsLeftRightEllipsisIcon, PlusIcon, TerminalIcon } from "lucide-react";
 import { useAtomValue } from "@effect/atom-react";
@@ -176,7 +175,7 @@ export function AddEnvironmentDialog({
     });
     if (result._tag === "Failure") {
       if (session === savedBackendSessionRef.current && !isAtomCommandInterrupted(result)) {
-        pipe(squashAtomCommandFailure(result), formatDesktopSshConnectionError, onErrorChange);
+        onErrorChange(formatDesktopSshConnectionError(squashAtomCommandFailure(result), gt));
       }
       setIsAddingSavedBackend(false);
       return;
@@ -187,8 +186,11 @@ export function AddEnvironmentDialog({
       type: "success",
       title: routeTarget ? gt("Route added") : gt("Environment connected"),
       description: routeTarget
-        ? `${routeTarget.label} can now be reached over SSH ${target.alias}.`
-        : `${target.alias} is ready over an SSH-managed tunnel.`,
+        ? gt("{name} can now be reached over SSH {host}.", {
+            name: routeTarget.label,
+            host: target.alias,
+          })
+        : gt("{host} is ready over an SSH-managed tunnel.", { host: target.alias }),
     });
     setIsAddingSavedBackend(false);
   };
@@ -197,13 +199,16 @@ export function AddEnvironmentDialog({
     if (savedBackendMode === "ssh") {
       let target: DesktopSshEnvironmentTarget;
       try {
-        target = parseManualDesktopSshTarget({
-          host: savedBackendSshHost,
-          username: savedBackendSshUsername,
-          port: savedBackendSshPort,
-        });
+        target = parseManualDesktopSshTarget(
+          {
+            host: savedBackendSshHost,
+            username: savedBackendSshUsername,
+            port: savedBackendSshPort,
+          },
+          gt,
+        );
       } catch (error) {
-        onErrorChange(formatDesktopSshConnectionError(error));
+        onErrorChange(formatDesktopSshConnectionError(error, gt));
         return;
       }
 
@@ -215,10 +220,13 @@ export function AddEnvironmentDialog({
     onErrorChange(null);
     let remotePairingInput: ReturnType<typeof parseRemotePairingFields>;
     try {
-      remotePairingInput = parseRemotePairingFields({
-        host: savedBackendHost,
-        pairingCode: savedBackendPairingCode,
-      });
+      remotePairingInput = parseRemotePairingFields(
+        {
+          host: savedBackendHost,
+          pairingCode: savedBackendPairingCode,
+        },
+        gt,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : gt("Failed to add backend.");
       onErrorChange(message);
@@ -260,7 +268,7 @@ export function AddEnvironmentDialog({
         ? {
             type: "success",
             title: gt("Route added"),
-            description: `${routeTarget.label} now has another way to connect.`,
+            description: gt("{name} now has another way to connect.", { name: routeTarget.label }),
           }
         : {
             type: "success",
@@ -291,7 +299,7 @@ export function AddEnvironmentDialog({
       resolved = await desktopBridge.resolveSshHost(target.alias);
     } catch (error) {
       if (session === savedBackendSessionRef.current) {
-        onErrorChange(formatDesktopSshConnectionError(error));
+        onErrorChange(formatDesktopSshConnectionError(error, gt));
       }
       setIsAddingSavedBackend(false);
       return;

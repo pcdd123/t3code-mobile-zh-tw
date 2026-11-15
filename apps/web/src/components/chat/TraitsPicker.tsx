@@ -40,6 +40,7 @@ import { Badge } from "../ui/badge";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { ComposerControl, ComposerControlIcon, type ComposerControlSize } from "./ComposerControl";
 import { useComposerMenuState } from "./useComposerMenuState";
+import { useGT } from "gt-react";
 
 type ProviderOptions = ReadonlyArray<ProviderOptionSelection>;
 
@@ -104,9 +105,10 @@ type TraitsPersistence =
     };
 
 function DefaultBadge() {
+  const gt = useGT();
   return (
     <Badge variant="outline" size="sm" className="min-w-0">
-      Default
+      {gt("Default")}
     </Badge>
   );
 }
@@ -373,10 +375,13 @@ export function useTraitsSelection({
   };
 }
 
-export const ULTRATHINK_IN_BODY_NOTE =
-  'Your prompt contains "ultrathink" in the text. Remove it to change this option.';
+export function UltrathinkInBodyNote() {
+  const gt = useGT();
+  return gt('Your prompt contains "ultrathink" in the text. Remove it to change this option.');
+}
 
 const TraitsMenuContent = memo(function TraitsMenuContentImpl(props: TraitsSelectionInput) {
+  const gt = useGT();
   const traits = useTraitsSelection(props);
   const {
     descriptors,
@@ -425,7 +430,7 @@ const TraitsMenuContent = memo(function TraitsMenuContentImpl(props: TraitsSelec
             </div>
             {ultrathinkInBodyText && descriptor.id === primarySelectDescriptor?.id ? (
               <div className="px-2 pb-1.5 text-muted-foreground/80 text-xs">
-                {ULTRATHINK_IN_BODY_NOTE}
+                <UltrathinkInBodyNote />
               </div>
             ) : null}
             <MenuRadioGroup
@@ -471,7 +476,7 @@ const TraitsMenuContent = memo(function TraitsMenuContentImpl(props: TraitsSelec
               {(["on", "off"] as const).map((value) => (
                 <MenuRadioItem key={value} value={value} hideIndicator closeOnClick>
                   <span className="flex w-full min-w-0 items-center justify-between gap-3">
-                    <span>{value === "on" ? "On" : "Off"}</span>
+                    <span>{value === "on" ? gt("On") : gt("Off")}</span>
                   </span>
                 </MenuRadioItem>
               ))}

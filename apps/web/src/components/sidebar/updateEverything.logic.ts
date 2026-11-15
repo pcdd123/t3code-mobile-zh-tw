@@ -9,6 +9,7 @@ import {
 } from "@t3tools/contracts";
 import { cliReleaseChannelOf, desktopUpdateChannelOf } from "@t3tools/shared/cliRelease";
 import { compareSemverVersions } from "@t3tools/shared/semver";
+import type { useGT } from "gt-react";
 
 import {
   resolveServerSelfUpdateCapability,
@@ -16,6 +17,8 @@ import {
   supportsDesktopAppUpdate,
 } from "~/versionSkew";
 import type { ServerUpdateOutcome, ServerUpdateTarget } from "../ServerUpdateAction";
+
+type Translate = ReturnType<typeof useGT>;
 
 export interface UpdateEverythingMachine {
   readonly environmentId: EnvironmentId;
@@ -464,13 +467,14 @@ export function describeUpdateCapsule(
   machines: ReadonlyArray<UpdateRunMachineView>,
   local: UpdateRunLocalState,
   now: number,
+  gt: Translate,
 ): UpdateCapsuleView {
   if (run.phase === "countdown" && run.restartAt !== null) {
     const seconds = Math.max(0, Math.ceil((run.restartAt - now) / 1000));
-    return { tone: "default", label: `Restart in ${seconds}s`, action: "later" };
+    return { tone: "default", label: gt("Restart in {seconds}s", { seconds }), action: "later" };
   }
   if (run.phase === "installing") {
-    return { tone: "default", label: "Restarting…", action: null };
+    return { tone: "default", label: gt("Restarting…"), action: null };
   }
   const active = machines.filter(({ status }) => isActive(status) && status !== "waiting");
   const slowest = active.toSorted((a, b) => a.machine.startedAt - b.machine.startedAt)[0];
@@ -479,7 +483,7 @@ export function describeUpdateCapsule(
       tone: "slow",
       label: slowest.machine.label,
       slow: {
-        status: RUN_STATUS_LABELS[slowest.status],
+        status: runStatusLabel(slowest.status, gt),
         elapsed: formatUpdateElapsed(now - slowest.machine.startedAt),
       },
       action: null,
@@ -487,12 +491,19 @@ export function describeUpdateCapsule(
   }
   const done = machines.filter(({ status }) => status === "done").length;
   if (machines.some(({ status }) => isActive(status))) {
-    return { tone: "default", label: `${done} of ${machines.length} updated`, action: null };
+    return {
+      tone: "default",
+      label: gt("{done} of {total} updated", { done, total: machines.length }),
+      action: null,
+    };
   }
   if (local?.status === "downloading") {
     return {
       tone: "default",
-      label: `Downloading${local.percent === null ? "" : ` ${Math.floor(local.percent)}%`}`,
+      label:
+        local.percent === null
+          ? gt("Downloading")
+          : gt("Downloading {percent}%", { percent: Math.floor(local.percent) }),
       action: null,
     };
   }
@@ -500,24 +511,39 @@ export function describeUpdateCapsule(
   if (failed.length > 0) {
     return {
       tone: "failed",
-      label: failed.length === 1 ? `${failed[0]!.machine.label} failed` : `${failed.length} failed`,
+      label:
+        failed.length === 1
+          ? gt("{machine} failed", { machine: failed[0]!.machine.label })
+          : gt("{count} failed", { count: failed.length }),
       action:
         !run.trackSwitch && failed.some(({ machine }) => machine.server !== null)
           ? "retry"
           : "dismiss",
     };
   }
-  return { tone: "default", label: `${done} of ${machines.length} updated`, action: null };
+  return {
+    tone: "default",
+    label: gt("{done} of {total} updated", { done, total: machines.length }),
+    action: null,
+  };
 }
 
-export const RUN_STATUS_LABELS: Record<UpdateRunMachineStatus, string> = {
-  providers: "updating providers",
-  waiting: "waiting",
-  downloading: "downloading",
-  restarting: "restarting",
-  done: "done",
-  failed: "failed",
-};
+export function runStatusLabel(status: UpdateRunMachineStatus, gt: Translate): string {
+  switch (status) {
+    case "providers":
+      return gt("updating providers");
+    case "waiting":
+      return gt("waiting");
+    case "downloading":
+      return gt("downloading");
+    case "restarting":
+      return gt("restarting");
+    case "done":
+      return gt("done");
+    case "failed":
+      return gt("failed");
+  }
+}
 
 export interface UpdateEverythingResult {
   readonly localVersion: string | null;
@@ -557,33 +583,39 @@ export function collectUpdateEverythingResult(input: {
 export function getUpdateEverythingToastView(
   result: UpdateEverythingResult,
   appVersion: string,
+  gt: Translate,
 ): {
   readonly type: "success" | "error";
   readonly title: string;
   readonly description?: string;
 } | null {
   const parts = [
-    result.localVersion !== null && result.localVersion === appVersion ? "this app" : null,
-    countLabel(result.updatedServers, "server"),
-    countLabel(result.updatedProviders, "provider"),
+    result.localVersion !== null && result.localVersion === appVersion ? gt("this app") : null,
+    serverCountLabel(result.updatedServers, gt),
+    providerCountLabel(result.updatedProviders, gt),
   ].filter((part) => part !== null);
   const restarting =
     result.restarting.length === 0
       ? []
       : [
-          `${joinList(result.restarting)} ${result.restarting.length === 1 ? "is" : "are"} still restarting.`,
+          result.restarting.length === 1
+            ? gt("{names} is still restarting.", { names: joinList(result.restarting, gt) })
+            : gt("{names} are still restarting.", { names: joinList(result.restarting, gt) }),
         ];
   if (result.failures.length === 0) {
     if (parts.length === 0) return null;
     return {
       type: "success",
-      title: `Updated ${joinList(parts)}`,
+      title: gt("Updated {items}", { items: joinList(parts, gt) }),
       ...(restarting.length === 0 ? {} : { description: restarting.join("\n") }),
     };
   }
   return {
     type: "error",
-    title: parts.length === 0 ? "Update failed" : `Updated ${joinList(parts)}`,
+    title:
+      parts.length === 0
+        ? gt("Update failed")
+        : gt("Updated {items}", { items: joinList(parts, gt) }),
     description: [...result.failures, ...restarting].join("\n"),
   };
 }
@@ -614,17 +646,30 @@ export interface UpdateEverythingRow {
   readonly providers: ReadonlyArray<string>;
 }
 
-function countLabel(count: number, noun: string): string | null {
-  return count === 0 ? null : `${count} ${noun}${count === 1 ? "" : "s"}`;
+function serverCountLabel(count: number, gt: Translate): string | null {
+  if (count === 0) return null;
+  return count === 1 ? gt("1 server") : gt("{count} servers", { count });
 }
 
-function joinList(parts: ReadonlyArray<string>): string {
-  if (parts.length <= 2) return parts.join(" and ");
-  return `${parts.slice(0, -1).join(", ")}, and ${parts.at(-1)}`;
+function providerCountLabel(count: number, gt: Translate): string | null {
+  if (count === 0) return null;
+  return count === 1 ? gt("1 provider") : gt("{count} providers", { count });
+}
+
+function joinList(parts: ReadonlyArray<string>, gt: Translate): string {
+  if (parts.length <= 1) return parts.join("");
+  if (parts.length === 2) return gt("{first} and {second}", { first: parts[0], second: parts[1] });
+  return gt("{items}, and {last}", {
+    items: parts.slice(0, -1).join(gt(", ")),
+    last: parts.at(-1),
+  });
 }
 
 /** One row per machine: this app's machines first, then servers, provider-only, and skipped. */
-export function describeUpdateEverything(plan: UpdateEverythingPlan): {
+export function describeUpdateEverything(
+  plan: UpdateEverythingPlan,
+  gt: Translate,
+): {
   readonly summary: string;
   readonly version: string | null;
   readonly providerCount: number;
@@ -634,13 +679,16 @@ export function describeUpdateEverything(plan: UpdateEverythingPlan): {
     (count, machine) => count + machine.providers.length,
     0,
   );
-  const summary = `Update ${joinList(
-    [
-      plan.localVersion ? "this app" : null,
-      countLabel(plan.servers.length, "server"),
-      countLabel(providerCount, "provider"),
-    ].filter((part) => part !== null),
-  )}`;
+  const summary = gt("Update {items}", {
+    items: joinList(
+      [
+        plan.localVersion ? gt("this app") : null,
+        serverCountLabel(plan.servers.length, gt),
+        providerCountLabel(providerCount, gt),
+      ].filter((part) => part !== null),
+      gt,
+    ),
+  });
 
   const rows = new Map<EnvironmentId | null, UpdateEverythingRow>();
   const update = (
@@ -658,7 +706,7 @@ export function describeUpdateEverything(plan: UpdateEverythingPlan): {
     rows.set(environmentId, { ...row, ...change });
   };
   if (plan.localVersion) {
-    if (plan.localMachines.length === 0) update(null, "This app", { app: "this-app" });
+    if (plan.localMachines.length === 0) update(null, gt("This app"), { app: "this-app" });
     for (const machine of plan.localMachines) {
       update(machine.environmentId, machine.label, { app: "this-app" });
     }

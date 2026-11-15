@@ -1,5 +1,6 @@
 import { StackActions, useNavigation } from "@react-navigation/native";
 import { Platform } from "react-native";
+import { useGT } from "gt-react-native";
 import { resolveThreadReferenceCopyTarget } from "@t3tools/client-runtime/thread-reference";
 import {
   createContext,
@@ -53,6 +54,7 @@ export function HardwareKeyboardCommandProvider({
   pathname,
 }: PropsWithChildren<{ readonly pathname: string }>) {
   const navigation = useNavigation();
+  const gt = useGT();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
   const activeThreadRef = useMemo(() => parseActiveThreadPath(pathname), [pathname]);
@@ -141,13 +143,17 @@ export function HardwareKeyboardCommandProvider({
             didCopy
               ? {
                   phase: "success",
-                  label: copyTarget.successTitle,
+                  label:
+                    copyTarget.kind === "pull-request" ? gt("PR link copied") : gt("Thread copied"),
                   description: copyTarget.description,
                 }
               : {
                   phase: "error",
-                  label: copyTarget.failureTitle,
-                  description: "Try again.",
+                  label:
+                    copyTarget.kind === "pull-request"
+                      ? gt("Failed to copy PR link")
+                      : gt("Failed to copy thread"),
+                  description: gt("Try again."),
                 },
           );
         });
@@ -182,7 +188,7 @@ export function HardwareKeyboardCommandProvider({
         navigation.navigate("ThreadReview", thread);
       }
     },
-    [copyTarget, navigation, pathname, showCopyFeedback],
+    [copyTarget, gt, navigation, pathname, showCopyFeedback],
   );
 
   const palette = useMemo(

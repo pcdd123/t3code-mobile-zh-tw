@@ -1,4 +1,5 @@
 import type { EnvironmentId, ThreadContextRecord } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
 import { collectInlineContextIds } from "../../lib/composerContextReferences";
 
 /** Attached threads the prompt still links to; replacing linked text leaves stale records. */
@@ -9,6 +10,46 @@ export function referencedThreadContexts(draft: {
   if (draft.threadContexts.length === 0) return [];
   const referenced = new Set(collectInlineContextIds(draft.prompt));
   return draft.threadContexts.filter((record) => referenced.has(record.contextId));
+}
+
+/** Notices stay English for comparison and tests; this translates them where they are shown. */
+export function localizeComposerSendNotice(gt: ReturnType<typeof useGT>, text: string): string {
+  switch (text) {
+    case "Checking machine resources":
+      return gt("Checking machine resources");
+    case "Resource checks are still running. You can choose a machine in the composer.":
+      return gt("Resource checks are still running. You can choose a machine in the composer.");
+    case "Choose a machine to continue":
+      return gt("Choose a machine to continue");
+    case "No machine can read every attached thread. Choose a machine in the composer or remove the threads.":
+      return gt(
+        "No machine can read every attached thread. Choose a machine in the composer or remove the threads.",
+      );
+    case "No eligible machine has available resources. Choose a machine in the composer to override.":
+      return gt(
+        "No eligible machine has available resources. Choose a machine in the composer to override.",
+      );
+    case "Approval declined. Your message changed, so it wasn't sent.":
+      return gt("Approval declined. Your message changed, so it wasn't sent.");
+    case "Your message changed, so it wasn't sent.":
+      return gt("Your message changed, so it wasn't sent.");
+    case "An approval is already being answered, so your message wasn't sent.":
+      return gt("An approval is already being answered, so your message wasn't sent.");
+    case "Another approval arrived, so your message wasn't sent.":
+      return gt("Another approval arrived, so your message wasn't sent.");
+    default:
+      return text;
+  }
+}
+
+export function localizeLoadBalancingSendWarning(
+  gt: ReturnType<typeof useGT>,
+  warning: ReturnType<typeof loadBalancingSendWarning>,
+) {
+  return {
+    title: localizeComposerSendNotice(gt, warning.title),
+    description: localizeComposerSendNotice(gt, warning.description),
+  };
 }
 
 /** Why a send waits for the user to pick a machine when no machine was chosen automatically. */

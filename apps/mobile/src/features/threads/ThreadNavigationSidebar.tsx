@@ -14,6 +14,7 @@ import { threadSearchMatchKey } from "@t3tools/client-runtime/state/thread-searc
 import { AnimatedLegendList } from "@legendapp/list/reanimated";
 import { THREAD_SIDEBAR_ROW_LAYOUT } from "./threadListAnimations";
 import { useAtomValue } from "@effect/atom-react";
+import { useGT } from "gt-react-native";
 import { useMemo, useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { GestureDetector, useNativeGesture } from "react-native-gesture-handler";
@@ -116,6 +117,7 @@ export function ThreadNavigationSidebar(props: ThreadNavigationSidebarProps) {
 }
 
 function ThreadNavigationSidebarPane(props: ThreadNavigationSidebarProps) {
+  const gt = useGT();
   const floatingTabsEnabled = useAndroidFloatingTabs();
   const { themeVariables: materialTheme } = useAppearancePreferences();
   const drawerColor = materialTheme["--color-drawer"];
@@ -531,14 +533,14 @@ function ThreadNavigationSidebarPane(props: ThreadNavigationSidebarProps) {
   };
   const header = (
     <WorkspaceListHeader
-      accessibilityLabel="T3 Code, Threads"
+      accessibilityLabel={gt("T3 Code, Threads")}
       onOpenEnvironments={props.onOpenEnvironmentSettings}
       onOpenSettings={props.onOpenSettings}
       search={{
         value: props.searchQuery,
         onChangeText: props.onSearchQueryChange,
-        placeholder: "Search",
-        accessibilityLabel: "Search threads",
+        placeholder: gt("Search"),
+        accessibilityLabel: gt("Search threads"),
       }}
       filter={{
         customized: options.selectedEnvironmentId !== null || selectedProjectKey !== null,
@@ -549,6 +551,7 @@ function ThreadNavigationSidebarPane(props: ThreadNavigationSidebarProps) {
           selectedProjectKey,
           onEnvironmentChange: setSelectedEnvironmentId,
           onProjectChange: setSelectedProjectKey,
+          gt,
         }),
       }}
       sidebar={{
@@ -572,16 +575,16 @@ function ThreadNavigationSidebarPane(props: ThreadNavigationSidebarProps) {
         }
       >
         {catalogState.isLoadingConnections
-          ? "Loading threads…"
+          ? gt("Loading threads…")
           : showAddEnvironment
-            ? "No environments connected"
+            ? gt("No environments connected")
             : props.searchQuery.trim().length > 0
               ? threadSearch.isPending
-                ? "Searching thread messages…"
-                : "No matching threads"
+                ? gt("Searching thread messages…")
+                : gt("No matching threads")
               : selectedProjectScope !== null
-                ? `No threads in ${selectedProjectScope.title}`
-                : "No threads yet"}
+                ? gt("No threads in {name}", { name: selectedProjectScope.title })
+                : gt("No threads yet")}
       </Text>
       {showAddEnvironment ? (
         <View className={Platform.OS === "android" ? "self-center" : "px-2"}>
@@ -589,7 +592,8 @@ function ThreadNavigationSidebarPane(props: ThreadNavigationSidebarProps) {
             tone="primary"
             size="compact"
             icon="plus"
-            label="Add environment"
+            label={gt("Add environment")}
+
             onPress={props.onOpenEnvironmentSettings}
           />
         </View>

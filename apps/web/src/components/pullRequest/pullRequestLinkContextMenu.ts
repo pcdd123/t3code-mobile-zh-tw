@@ -4,6 +4,8 @@ import {
   UNKNOWN_SOURCE_CONTROL_CLIENT,
 } from "@t3tools/client-runtime/source-control-clients";
 
+import type { useGT } from "gt-react";
+
 import { writeTextToClipboard } from "~/hooks/useCopyToClipboard";
 import { readLocalApi } from "~/localApi";
 
@@ -11,14 +13,19 @@ import { toastManager } from "../ui/toast";
 
 export type PullRequestLinkContextMenuAction = "copy-link" | "open-external";
 
-export const openOnHostLabel = (host: SourceControlDefinition): string =>
-  host === UNKNOWN_SOURCE_CONTROL_CLIENT ? "Open on host" : `Open on ${host.label}`;
+type Translate = ReturnType<typeof useGT>;
+
+export const openOnHostLabel = (host: SourceControlDefinition, gt: Translate): string =>
+  host === UNKNOWN_SOURCE_CONTROL_CLIENT
+    ? gt("Open on host")
+    : gt("Open on {providerName}", { providerName: host.label });
 
 function pullRequestLinkContextMenuItems(
   openLabel: string,
+  gt: Translate,
 ): readonly ContextMenuItem<PullRequestLinkContextMenuAction>[] {
   return [
-    { id: "copy-link", label: "Copy link", icon: "copy" },
+    { id: "copy-link", label: gt("Copy link"), icon: "copy" },
     { id: "open-external", label: openLabel },
   ];
 }
@@ -27,16 +34,18 @@ export async function showPullRequestLinkContextMenu({
   url,
   openLabel,
   position,
+  gt,
 }: {
   readonly url: string;
   readonly openLabel: string;
   readonly position: { readonly x: number; readonly y: number };
+  readonly gt: Translate;
 }): Promise<void> {
   const api = readLocalApi();
   if (!api) return;
   let action: PullRequestLinkContextMenuAction | null = null;
   try {
-    action = await api.contextMenu.show(pullRequestLinkContextMenuItems(openLabel), position);
+    action = await api.contextMenu.show(pullRequestLinkContextMenuItems(openLabel, gt), position);
   } catch {
     return;
   }
@@ -46,7 +55,7 @@ export async function showPullRequestLinkContextMenu({
   } catch {
     toastManager.add({
       type: "error",
-      title: action === "copy-link" ? "Could not copy the link" : "Could not open the link",
+      title: action === "copy-link" ? gt("Could not copy the link") : gt("Could not open the link"),
     });
   }
 }

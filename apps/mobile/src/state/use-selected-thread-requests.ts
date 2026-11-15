@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import * as Dialog from "../components/ui/Dialog";
 import { useServerConfigs } from "./entities";
 import {
@@ -164,6 +165,7 @@ function collectAnsweredRequestDrafts(
 }
 
 export function useSelectedThreadRequests() {
+  const gt = useGT();
   const respondToApproval = useAtomCommand(
     threadEnvironment.respondToApproval,
     "thread approval response",
@@ -360,8 +362,8 @@ export function useSelectedThreadRequests() {
         )
       ) {
         Dialog.alert(
-          "Attachments are not ready",
-          "Wait for uploads to finish, or retry failed uploads.",
+          gt("Attachments are not ready"),
+          gt("Wait for uploads to finish, or retry failed uploads."),
         );
         return;
       }

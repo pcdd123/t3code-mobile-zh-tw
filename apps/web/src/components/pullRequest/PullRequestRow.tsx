@@ -1,5 +1,6 @@
 import type { PullRequestAction } from "@t3tools/contracts";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
+import { useGT } from "gt-react";
 import { SearchIcon } from "lucide-react";
 import { PullRequestChangeBreakdownStat } from "./PullRequestChangeBreakdownStat";
 import { PullRequestStackPopover } from "./PullRequestStackPopover";
@@ -103,6 +104,7 @@ function PullRequestRowImpl({
   sweeping?: boolean;
   onCloseSweepStart?: (entry: EnvironmentPullRequestEntry, event: PointerEvent) => void;
 }) {
+  const gt = useGT();
   const { Icon, providerName, terminology } = getSourceControlPresentationForKind(entry.provider);
   return (
     <div
@@ -148,8 +150,9 @@ function PullRequestRowImpl({
                 event.stopPropagation();
                 void showPullRequestLinkContextMenu({
                   url: entry.url,
-                  openLabel: openOnHostLabel(sourceControlClients.get(entry.provider)),
+                  openLabel: openOnHostLabel(sourceControlClients.get(entry.provider), gt),
                   position: { x: event.clientX, y: event.clientY },
+                  gt,
                 });
               }}
             >
@@ -216,13 +219,13 @@ function PullRequestRowImpl({
                       <span className="flex min-w-6 items-center gap-1 overflow-hidden rounded-full border border-border/60 px-1 text-3xs" />
                     }
                   >
-                    <span className="sr-only">matched in the description</span>
+                    <span className="sr-only">{gt("matched in the description")}</span>
                     <SearchIcon aria-hidden className="size-3 shrink-0" />
                     <span aria-hidden className="hidden truncate @xs/pr-row-meta:block">
-                      matched in the description
+                      {gt("matched in the description")}
                     </span>
                   </TooltipTrigger>
-                  <TooltipPopup side="top">Matched in the description</TooltipPopup>
+                  <TooltipPopup side="top">{gt("Matched in the description")}</TooltipPopup>
                 </Tooltip>
               ) : null}
               {showProvider ? (

@@ -20,6 +20,7 @@ import {
 import { formatComposerContextReference } from "@t3tools/shared/composerContextReferences";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { normalizeThreadPullRequestKey } from "@t3tools/client-runtime/thread-pull-requests";
+import { useGT } from "gt-react-native";
 import { useRef, useState } from "react";
 import { pullRequestComposerContext } from "../../lib/composerContext";
 import { scopedThreadKey } from "../../lib/scopedEntities";
@@ -52,6 +53,7 @@ export function usePullRequestThreads(
   pr: PullRequestDetail | null,
   filePath?: string,
 ) {
+  const gt = useGT();
   const target = pullRequestTarget(params);
   const config = useEnvironmentServerConfig(target.environmentId);
   const supported = threadPullRequestLinkMode(config?.environment.capabilities) === "multiple";
@@ -104,7 +106,9 @@ export function usePullRequestThreads(
     const result = await settlePromise(async () => {
       if (connected && !thread && !canCheckout)
         throw new Error(
-          `Starting work from this ${terminology.shortLabel} requires source control write access.`,
+          gt("Starting work from this {term} requires source control write access.", {
+            term: terminology.shortLabel,
+          }),
         );
       await waitForComposerDraftsLoaded();
       const draftKey = thread
@@ -155,7 +159,7 @@ export function usePullRequestThreads(
           { text: draft.text, start: draft.text.length, end: draft.text.length },
         )
       )
-        throw new Error("Remove some context from this thread's draft, then try again.");
+        throw new Error(gt("Remove some context from this thread's draft, then try again."));
       const withContext = getComposerDraftSnapshot(draftKey);
       setComposerDraftText(
         draftKey,
@@ -168,13 +172,19 @@ export function usePullRequestThreads(
       );
       previousPrompts.current.set(draftKey, pullRequestAgentPrompt(task, terminology));
       if (thread) openThread(thread);
-      else openThreadRoute({ draft: { draftId: draftKey, title: `Ask about #${pr.number}` } });
+      else
+        openThreadRoute({
+          draft: { draftId: draftKey, title: gt("Ask about #{number}", { number: pr.number }) },
+        });
     });
     pending.current = false;
     setBusy(false);
     if (AsyncResult.isFailure(result)) {
       const cause = squashAtomCommandFailure(result);
-      Dialog.alert("Couldn't open a thread", cause instanceof Error ? cause.message : "Try again.");
+      Dialog.alert(
+        gt("Couldn't open a thread"),
+        cause instanceof Error ? cause.message : gt("Try again."),
+      );
     }
   };
   return {

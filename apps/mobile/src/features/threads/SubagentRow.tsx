@@ -10,6 +10,7 @@ import {
 } from "@t3tools/client-runtime/state/subagent-display";
 import { formatSubagentEffort } from "@t3tools/client-runtime/state/thread-execution";
 import type { EnvironmentId, OrchestrationV2Subagent } from "@t3tools/contracts";
+import { useGT } from "gt-react-native";
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
@@ -19,7 +20,10 @@ import { ProviderIcon, ProviderInstanceIcon } from "../../components/ProviderIco
 import { cn } from "../../lib/cn";
 import { useEnvironmentServerConfig, useProject, useThreadShell } from "../../state/entities";
 import { SUBAGENT_TONE_TEXT_CLASS, SubagentStatusDot } from "./SubagentStatusDot";
-import { resolveSubagentRowPresentation } from "./threadAgentsPresentation";
+import {
+  localizeSubagentRowPresentation,
+  resolveSubagentRowPresentation,
+} from "./threadAgentsPresentation";
 
 type SubagentRowSubagent = Pick<
   OrchestrationV2Subagent,
@@ -44,7 +48,12 @@ export function SubagentRow(props: {
   /** The task runs in a linked environment this app is connected to. */
   readonly canOpenRemote?: boolean;
 }) {
-  const presentation = resolveSubagentRowPresentation(props.subagent, props.canOpenRemote);
+  const gt = useGT();
+  const presentation = localizeSubagentRowPresentation(
+    resolveSubagentRowPresentation(props.subagent, props.canOpenRemote),
+    props.subagent.status,
+    gt,
+  );
   const detail = subagentCardDetail(presentation.detail);
   return (
     <View className="flex-row gap-3">
@@ -77,7 +86,7 @@ export function SubagentRow(props: {
             </Text>
             {presentation.runsOn !== null ? (
               <Text numberOfLines={1} className="shrink text-xs text-foreground-muted">
-                on {presentation.runsOn}
+                {gt("on {environment}", { environment: presentation.runsOn })}
               </Text>
             ) : null}
           </View>
@@ -107,6 +116,7 @@ function SubagentMetadata(props: {
   readonly environmentId: EnvironmentId;
   readonly subagent: SubagentRowSubagent;
 }) {
+  const gt = useGT();
   const { environmentId, subagent } = props;
   // A task in a linked environment runs a provider instance of that environment.
   const config = useEnvironmentServerConfig(subagent.remoteChild?.environmentId ?? environmentId);
@@ -175,7 +185,18 @@ function SubagentMetadata(props: {
         <View
           key={label}
           collapsable={false}
-          accessibilityLabel={`${label}: ${value}`}
+          accessibilityLabel={`${
+            label === "Branch"
+              ? gt("Branch")
+              : label === "Project"
+                ? gt("Project")
+                : label === "Worktree"
+                  ? gt("Worktree")
+                  : label === "Workspace"
+                    ? gt("Workspace")
+                    : label
+          }: ${value}`}
+
           className="min-w-0 shrink flex-row items-center gap-1.5"
         >
           <Text className="text-xs text-foreground-muted">·</Text>

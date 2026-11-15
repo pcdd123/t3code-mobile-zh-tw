@@ -99,6 +99,10 @@ function emit(value: string, resetGeneration = native.resetGeneration) {
   });
 }
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("expo", () => ({ requireNativeView: () => NativeView }));
 // Vite resolves the platform-neutral module; the race lives in the iOS editor.
 vi.mock("../native/T3ComposerEditor", () => import("../native/T3ComposerEditor.ios"));

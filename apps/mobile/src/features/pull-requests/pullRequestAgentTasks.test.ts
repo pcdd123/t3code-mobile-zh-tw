@@ -9,6 +9,7 @@ import { IsoDateTime, ProjectId, ThreadId } from "@t3tools/contracts";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 
 const GITHUB = sourceControlClients.get("github").changeRequest;
+const gt = (message: string) => message;
 
 describe("PR agent tasks", () => {
   it("continues a single linked thread, but keeps an explicit new-thread choice separate", () => {
@@ -34,7 +35,7 @@ describe("PR agent tasks", () => {
     expect(pullRequestAgentThread([settled], settled.id)).toBe(settled);
     expect(pullRequestAgentThread([thread, { ...settled, id: archived.id }])).toBeUndefined();
     expect(pullRequestAgentThread([thread, archived], archived.id)).toBe(archived);
-    const actions = pullRequestAgentThreadActions([settled, archived], "ask", true);
+    const actions = pullRequestAgentThreadActions([settled, archived], "ask", true, gt);
     expect(actions.map((action) => action.title)).toEqual([
       "Start a new thread",
       "Existing work",
@@ -43,13 +44,13 @@ describe("PR agent tasks", () => {
     expect(actions[2]?.subactions).toMatchObject([
       { id: `ask:${settled.id}`, subtitle: "Settled thread" },
     ]);
-    expect(pullRequestAgentThreadActions([thread], "ask", false)).toMatchObject([
+    expect(pullRequestAgentThreadActions([thread], "ask", false, gt)).toMatchObject([
       { id: `ask:${thread.id}`, subtitle: "Continue thread" },
     ]);
     expect(
-      pullRequestAgentThreadActions([settled], "feedback", false)[0]?.subactions,
+      pullRequestAgentThreadActions([settled], "feedback", false, gt)[0]?.subactions,
     ).toMatchObject([{ id: `feedback:${settled.id}`, attributes: { disabled: false } }]);
-    expect(pullRequestAgentThreadActions([archived], "feedback", true)[1]).toMatchObject({
+    expect(pullRequestAgentThreadActions([archived], "feedback", true, gt)[1]).toMatchObject({
       attributes: { disabled: true },
     });
   });

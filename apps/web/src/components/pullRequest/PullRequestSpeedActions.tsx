@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import type { PullRequestAction, PullRequestSummary } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 import { createContext, use, type ReactNode } from "react";
 import type { ChangeRequestTerminology } from "@t3tools/client-runtime/source-control-clients";
 
@@ -45,6 +46,7 @@ export function PullRequestSpeedActions<Entry extends PullRequestSpeedActionEntr
   sweeping?: boolean;
   onCloseSweepStart?: (entry: Entry, event: PointerEvent) => void;
 }) {
+  const gt = useGT();
   const canWrite = useAtomValue(
     pullRequestEnvironment.runAction.permissionAtom(entry.environmentId),
   );
@@ -68,7 +70,7 @@ export function PullRequestSpeedActions<Entry extends PullRequestSpeedActionEntr
         (method) => detail.mergeCapabilities[method],
       );
       if (allowed.length === 0)
-        throw new Error("No merge method is available for this repository.");
+        throw new Error(gt("No merge method is available for this repository."));
       return resolvePullRequestMergeMethod(
         allowed,
         null,
@@ -84,10 +86,13 @@ export function PullRequestSpeedActions<Entry extends PullRequestSpeedActionEntr
     <SpeedModeGroup
       busy={busy}
       pending={actionPending || closing}
-      label={`Quick actions for ${terminology.singular} #${entry.number}`}
+      label={gt("Quick actions for {term} #{number}", {
+        term: terminology.singular,
+        number: entry.number,
+      })}
     >
       {actions.map((action) => {
-        const label = ACTIONS[action].label;
+        const label = actionLabel(action, gt);
         const Icon = ACTIONS[action].Icon;
         return (
           <Tooltip key={action}>
@@ -112,10 +117,10 @@ export function PullRequestSpeedActions<Entry extends PullRequestSpeedActionEntr
             </TooltipTrigger>
             <TooltipPopup>
               {action === "merge" && entry.stack
-                ? `Open this ${terminology.singular} to merge its stack`
+                ? gt("Open this {term} to merge its stack", { term: terminology.singular })
                 : action === "close" && onCloseSweepStart
-                  ? "Close immediately, or drag across rows to close several"
-                  : `${label} immediately`}
+                  ? gt("Close immediately, or drag across rows to close several")
+                  : gt("{label} immediately", { label })}
             </TooltipPopup>
           </Tooltip>
         );
@@ -164,8 +169,21 @@ function SpeedModeGroup({
 }
 
 const ACTIONS = {
-  close: { label: "Close", Icon: PullRequestGlyph.closed },
-  merge: { label: "Merge", Icon: PullRequestGlyph.merged },
-  ready: { label: "Ready for review", Icon: PullRequestGlyph.pullRequest },
-  reopen: { label: "Reopen", Icon: PullRequestGlyph.reopen },
+  close: { Icon: PullRequestGlyph.closed },
+  merge: { Icon: PullRequestGlyph.merged },
+  ready: { Icon: PullRequestGlyph.pullRequest },
+  reopen: { Icon: PullRequestGlyph.reopen },
 } as const;
+
+function actionLabel(action: keyof typeof ACTIONS, gt: ReturnType<typeof useGT>) {
+  switch (action) {
+    case "close":
+      return gt("Close");
+    case "merge":
+      return gt("Merge");
+    case "ready":
+      return gt("Ready for review");
+    case "reopen":
+      return gt("Reopen");
+  }
+}

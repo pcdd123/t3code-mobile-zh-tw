@@ -9,6 +9,13 @@ const mocks = vi.hoisted(() => ({
 }));
 
 // The event atom is derived from server state, as in production; nothing else reads it.
+vi.mock("./Localized", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./Localized")>();
+  return {
+    ...actual,
+    localized: (render: Parameters<typeof actual.localized>[0]) => render(actual.englishGt),
+  };
+});
 vi.mock(import("../state/server"), async () => {
   const { Atom } = await import("effect/reactivity");
   mocks.state = Atom.make<{ readonly latestEvent: ServerConfigStreamEvent | null }>({

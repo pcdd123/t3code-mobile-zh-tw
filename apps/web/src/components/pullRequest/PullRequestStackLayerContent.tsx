@@ -1,6 +1,7 @@
 import type { PullRequestStack } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 import { cn } from "~/lib/utils";
-import { resolvePullRequestState } from "./pullRequestPresentation";
+import { pullRequestStateLabel, resolvePullRequestState } from "./pullRequestPresentation";
 
 export function PullRequestStackLayerContent({
   layer,
@@ -9,6 +10,7 @@ export function PullRequestStackLayerContent({
   layer: PullRequestStack["layers"][number];
   compact?: boolean;
 }) {
+  const gt = useGT();
   const state = resolvePullRequestState({
     state: layer.state,
     isDraft: layer.isDraft ?? false,
@@ -20,7 +22,7 @@ export function PullRequestStackLayerContent({
         <span className="block truncate">{layer.title || layer.headBranch}</span>
         <span className="block truncate text-xs font-normal text-muted-foreground">
           #{layer.number} · {compact ? null : `${layer.headBranch} · `}
-          {state.label}
+          {pullRequestStateLabel(state, gt)}
         </span>
       </span>
     </>

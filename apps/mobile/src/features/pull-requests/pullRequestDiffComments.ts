@@ -1,3 +1,4 @@
+import type { useGT } from "gt-react-native";
 import type { PullRequestReviewPosition, PullRequestReviewThread } from "@t3tools/contracts";
 import type { NativeReviewDiffRow } from "../diffs/nativeReviewDiffSurface";
 import type { NativeReviewDiffData } from "../review/nativeReviewDiffAdapter";
@@ -18,13 +19,17 @@ export function reviewPosition(row: NativeReviewDiffRow): PullRequestReviewPosit
     };
   return null;
 }
-export function discussionCommentCountLabel(count: number) {
-  return `${count} ${count === 1 ? "comment" : "comments"}`;
+export function discussionCommentCountLabel(count: number, gt: ReturnType<typeof useGT>) {
+  return count === 1 ? gt("1 comment") : gt("{count} comments", { count });
 }
-export function reviewPositionLabel(position: PullRequestReviewPosition) {
+export function reviewPositionLabel(
+  position: PullRequestReviewPosition,
+  gt: ReturnType<typeof useGT>,
+) {
   const oldSide =
     position.kind === "deleted" || (position.kind === "context" && position.side === "left");
-  return `${oldSide ? "Old line" : "Line"} ${reviewLine(position)}`;
+  const line = reviewLine(position);
+  return oldSide ? gt("Old line {line}", { line }) : gt("Line {line}", { line });
 }
 function reviewLine(position: PullRequestReviewPosition) {
   if (position.kind === "deleted" || (position.kind === "context" && position.side === "left"))
@@ -36,6 +41,7 @@ export function annotatePullRequestDiff(
   threads: readonly PullRequestReviewThread[],
   drafts: readonly PendingReviewComment[],
   headSha: string | undefined,
+  gt: ReturnType<typeof useGT>,
 ): NativeReviewDiffData {
   if (threads.length === 0 && drafts.length === 0) return data;
   const anchors = new Map<string, NativeReviewDiffRow[]>();
@@ -82,7 +88,7 @@ export function annotatePullRequestDiff(
     attach(
       anchor,
       `discussion:${thread.id}`,
-      `${first?.author?.login ?? "Discussion"}${thread.isResolved ? " · Resolved" : ""}\n${first?.body ?? ""}\n${discussionCommentCountLabel(thread.commentCount ?? thread.comments.length)} · Tap to open`,
+      `${first?.author?.login ?? gt("Discussion")}${thread.isResolved ? ` · ${gt("Resolved")}` : ""}\n${first?.body ?? ""}\n${discussionCommentCountLabel(thread.commentCount ?? thread.comments.length, gt)} · ${gt("Tap to open")}`,
       thread.line === null ? "file" : String(thread.line),
     );
   }
@@ -98,7 +104,7 @@ export function annotatePullRequestDiff(
     attach(
       lines.get(JSON.stringify([draft.path, side, line])),
       `draft:${draft.id}`,
-      `Pending review · Tap to edit\n${draft.body}`,
+      `${gt("Pending review · Tap to edit")}\n${draft.body}`,
       String(line),
     );
   }

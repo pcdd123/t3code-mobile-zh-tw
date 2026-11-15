@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { ListChoiceRow } from "../../components/ui/ListChoiceRow";
 import * as Dialog from "../../components/ui/Dialog";
 import { useAtomValue } from "@effect/atom-react";
@@ -16,26 +17,35 @@ import { environmentCatalog } from "../../connection/catalog";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { SettingsSection } from "../settings/components/SettingsSection";
 
-const options: ReadonlyArray<{
+function routingOptions(gt: ReturnType<typeof useGT>): ReadonlyArray<{
   value: PullRequestRoutingPermission;
   label: string;
   description: string;
-}> = [
-  { value: "off", label: "Off", description: "Keep source control requests on this environment." },
-  {
-    value: "read",
-    label: "Read PRs",
-    description: "Share PR data with other enabled environments.",
-  },
-  {
-    value: "read-write",
-    label: "Read and act",
-    description:
-      "Actions may use broader source control permissions than the original environment.",
-  },
-];
+}> {
+  return [
+    {
+      value: "off",
+      label: gt("Off"),
+      description: gt("Keep source control requests on this environment."),
+    },
+    {
+      value: "read",
+      label: gt("Read PRs"),
+      description: gt("Share PR data with other enabled environments."),
+    },
+    {
+      value: "read-write",
+      label: gt("Read and act"),
+      description: gt(
+        "Actions may use broader source control permissions than the original environment.",
+      ),
+    },
+  ];
+}
 
 export function PullRequestRoutingSettings() {
+  const gt = useGT();
+  const options = routingOptions(gt);
   const catalog = useAtomValue(environmentCatalog.catalogValueAtom);
   const permissions = useAtomValue(environmentCatalog.pullRequestRoutingPermissionsValueAtom);
   const update = useAtomCommand(environmentCatalog.setPullRequestRoutingPermission);
@@ -45,7 +55,7 @@ export function PullRequestRoutingSettings() {
 
   return (
     <View className="mt-5 gap-3">
-      <SettingsSection title="Pull request routing">
+      <SettingsSection title={gt("Pull request routing")}>
         {[...catalog.entries.values()].map((entry) => {
           const environmentId = entry.target.environmentId;
           const selected = pullRequestRoutingPermissionFor(entry, permissions);
@@ -55,7 +65,9 @@ export function PullRequestRoutingSettings() {
             <View key={environmentId}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`${entry.target.label} pull request routing`}
+                accessibilityLabel={gt("{environment} pull request routing", {
+                  environment: entry.target.label,
+                })}
                 accessibilityState={{ expanded: expanded === environmentId }}
                 className="flex-row items-center gap-3 p-4"
                 onPress={() => setExpanded(expanded === environmentId ? null : environmentId)}
@@ -91,8 +103,8 @@ export function PullRequestRoutingSettings() {
                           setSaving(false);
                           if (result._tag === "Failure")
                             Dialog.alert(
-                              "Could not save pull request routing permission",
-                              "Try again before leaving this screen.",
+                              gt("Could not save pull request routing permission"),
+                              gt("Try again before leaving this screen."),
                             );
                         });
                       }}
@@ -104,8 +116,9 @@ export function PullRequestRoutingSettings() {
         })}
       </SettingsSection>
       <Text className="px-2 text-sm text-foreground-muted">
-        Choose environments you trust to share PR data and use each other's source control access.
-        Enable both environments. This applies only to this client.
+        {gt(
+          "Choose environments you trust to share PR data and use each other's source control access. Enable both environments. This applies only to this client.",
+        )}
       </Text>
     </View>
   );

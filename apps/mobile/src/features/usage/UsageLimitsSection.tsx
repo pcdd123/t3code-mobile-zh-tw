@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import * as Dialog from "../../components/ui/Dialog";
 import { RegistryContext, useAtomMount, useAtomValue } from "@effect/atom-react";
 import { normalizeProviderAccentColor } from "@t3tools/client-runtime/state/provider-instance-display";
@@ -38,7 +39,13 @@ import {
 } from "./usageLimitsRefresh";
 import { usageProviderKind, useProviderColors } from "./usageProviders";
 
-const PACE_LABEL = { ahead: "ahead of pace", on: "on pace", under: "under pace" } as const;
+type Translate = ReturnType<typeof useGT>;
+
+function paceLabel(pace: "ahead" | "on" | "under", gt: Translate) {
+  if (pace === "ahead") return gt("ahead of pace");
+  if (pace === "on") return gt("on pace");
+  return gt("under pace");
+}
 
 type Driver = ServerProvider["driver"];
 
@@ -53,6 +60,7 @@ function WindowRow(props: {
   readonly color: string | null;
   readonly now: number;
 }) {
+  const gt = useGT();
   const { window, now } = props;
   const remaining = remainingPercent(window);
   const timeLeft = paceRemainingPercent(window, now);
@@ -126,7 +134,9 @@ function WindowRow(props: {
       </View>
       {pace || resetsIn ? (
         <View className="flex-row justify-between gap-3">
-          <Text className="text-xs text-foreground-tertiary">{pace ? PACE_LABEL[pace] : ""}</Text>
+          <Text className="text-xs text-foreground-tertiary">
+            {pace ? paceLabel(pace, gt) : ""}
+          </Text>
           <Text className="text-xs tabular-nums text-foreground-tertiary">{resetsIn ?? ""}</Text>
         </View>
       ) : null}
@@ -135,6 +145,7 @@ function WindowRow(props: {
 }
 
 function AccountInstanceLabel({ value }: { readonly value: string }) {
+  const gt = useGT();
   const [revealed, setRevealed] = useState(false);
   if (!value.includes("@")) {
     return (
@@ -147,7 +158,7 @@ function AccountInstanceLabel({ value }: { readonly value: string }) {
     <Pressable
       className="shrink active:opacity-60"
       accessibilityRole="button"
-      accessibilityLabel={revealed ? "Hide account label" : "Reveal account label"}
+      accessibilityLabel={revealed ? gt("Hide account label") : gt("Reveal account label")}
       onPress={() => setRevealed((current) => !current)}
     >
       <Text className="text-xs text-foreground-tertiary" numberOfLines={1}>
@@ -170,6 +181,7 @@ export function AccountLimits(props: {
   readonly trailing?: ReactNode;
   readonly footer?: ReactNode;
 }) {
+  const gt = useGT();
   const { limits, now, dense = false } = props;
   const providerColor = useBarColor(props.driver);
   const color = normalizeProviderAccentColor(props.accentColor) ?? providerColor;
@@ -213,7 +225,7 @@ export function AccountLimits(props: {
           className="min-h-11 justify-center"
           onPress={() => void Linking.openURL(externalUsage.url).catch(() => undefined)}
         >
-          <Text className="text-sm font-t3-medium text-primary">Manage usage</Text>
+          <Text className="text-sm font-t3-medium text-primary">{gt("Manage usage")}</Text>
         </Pressable>
       ) : null}
       {props.footer}
@@ -221,12 +233,12 @@ export function AccountLimits(props: {
   );
 }
 
-const OUTCOME_TEXT: Record<ProviderConsumeResetCreditOutcome, string> = {
-  reset: "Reset applied. Your windows have cleared.",
-  nothingToReset: "Nothing to reset right now.",
-  noCredit: "No reset credit left.",
-  alreadyRedeemed: "That credit was already redeemed.",
-};
+function outcomeText(outcome: ProviderConsumeResetCreditOutcome, gt: Translate) {
+  if (outcome === "reset") return gt("Reset applied. Your windows have cleared.");
+  if (outcome === "nothingToReset") return gt("Nothing to reset right now.");
+  if (outcome === "noCredit") return gt("No reset credit left.");
+  return gt("That credit was already redeemed.");
+}
 
 export function ResetCredits(props: {
   readonly environmentId: EnvironmentId;
@@ -235,6 +247,7 @@ export function ResetCredits(props: {
   readonly now: number;
   readonly dense?: boolean;
 }) {
+  const gt = useGT();
   const { environmentId, input, credits, now, dense = false } = props;
   const canManageProviders = useEnvironmentScope(environmentId, AuthProvidersManageScope);
   const consume = useAtomCommand(serverEnvironment.consumeResetCredit, {
@@ -251,21 +264,21 @@ export function ResetCredits(props: {
     const result = await consume({ environmentId, input: choice.input });
     setBusy(false);
     if (result._tag === "Success") {
-      setStatus(result.value.warning ?? OUTCOME_TEXT[result.value.outcome]);
+      setStatus(result.value.warning ?? outcomeText(result.value.outcome, gt));
       return;
     }
     setStatus(
       "error" in result.cause && result.cause.error instanceof Error
         ? result.cause.error.message
-        : "Could not use the reset credit.",
+        : gt("Could not use the reset credit."),
     );
   };
 
   const confirm = (choice: ResetCreditChoice) => {
     if (!readEnvironmentScope(environmentId, AuthProvidersManageScope)) return;
-    Dialog.alert("Use a reset credit?", choice.confirmDescription, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Use credit", onPress: () => void redeem(choice) },
+    Dialog.alert(gt("Use a reset credit?"), choice.confirmDescription, [
+      { text: gt("Cancel"), style: "cancel" },
+      { text: gt("Use credit"), onPress: () => void redeem(choice) },
     ]);
   };
 
@@ -293,7 +306,7 @@ export function ResetCredits(props: {
                     : "text-sm font-t3-medium text-foreground"
                 }
               >
-                {busy ? "Using…" : choice.actionLabel}
+                {busy ? gt("Using…") : choice.actionLabel}
               </Text>
             </Pressable>
           ) : null}
@@ -301,7 +314,7 @@ export function ResetCredits(props: {
       ))}
       {!canManageProviders ? (
         <Text className="text-xs text-foreground-tertiary">
-          This connection cannot manage provider accounts.
+          {gt("This connection cannot manage provider accounts.")}
         </Text>
       ) : null}
       {status ? <Text className="text-sm text-foreground">{status}</Text> : null}

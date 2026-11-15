@@ -18,6 +18,10 @@ const fetches = vi.hoisted(() => ({
   open: () => {},
 }));
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("@react-navigation/native", async () => {
   const { createRequire } = await import("node:module");
   const { realpathSync } = await import("node:fs");

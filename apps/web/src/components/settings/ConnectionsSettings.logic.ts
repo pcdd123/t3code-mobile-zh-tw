@@ -1,4 +1,5 @@
 import * as DateTime from "effect/DateTime";
+import type { useGT } from "gt-react";
 
 import { resolveDesktopPairingUrl, resolveHostedPairingUrl } from "./pairingUrls";
 import { getPairingTokenFromUrl, setPairingTokenOnUrl } from "@t3tools/shared/remote";
@@ -28,6 +29,8 @@ import {
   getDesktopUpdateDownloadedVersion,
   resolveDesktopUpdateButtonAction,
 } from "../desktopUpdate.logic";
+
+type Translate = ReturnType<typeof useGT>;
 
 /** Keep terminal:read with terminal:operate to avoid creating unseen shells on every script run. */
 export function togglePairingScopeSelection(
@@ -65,10 +68,11 @@ export function isQrShareableEndpoint(endpoint: AdvertisedEndpoint): boolean {
  * means unchecked. */
 export function missingTailscaleEndpointDescription(
   state: Pick<DesktopServerExposureState, "mode" | "tailscaleServeEnabled"> | null,
+  gt: Translate,
 ): string {
   return state && state.mode !== "network-accessible" && !state.tailscaleServeEnabled
-    ? "Turn on Network access to detect Tailscale."
-    : "Start Tailscale to set up HTTPS access through MagicDNS.";
+    ? gt("Turn on Network access to detect Tailscale.")
+    : gt("Start Tailscale to set up HTTPS access through MagicDNS.");
 }
 
 export function resolveTailscaleServeBaseUrl(
@@ -99,12 +103,15 @@ export function isWslSettingsRowVisible(input: {
  * Once client/server versions match, this passive Version label follows the sidebar update action,
  * including retryable failures. Rechecks retain downloaded-update labels; `state` is null outside desktop.
  */
-export function resolveLocalVersionStatusLabel(state: DesktopUpdateState | null): string {
-  if (!state) return "Up to date";
+export function resolveLocalVersionStatusLabel(
+  state: DesktopUpdateState | null,
+  gt: Translate,
+): string {
+  if (!state) return gt("Up to date");
   if (state.status === "downloading") {
     return state.availableVersion
-      ? `Downloading update ${state.availableVersion}`
-      : "Downloading update";
+      ? gt("Downloading update {version}", { version: state.availableVersion })
+      : gt("Downloading update");
   }
   const action = resolveDesktopUpdateButtonAction(state);
   if (
@@ -113,14 +120,14 @@ export function resolveLocalVersionStatusLabel(state: DesktopUpdateState | null)
     (state.status === "checking" && state.downloadedVersion !== null)
   ) {
     const version = getDesktopUpdateDownloadedVersion(state);
-    return version ? `Update ${version} downloaded` : "Update downloaded";
+    return version ? gt("Update {version} downloaded", { version }) : gt("Update downloaded");
   }
   if (action === "download") {
     return state.availableVersion
-      ? `Update ${state.availableVersion} available`
-      : "Update available";
+      ? gt("Update {version} available", { version: state.availableVersion })
+      : gt("Update available");
   }
-  return "Up to date";
+  return gt("Up to date");
 }
 
 export type QrEndpointOption = {
@@ -175,14 +182,17 @@ export function formatAccessTimestamp(value: string): string {
   return accessTimestampFormatter.format(parsed);
 }
 
-export function parseManualDesktopSshTarget(input: {
-  readonly host: string;
-  readonly username: string;
-  readonly port: string;
-}): DesktopSshEnvironmentTarget {
+export function parseManualDesktopSshTarget(
+  input: {
+    readonly host: string;
+    readonly username: string;
+    readonly port: string;
+  },
+  gt: Translate,
+): DesktopSshEnvironmentTarget {
   const rawHost = input.host.trim();
   if (rawHost.length === 0) {
-    throw new Error("SSH host or alias is required.");
+    throw new Error(gt("SSH host or alias is required."));
   }
 
   let hostname = rawHost;
@@ -218,11 +228,11 @@ export function parseManualDesktopSshTarget(input: {
   }
 
   if (hostname.length === 0) {
-    throw new Error("SSH host or alias is required.");
+    throw new Error(gt("SSH host or alias is required."));
   }
 
   if (port !== null && (!Number.isInteger(port) || port <= 0 || port > 65_535)) {
-    throw new Error("SSH port must be between 1 and 65535.");
+    throw new Error(gt("SSH port must be between 1 and 65535."));
   }
 
   return {
@@ -264,10 +274,13 @@ export function parsePairingUrlFields(
   }
 }
 
-export function parseRemotePairingFields(input: {
-  readonly host: string;
-  readonly pairingCode: string;
-}): {
+export function parseRemotePairingFields(
+  input: {
+    readonly host: string;
+    readonly pairingCode: string;
+  },
+  gt: Translate,
+): {
   readonly host: string;
   readonly pairingCode: string;
 } {
@@ -277,16 +290,16 @@ export function parseRemotePairingFields(input: {
   const host = input.host.trim();
   const pairingCode = input.pairingCode.trim();
   if (!host) {
-    throw new Error("Enter a backend host.");
+    throw new Error(gt("Enter a backend host."));
   }
   if (!pairingCode) {
-    throw new Error("Enter a pairing code.");
+    throw new Error(gt("Enter a pairing code."));
   }
   return { host, pairingCode };
 }
 
-export function formatDesktopSshConnectionError(error: unknown): string {
-  const fallback = "Failed to connect SSH host.";
+export function formatDesktopSshConnectionError(error: unknown, gt: Translate): string {
+  const fallback = gt("Failed to connect SSH host.");
   const rawMessage = error instanceof Error ? error.message : fallback;
   const withoutIpcPrefix = rawMessage.replace(
     /^Error invoking remote method 'desktop:ensure-ssh-environment':\s*/u,
@@ -305,12 +318,15 @@ export function sortDesktopPairingLinks(links: ReadonlyArray<ServerPairingLinkRe
 export function summarizeAuthorizedClients(
   sessions: ReadonlyArray<ServerClientSessionRecord>,
   links: ReadonlyArray<ServerPairingLinkRecord>,
+  gt: Translate,
 ): string {
   const parts = [
-    `${sessions.length} ${sessions.length === 1 ? "client" : "clients"}`,
-    links.length > 0
-      ? `${links.length} ${links.length === 1 ? "pairing link" : "pairing links"}`
-      : null,
+    sessions.length === 1 ? gt("1 client") : gt("{count} clients", { count: sessions.length }),
+    links.length === 0
+      ? null
+      : links.length === 1
+        ? gt("1 pairing link")
+        : gt("{count} pairing links", { count: links.length }),
   ];
   return parts.filter((part): part is string => part !== null).join(" · ");
 }
@@ -434,19 +450,23 @@ export function isHostedAppPairingUrl(value: string): boolean {
   }
 }
 
-export function endpointShareHint(endpoint: AdvertisedEndpoint, url: string): string {
+export function endpointShareHint(
+  endpoint: AdvertisedEndpoint,
+  url: string,
+  gt: Translate,
+): string {
   if (isHostedAppPairingUrl(url)) {
-    return "Opens the hosted app, no install needed";
+    return gt("Opens the hosted app, no install needed");
   }
   switch (endpoint.reachability) {
     case "lan":
-      return "Devices on the same network";
+      return gt("Devices on the same network");
     case "private-network":
-      return "Devices on your private network";
+      return gt("Devices on your private network");
     case "public":
-      return "Reachable from anywhere";
+      return gt("Reachable from anywhere");
     case "loopback":
-      return "Clients on this machine";
+      return gt("Clients on this machine");
   }
 }
 
@@ -470,22 +490,28 @@ export function resolveAccessEnvironmentId(input: {
 }
 
 /** A short name for a T3 Connect device: its label, or what it runs on. */
-export function connectDeviceName({
-  client,
-}: {
-  readonly client?: AuthClientMetadata | undefined;
-}): string {
-  return client?.label ?? client?.os ?? client?.browser ?? "this device";
+export function connectDeviceName(
+  {
+    client,
+  }: {
+    readonly client?: AuthClientMetadata | undefined;
+  },
+  gt: Translate,
+): string {
+  return client?.label ?? client?.os ?? client?.browser ?? gt("this device");
 }
 
 /** How a T3 Connect device describes itself. It can say anything, so the code is what to trust. */
-export function describeConnectDeviceClient({
-  client,
-}: {
-  readonly client?: AuthClientMetadata | undefined;
-}): string {
+export function describeConnectDeviceClient(
+  {
+    client,
+  }: {
+    readonly client?: AuthClientMetadata | undefined;
+  },
+  gt: Translate,
+): string {
   const bits = [client?.label, client?.os, client?.browser, client?.ipAddress].filter(
     (value): value is string => typeof value === "string" && value.length > 0,
   );
-  return bits.length > 0 ? [...new Set(bits)].join(" · ") : "Unknown device";
+  return bits.length > 0 ? [...new Set(bits)].join(" · ") : gt("Unknown device");
 }

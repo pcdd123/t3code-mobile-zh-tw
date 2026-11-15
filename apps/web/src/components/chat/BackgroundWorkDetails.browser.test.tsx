@@ -43,6 +43,7 @@ it("opens full command details for short labels and keeps pending tasks current"
       syncPhase={null}
       goal={null}
       work={backgroundWorkNowItem({
+        gt: (message: string) => message,
         environmentId: EnvironmentId.make("test"),
         threadId: ThreadId.make("thread"),
         tasks: [

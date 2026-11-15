@@ -6,6 +6,10 @@ import { afterEach, expect, it, vi } from "vite-plus/test";
 // native event that was dispatched against an older render.
 const renderedClicks = vi.hoisted(() => [] as Array<() => void>);
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("@expo/ui/jetpack-compose", () => {
   const Slot = (props: { readonly children?: ReactNode }) => <div>{props.children}</div>;
   const Button = (props: { readonly children?: ReactNode; readonly onClick?: () => void }) => {

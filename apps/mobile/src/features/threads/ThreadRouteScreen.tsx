@@ -246,6 +246,7 @@ export function ThreadRouteScreen(props: ThreadRouteScreenProps) {
 }
 
 function LiveThreadRouteController(props: ThreadRouteScreenProps) {
+  const gt = useGT();
   useAndroidWorkspaceBack();
   const connectionsReady = useConnectionsReady();
   const { connectionState } = useRemoteConnectionStatus();
@@ -335,7 +336,7 @@ function LiveThreadRouteController(props: ThreadRouteScreenProps) {
   return withInspectorHeader(
     <ThreadUnavailableScreen
       actionLabel={
-        routeEnvironmentRuntime === null ? "Manage environments" : "Reconnect environment"
+        routeEnvironmentRuntime === null ? gt("Manage environments") : gt("Reconnect environment")
       }
       onAction={() => {
         if (routeEnvironmentRuntime !== null) {
@@ -353,6 +354,7 @@ function ThreadRouteContent(
     readonly selectedThreadDetailState: ReturnType<typeof useSelectedThreadDetailState>;
   },
 ) {
+  const gt = useGT();
   const { layout, showInspector, toggleAuxiliaryPane } = useAdaptiveWorkspaceLayout();
   const { connectionState } = useRemoteConnectionStatus();
   const { onReconnectEnvironment } = useRemoteConnections();
@@ -536,9 +538,9 @@ function ThreadRouteContent(
     selectedEnvironmentConnection?.environmentLabel ?? null,
     // A linked environment's delegated task names its parent; other linked work its origin.
     delegatedFrom !== null
-      ? `Subagent of ${delegatedFromThread?.title ?? delegatedFrom.title}`
+      ? gt("Subagent of {title}", { title: delegatedFromThread?.title ?? delegatedFrom.title })
       : selectedThread?.linkOrigin
-        ? `From ${selectedThread.linkOrigin.label}`
+        ? gt("From {origin}", { origin: selectedThread.linkOrigin.label })
         : null,
   ]
     .filter(Boolean)
@@ -610,7 +612,7 @@ function ThreadRouteContent(
           <ThreadFileNavigatorPane
             cwd={selectedThreadCwd}
             environmentId={selectedThread.environmentId}
-            projectName={selectedThreadProject?.title ?? "Files"}
+            projectName={selectedThreadProject?.title ?? gt("Files")}
             selectedPath={null}
             onSelectFile={(path) =>
               closeInspectorSheet
@@ -700,8 +702,8 @@ function ThreadRouteContent(
     if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
       Dialog.alert(
-        "Could not resume thread",
-        error instanceof Error ? error.message : "Try again.",
+        gt("Could not resume thread"),
+        error instanceof Error ? error.message : gt("Try again."),
       );
     }
   };
@@ -837,7 +839,7 @@ function ThreadRouteContent(
       await recoverFailedThreadDraft(creation);
     } catch (error) {
       Dialog.alert(
-        "Could not restore draft",
+        gt("Could not restore draft"),
         error instanceof Error ? error.message : String(error),
       );
       return;

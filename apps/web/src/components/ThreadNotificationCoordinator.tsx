@@ -1,3 +1,4 @@
+import { englishGt, localized, type Translate } from "./Localized";
 import {
   type EnvironmentThreadShell,
   type PendingSubagentRequest,
@@ -142,18 +143,19 @@ export function startThreadNotifications(
       return;
     const { notificationMode: mode, inAppNotificationsEnabled } = getClientSettings();
     const active = activeThread();
-    const title =
+    const titleWith = (gt: Translate) =>
       kind === "completion"
-        ? "Thread completed"
+        ? gt("Thread completed")
         : status === "approval"
-          ? "Approval needed"
+          ? gt("Approval needed")
           : status === "limited"
-            ? "Usage limit reached"
+            ? gt("Usage limit reached")
             : status === "failed"
-              ? "Thread failed"
+              ? gt("Thread failed")
               : status === "request"
-                ? "Guest request"
-                : "Input needed";
+                ? gt("Guest request")
+                : gt("Input needed");
+    const title = localized(titleWith);
     if (hasNotificationSound(mode)) {
       void playNotificationSound(kind, () =>
         hasNotificationSound(getClientSettings().notificationMode),
@@ -187,7 +189,7 @@ export function startThreadNotifications(
             ),
         },
         actionProps: {
-          children: "Open thread",
+          children: localized((gt) => gt("Open thread")),
           onClick: () => {
             toastManager.close(toastId);
             void router.navigate({
@@ -208,7 +210,8 @@ export function startThreadNotifications(
     )
       return;
     try {
-      const notification = new Notification(title, {
+      // System notifications take plain text, which no hook can translate here.
+      const notification = new Notification(titleWith(englishGt), {
         body: thread.title,
         tag: threadNotificationTag(environmentId, thread.id),
         silent: true,

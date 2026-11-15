@@ -10,6 +10,7 @@ import {
   ShieldCheckIcon,
   ShieldOffIcon,
 } from "lucide-react";
+import type { useGT } from "gt-react";
 
 export const runtimeModeConfig: Record<
   RuntimeMode,
@@ -39,6 +40,33 @@ export const runtimeModeConfig: Record<
 };
 
 export const runtimeModeOptions = Object.keys(runtimeModeConfig) as RuntimeMode[];
+
+/** The config keeps English text; these translate it for display. */
+export function runtimeModeLabel(gt: ReturnType<typeof useGT>, mode: RuntimeMode): string {
+  switch (mode) {
+    case "approval-required":
+      return gt("Supervised");
+    case "auto-accept-edits":
+      return gt("Auto-accept edits");
+    case "auto":
+      return gt("Auto");
+    case "full-access":
+      return gt("Full access");
+  }
+}
+
+export function runtimeModeDescription(gt: ReturnType<typeof useGT>, mode: RuntimeMode): string {
+  switch (mode) {
+    case "approval-required":
+      return gt("Ask before commands and file changes.");
+    case "auto-accept-edits":
+      return gt("Auto-approve edits, ask before other actions.");
+    case "auto":
+      return gt("Supported providers approve routine actions; others still ask.");
+    case "full-access":
+      return gt("Allow commands and edits without prompts.");
+  }
+}
 
 /** The modes a provider supports (all when it reports none) and the mode a thread really runs in. */
 export function resolveCompatibleRuntimeMode(

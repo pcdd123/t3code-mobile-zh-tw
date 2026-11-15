@@ -90,6 +90,11 @@ vi.mock("react", async (importOriginal) => {
   };
 });
 
+vi.mock("gt-react", () => ({
+  useGT: () => (m: string, v?: Record<string, unknown>) =>
+    m.replace(/\{(\w+)\}/g, (_: string, k: string) => String(v?.[k] ?? "")),
+}));
+
 vi.mock("~/state/projects", () => ({
   projectEnvironment: projectMocks,
 }));

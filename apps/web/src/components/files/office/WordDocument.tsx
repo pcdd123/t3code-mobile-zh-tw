@@ -3,6 +3,7 @@
 import { Tooltip, TooltipTrigger, TooltipPopup } from "~/components/ui/tooltip";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { FileSurfaceLoading } from "../fileSurfaceChrome";
+import type { OfficeDetails } from "../officePreviewProtocol";
 import { OfficePages, type PaintPage } from "./OfficePages";
 import { rasterize } from "./vector-pictures";
 import { createWorkerClient } from "./worker-rpc";
@@ -23,7 +24,7 @@ type Opened = {
 
 export default function WordDocument(props: {
   bytes: ArrayBuffer;
-  onDetails: (text: string) => void;
+  onDetails: (details: OfficeDetails) => void;
   onError: (cause: unknown) => void;
 }) {
   const { onError, bytes, onDetails } = props;
@@ -81,9 +82,7 @@ export default function WordDocument(props: {
       .then(async (first) => {
         if (controller.signal.aborted) return;
         setOpened({ pages: first.pages, paint, engine });
-        onDetails(
-          `${first.pages.length}${first.loading ? "+" : ""} page${first.pages.length === 1 && !first.loading ? "" : "s"}`,
-        );
+        onDetails({ unit: "page", count: first.pages.length, partial: first.loading });
         if (!first.loading) return;
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         while (!controller.signal.aborted) {
@@ -91,7 +90,7 @@ export default function WordDocument(props: {
           if (!step.done) continue;
           if (step.pages.length > 1000) throw new Error("Preview limited to 1,000 pages.");
           setOpened({ pages: step.pages, paint, engine });
-          onDetails(`${step.pages.length} page${step.pages.length === 1 ? "" : "s"}`);
+          onDetails({ unit: "page", count: step.pages.length });
           break;
         }
       })

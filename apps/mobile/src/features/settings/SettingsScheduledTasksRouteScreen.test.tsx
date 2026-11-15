@@ -15,6 +15,10 @@ const { Children, mocks } = vi.hoisted(() => ({
   Children: ({ children }: { children?: ReactNode }) => children,
   mocks: { upsert: vi.fn(), alert: vi.fn(), tasks: [] as ScheduledTask[] },
 }));
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("react-native", () => ({
   Platform: { OS: "ios" },
   View: Children,

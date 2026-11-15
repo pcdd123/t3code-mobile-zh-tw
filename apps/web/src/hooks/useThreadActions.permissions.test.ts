@@ -54,6 +54,10 @@ const state = vi.hoisted(() => ({
   sessionLookupFails: false,
 }));
 
+vi.mock("gt-react", () => ({
+  useGT: () => (m: string, v?: Record<string, unknown>) =>
+    m.replace(/\{(\w+)\}/g, (_: string, k: string) => String(v?.[k] ?? "")),
+}));
 vi.mock("react", () => ({
   useCallback: (callback: unknown) => callback,
   useMemo: (factory: () => unknown) => factory(),

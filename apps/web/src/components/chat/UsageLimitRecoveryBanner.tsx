@@ -15,11 +15,12 @@ import { useState } from "react";
 import { useDeadlinePassed } from "../../hooks/useDeadline";
 import { OpenAI } from "../Icons";
 import { ChatGptUsageButton } from "../settings/ChatGptUsageButton";
-import { Button, InlineButton } from "../ui/button";
+import { InlineButton } from "../ui/button";
 import { formatUpcomingTimestamp } from "../../timestampFormat";
 import { toastManager } from "../ui/toast";
 import type { ComposerBannerStackItem } from "./ComposerBannerStack";
-import { copyAdminRequest } from "./ThreadErrorBanner";
+import { CopyAdminRequestButton } from "./ThreadErrorBanner";
+import { useGT } from "gt-react";
 
 type RecoveryProps = {
   runId: RunId;
@@ -33,6 +34,33 @@ type RecoveryProps = {
   timestampFormat: TimestampFormat;
   onChange: (recovery: OrchestrationV2LimitRecoveryUpdate) => Promise<void>;
 };
+
+type RecoveryTextKind = "unavailable" | "usage-limit" | "chatgpt-limit" | "workspace-limit";
+
+/** The banner item is built outside React, so its text renders through these components. */
+function RecoveryText({ kind }: { readonly kind: RecoveryTextKind }) {
+  const gt = useGT();
+  switch (kind) {
+    case "unavailable":
+      return gt("Reset time unavailable; retry manually");
+    case "usage-limit":
+      return gt("Usage limit reached");
+    case "chatgpt-limit":
+      return gt("ChatGPT usage limit reached");
+    case "workspace-limit":
+      return gt("You've reached your workspace's limit for using your ChatGPT plan in other apps.");
+  }
+}
+
+function RecoveryResetText(props: {
+  readonly resumes: boolean;
+  readonly displayAt: string;
+  readonly timestampFormat: TimestampFormat;
+}) {
+  const gt = useGT();
+  const time = formatUpcomingTimestamp(props.displayAt, props.timestampFormat);
+  return props.resumes ? gt("Resumes {time}", { time }) : gt("Resets {time}", { time });
+}
 
 export function usageLimitRecoveryBannerItem(props: RecoveryProps): ComposerBannerStackItem {
   const {
@@ -60,16 +88,22 @@ export function usageLimitRecoveryBannerItem(props: RecoveryProps): ComposerBann
     resumes && resetAt && snoozedUntil && Date.parse(snoozedUntil) > Date.parse(resetAt)
       ? snoozedUntil
       : resetAt;
-  const resetDescription = displayAt
-    ? `${resumes ? "Resumes" : "Resets"} ${formatUpcomingTimestamp(displayAt, timestampFormat)}`
-    : "Reset time unavailable; retry manually";
+  const resetDescription = displayAt ? (
+    <RecoveryResetText
+      resumes={Boolean(resumes)}
+      displayAt={displayAt}
+      timestampFormat={timestampFormat}
+    />
+  ) : (
+    <RecoveryText kind="unavailable" />
+  );
   if (!chatGptLimit) {
     return {
       id: `usage-limit-recovery:${runId}`,
       variant: "warning",
       group: "environment",
       icon: <GaugeIcon />,
-      title: "Usage limit reached",
+      title: <RecoveryText kind="usage-limit" />,
       description: resetDescription,
       actions: recoveryActions,
     };
@@ -80,17 +114,13 @@ export function usageLimitRecoveryBannerItem(props: RecoveryProps): ComposerBann
     variant: "warning",
     group: "environment",
     icon: <OpenAI aria-hidden="true" />,
-    title: "ChatGPT usage limit reached",
-    description: workspaceLimit
-      ? "You've reached your workspace's limit for using your ChatGPT plan in other apps."
-      : resetDescription,
+    title: <RecoveryText kind="chatgpt-limit" />,
+    description: workspaceLimit ? <RecoveryText kind="workspace-limit" /> : resetDescription,
     actions: (
       <>
         {recoveryActions}
         {workspaceLimit ? (
-          <Button size="xs" variant="ghost" onClick={copyAdminRequest}>
-            Copy request for admin
-          </Button>
+          <CopyAdminRequestButton size="xs" variant="ghost" />
         ) : (
           <ChatGptUsageButton size="xs" variant="ghost" />
         )}
@@ -100,6 +130,7 @@ export function usageLimitRecoveryBannerItem(props: RecoveryProps): ComposerBann
 }
 
 function RecoveryActions({ runId, resetAt, recovery, snoozedUntil, onChange }: RecoveryProps) {
+  const gt = useGT();
   const [pending, setPending] = useState(false);
 
   const scheduled =
@@ -114,8 +145,8 @@ function RecoveryActions({ runId, resetAt, recovery, snoozedUntil, onChange }: R
     if (action === "snooze" && !snoozed && Date.parse(resetAt) <= Date.now()) {
       toastManager.add({
         type: "error",
-        title: "Could not snooze thread",
-        description: "The reset time has passed. Retry the thread manually.",
+        title: gt("Could not snooze thread"),
+        description: gt("The reset time has passed. Retry the thread manually."),
       });
       // The deadline timer can lag after a throttled tab or sleep; disable now.
       deadlineStore(Date.parse(resetAt)).refresh();
@@ -131,8 +162,9 @@ function RecoveryActions({ runId, resetAt, recovery, snoozedUntil, onChange }: R
     } catch (cause) {
       toastManager.add({
         type: "error",
-        title: action === "resume" ? "Could not change auto-resume" : "Could not snooze thread",
-        description: cause instanceof Error ? cause.message : "An error occurred.",
+        title:
+          action === "resume" ? gt("Could not change auto-resume") : gt("Could not snooze thread"),
+        description: cause instanceof Error ? cause.message : gt("An error occurred."),
       });
     }
     setPending(false);
@@ -141,14 +173,14 @@ function RecoveryActions({ runId, resetAt, recovery, snoozedUntil, onChange }: R
   return (
     <span className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
       <InlineButton touchTarget="padded" disabled={pending} onClick={() => void toggle("resume")}>
-        {pending ? "Saving..." : scheduled ? "Cancel auto-resume" : "Resume at reset"}
+        {pending ? gt("Saving...") : scheduled ? gt("Cancel auto-resume") : gt("Resume at reset")}
       </InlineButton>
       <InlineButton
         touchTarget="padded"
         disabled={pending || (!snoozed && resetPassed)}
         onClick={() => void toggle("snooze")}
       >
-        {pending ? "Saving..." : snoozed ? "Wake now" : "Snooze until reset"}
+        {pending ? gt("Saving...") : snoozed ? gt("Wake now") : gt("Snooze until reset")}
       </InlineButton>
     </span>
   );

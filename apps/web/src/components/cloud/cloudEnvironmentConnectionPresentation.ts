@@ -1,3 +1,4 @@
+import { englishGt, type Translate } from "../Localized";
 import {
   connectionStatusText,
   type EnvironmentConnectionPresentation,
@@ -11,47 +12,50 @@ export interface SavedCloudEnvironmentConnectionPresentation {
 
 export function presentSavedCloudEnvironmentConnection(
   connection: EnvironmentConnectionPresentation,
+  gt: Translate = englishGt,
 ): SavedCloudEnvironmentConnectionPresentation {
   switch (connection.phase) {
     case "connected":
       return {
-        buttonLabel: "Connected",
+        buttonLabel: gt("Connected"),
         statusText: connectionStatusText(connection),
         tone: "connected",
       };
     case "connecting":
       return {
-        buttonLabel: "Connecting…",
+        buttonLabel: gt("Connecting…"),
         statusText: connectionStatusText(connection),
         tone: "connecting",
       };
     case "reconnecting":
       return {
-        buttonLabel: connection.awaitingApproval ? "Waiting for approval…" : "Reconnecting…",
+        buttonLabel: connection.awaitingApproval
+          ? gt("Waiting for approval…")
+          : gt("Reconnecting…"),
         statusText: connectionStatusText(connection),
         tone: "connecting",
       };
     case "unsupported":
       return {
-        buttonLabel: "Client not supported",
+        buttonLabel: gt("Client not supported"),
         statusText: connectionStatusText(connection),
         tone: "idle",
       };
     case "error":
       return {
-        buttonLabel: "Connection failed",
+        buttonLabel: gt("Connection failed"),
         statusText: connectionStatusText(connection),
         tone: "error",
       };
     case "offline":
       return {
-        buttonLabel: "Offline",
+        buttonLabel: gt("Offline"),
         statusText: connectionStatusText(connection),
         tone: "idle",
       };
     case "available":
       return {
-        buttonLabel: "Not connected",
+        buttonLabel: gt("Not connected"),
         statusText: connectionStatusText(connection),
         tone: "idle",
       };

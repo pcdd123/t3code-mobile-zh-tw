@@ -8,6 +8,9 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { planClaudeAccountSave } from "./claude-accounts";
 
+const gt = (message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? ""));
+
 const claude = ProviderDriverKind.make("claudeAgent");
 const work = ProviderInstanceId.make("claudeAgent_work");
 
@@ -22,6 +25,7 @@ describe("planClaudeAccountSave", () => {
         policy: undefined,
         instanceId: null,
         draft: { name, configDir },
+        gt,
       });
 
     expect(plan(" Work ", " ~/.claude-willy ")).toEqual({
@@ -57,6 +61,7 @@ describe("planClaudeAccountSave", () => {
         policy: undefined,
         instanceId: work,
         draft: { name, configDir },
+        gt,
       });
 
     expect(edit("Willy", "~/.claude-willy")).toEqual({
@@ -94,6 +99,7 @@ describe("planClaudeAccountSave", () => {
         policy: undefined,
         instanceId: work,
         draft: { name: "", configDir: "" },
+        gt,
       }),
     ).toEqual({
       mutation: { operation: "upsert", instanceId: work, instance: { driver: claude } },
@@ -111,6 +117,7 @@ describe("planClaudeAccountSave", () => {
         policy,
         instanceId: work,
         draft: { name: "Work", configDir: "~/.claude-other" },
+        gt,
       }),
     ).toEqual({ error: "Managed by Example Corp." });
   });

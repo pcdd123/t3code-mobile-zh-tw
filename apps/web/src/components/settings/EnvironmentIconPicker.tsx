@@ -6,6 +6,7 @@ import {
   type EnvironmentId,
   type ServerConfig,
 } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 
 import { useUpdateEnvironmentSettings } from "../../hooks/useSettings";
 import { useEnvironmentScope } from "../../state/session";
@@ -40,11 +41,18 @@ export function EnvironmentIconMenu({
   readonly environmentId: EnvironmentId;
   readonly serverConfig: Pick<ServerConfig, "environment"> | null;
 }) {
+  const gt = useGT();
   const updateSettings = useUpdateEnvironmentSettings(environmentId);
   const operateAccess = useEnvironmentScope(environmentId, AuthSettingsWriteScope)
     ? "granted"
     : "denied";
   const lock = resolveEnvironmentIconPickerLock({ serverConfig, operateAccess });
+  const lockMessage =
+    lock === null
+      ? null
+      : serverConfig === null
+        ? gt("Connect to this environment to change its icon.")
+        : gt("Your session on this environment cannot change its settings.");
   const detected = serverConfig?.environment.platform.machine ?? "server";
   const resolved = resolveEnvironmentMachineKind(serverConfig);
 
@@ -52,13 +60,13 @@ export function EnvironmentIconMenu({
     <MenuSub>
       <MenuSubTrigger>
         <EnvironmentMachineIcon kind={resolved} />
-        Icon
+        {gt("Icon")}
       </MenuSubTrigger>
       <MenuSubPopup>
         {lock !== null ? (
           <>
             <MenuItem disabled className="whitespace-normal">
-              {lock}
+              {lockMessage}
             </MenuItem>
             <MenuSeparator />
           </>
@@ -79,7 +87,7 @@ export function EnvironmentIconMenu({
                 </span>
                 {kind === detected ? (
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {serverConfig?.environment.platform.machine ? "detected" : "default"}
+                    {serverConfig?.environment.platform.machine ? gt("detected") : gt("default")}
                   </span>
                 ) : null}
               </span>

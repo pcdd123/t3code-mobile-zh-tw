@@ -5,6 +5,7 @@ import type {
   PullRequestUpdateMethod,
 } from "@t3tools/contracts";
 import { CheckIcon, ChevronDownIcon, FolderGit2Icon, GitBranchIcon, PlayIcon } from "lucide-react";
+import { useGT } from "gt-react";
 import type { ReactNode } from "react";
 
 import { AnimatedWidth } from "~/components/AnimatedWidth";
@@ -24,7 +25,7 @@ import {
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import type { resolvePullRequestPrimaryControl } from "./pullRequestDetail.logic";
 import { PullRequestGlyph } from "./pullRequestIcons";
-import type { resolvePullRequestState } from "./pullRequestPresentation";
+import { pullRequestStateLabel, type resolvePullRequestState } from "./pullRequestPresentation";
 import type { PickableEnvironment } from "./pullRequestProjectAssignment.logic";
 import { useInlineActionConfirm } from "./useInlineActionConfirm";
 
@@ -94,6 +95,7 @@ export function PullRequestCheckoutMenu({
   /** The host's word for a change request, as in "pull request". */
   term: string;
 }) {
+  const gt = useGT();
   return (
     <Menu>
       <Tooltip>
@@ -105,11 +107,13 @@ export function PullRequestCheckoutMenu({
                 <Button
                   size="xs"
                   variant="outline"
-                  aria-label={handoff?.startsWith("checkout") ? "Checking out..." : "Check out"}
+                  aria-label={
+                    handoff?.startsWith("checkout") ? gt("Checking out...") : gt("Check out")
+                  }
                 >
                   <GitBranchIcon aria-hidden className="size-3.5" />
                   <span className="@max-[35rem]/pr-header:hidden">
-                    {handoff?.startsWith("checkout") ? "Checking out..." : "Check out"}
+                    {handoff?.startsWith("checkout") ? gt("Checking out...") : gt("Check out")}
                   </span>
                   <ChevronDownIcon aria-hidden className="size-3.5 text-muted-foreground" />
                 </Button>
@@ -117,24 +121,24 @@ export function PullRequestCheckoutMenu({
             />
           }
         />
-        <TooltipPopup>Check out this {term}</TooltipPopup>
+        <TooltipPopup>{gt("Check out this {changeRequest}", { changeRequest: term })}</TooltipPopup>
       </Tooltip>
       <MenuPopup align="end" side="bottom">
         <MenuItem disabled={!canPrepareWorktree} onClick={() => onCheckout("worktree")}>
           <GitBranchIcon className="mt-1 size-3.5 shrink-0 self-start" />
           <span className="flex min-w-0 flex-col">
-            <span>In a separate worktree</span>
+            <span>{gt("In a separate worktree")}</span>
             <span className="text-xs text-muted-foreground">
-              Its own folder and thread. Nothing you have open moves.
+              {gt("Its own folder and thread. Nothing you have open moves.")}
             </span>
           </span>
         </MenuItem>
         <MenuItem disabled={!canCheckoutHere} onClick={() => onCheckout("local")}>
           <FolderGit2Icon className="mt-1 size-3.5 shrink-0 self-start" />
           <span className="flex min-w-0 flex-col">
-            <span>In this repository</span>
+            <span>{gt("In this repository")}</span>
             <span className="text-xs text-muted-foreground">
-              Switches the branch you are working in.
+              {gt("Switches the branch you are working in.")}
             </span>
           </span>
         </MenuItem>
@@ -160,6 +164,7 @@ export function PullRequestResolveConflictsButton({
   unavailable: boolean;
   onResolve: () => void;
 }) {
+  const gt = useGT();
   return (
     <Tooltip>
       <TooltipTrigger
@@ -170,18 +175,18 @@ export function PullRequestResolveConflictsButton({
               variant="destructive-outline"
               disabled={handoff !== null || unavailable}
               onClick={onResolve}
-              aria-label={handoff === "conflicts" ? "Preparing..." : "Resolve conflicts"}
+              aria-label={handoff === "conflicts" ? gt("Preparing...") : gt("Resolve conflicts")}
             >
               <PullRequestGlyph.conflicting aria-hidden className="size-3.5" />
               <span className="@max-[30rem]/pr-header:hidden">
-                {handoff === "conflicts" ? "Preparing..." : "Resolve conflicts"}
+                {handoff === "conflicts" ? gt("Preparing...") : gt("Resolve conflicts")}
               </span>
             </Button>
           </span>
         }
       />
       <TooltipPopup side="top">
-        {handoff === "conflicts" ? "Preparing..." : "Resolve conflicts"}
+        {handoff === "conflicts" ? gt("Preparing...") : gt("Resolve conflicts")}
       </TooltipPopup>
     </Tooltip>
   );
@@ -215,6 +220,7 @@ export function PullRequestPrimaryAction({
   perform: PerformPullRequestAction;
   resolveConflicts: ReactNode;
 }) {
+  const gt = useGT();
   const inlineConfirm = useInlineActionConfirm(pullRequestKey);
   const actionPending = pendingAction !== null;
   return (
@@ -230,7 +236,9 @@ export function PullRequestPrimaryAction({
             }
           />
           <TooltipPopup side="top">
-            {armedAutoMergeLabel}: the host will merge this on its own once its requirements are met
+            {gt("{label}: the host will merge this on its own once its requirements are met", {
+              label: armedAutoMergeLabel,
+            })}
           </TooltipPopup>
         </Tooltip>
       ) : null}
@@ -246,15 +254,15 @@ export function PullRequestPrimaryAction({
                   variant="default"
                   disabled={actionPending}
                   onClick={() => void perform("ready")}
-                  aria-label="Ready for review"
+                  aria-label={gt("Ready for review")}
                 >
                   <PullRequestGlyph.pullRequest aria-hidden className="size-3.5" />
-                  <span className="@max-[30rem]/pr-header:hidden">Ready for review</span>
+                  <span className="@max-[30rem]/pr-header:hidden">{gt("Ready for review")}</span>
                 </Button>
               </span>
             }
           />
-          <TooltipPopup side="top">Ready for review</TooltipPopup>
+          <TooltipPopup side="top">{gt("Ready for review")}</TooltipPopup>
         </Tooltip>
       ) : primaryAction === "enable-auto-merge" ? (
         <Tooltip>
@@ -275,9 +283,9 @@ export function PullRequestPrimaryAction({
                     : {})}
                   aria-label={
                     pendingAction === "enable-auto-merge"
-                      ? "Enabling..."
+                      ? gt("Enabling...")
                       : inlineConfirm.isArmed("enable-auto-merge")
-                        ? "Confirm auto-merge?"
+                        ? gt("Confirm auto-merge?")
                         : pendingAutoMergeLabel
                   }
                 >
@@ -293,9 +301,9 @@ export function PullRequestPrimaryAction({
                       </span>
                       <span className="col-start-1 row-start-1">
                         {pendingAction === "enable-auto-merge"
-                          ? "Enabling..."
+                          ? gt("Enabling...")
                           : inlineConfirm.isArmed("enable-auto-merge")
-                            ? "Confirm auto-merge?"
+                            ? gt("Confirm auto-merge?")
                             : pendingAutoMergeLabel}
                       </span>
                     </span>
@@ -307,9 +315,9 @@ export function PullRequestPrimaryAction({
           <TooltipPopup side="top">
             {mergeBlockedReason ??
               (pendingAction === "enable-auto-merge"
-                ? "Enabling..."
+                ? gt("Enabling...")
                 : inlineConfirm.isArmed("enable-auto-merge")
-                  ? "Confirm auto-merge?"
+                  ? gt("Confirm auto-merge?")
                   : pendingAutoMergeLabel)}
           </TooltipPopup>
         </Tooltip>
@@ -324,7 +332,9 @@ export function PullRequestPrimaryAction({
             }
           />
           <TooltipPopup side="top">
-            {armedAutoMergeLabel}: the host will merge this on its own once its requirements are met
+            {gt("{label}: the host will merge this on its own once its requirements are met", {
+              label: armedAutoMergeLabel,
+            })}
           </TooltipPopup>
         </Tooltip>
       ) : primaryAction === "merge" ? (
@@ -343,9 +353,9 @@ export function PullRequestPrimaryAction({
                     : {})}
                   aria-label={
                     pendingAction === "merge"
-                      ? "Merging..."
+                      ? gt("Merging...")
                       : inlineConfirm.isArmed("merge")
-                        ? "Confirm merge?"
+                        ? gt("Confirm merge?")
                         : selectedMergeMethodLabel
                   }
                 >
@@ -361,9 +371,9 @@ export function PullRequestPrimaryAction({
                       </span>
                       <span className="col-start-1 row-start-1">
                         {pendingAction === "merge"
-                          ? "Merging..."
+                          ? gt("Merging...")
                           : inlineConfirm.isArmed("merge")
-                            ? "Confirm merge?"
+                            ? gt("Confirm merge?")
                             : selectedMergeMethodLabel}
                       </span>
                     </span>
@@ -375,9 +385,9 @@ export function PullRequestPrimaryAction({
           <TooltipPopup side="top">
             {mergeBlockedReason ??
               (pendingAction === "merge"
-                ? "Merging..."
+                ? gt("Merging...")
                 : inlineConfirm.isArmed("merge")
-                  ? "Confirm merge?"
+                  ? gt("Confirm merge?")
                   : selectedMergeMethodLabel)}
           </TooltipPopup>
         </Tooltip>
@@ -386,7 +396,7 @@ export function PullRequestPrimaryAction({
         <Badge size="control" variant="outline">
           <span className={cn("flex items-center gap-1", statePresentation.toneClassName)}>
             <statePresentation.Icon className="size-3.5" />
-            {statePresentation.label}
+            {pullRequestStateLabel(statePresentation, gt)}
           </span>
         </Badge>
       ) : null}
@@ -403,6 +413,7 @@ export function PullRequestApproveWorkflowsButton({
   pendingAction: PullRequestAction | null;
   perform: PerformPullRequestAction;
 }) {
+  const gt = useGT();
   const inlineConfirm = useInlineActionConfirm(pullRequestKey);
   const actionPending = pendingAction !== null;
   return (
@@ -417,26 +428,26 @@ export function PullRequestApproveWorkflowsButton({
               {...inlineConfirm.props("approve-workflows", () => void perform("approve-workflows"))}
               aria-label={
                 pendingAction === "approve-workflows"
-                  ? "Approving..."
+                  ? gt("Approving...")
                   : inlineConfirm.isArmed("approve-workflows")
-                    ? "Confirm approve?"
-                    : "Approve workflows to run"
+                    ? gt("Confirm approve?")
+                    : gt("Approve workflows to run")
               }
             >
               <PlayIcon aria-hidden className="size-3.5" />
               <span className="inline-grid">
                 <span aria-hidden className="invisible col-start-1 row-start-1">
-                  Approve workflows to run
+                  {gt("Approve workflows to run")}
                 </span>
                 <span aria-hidden className="invisible col-start-1 row-start-1">
-                  Confirm approve?
+                  {gt("Confirm approve?")}
                 </span>
                 <span className="col-start-1 row-start-1">
                   {pendingAction === "approve-workflows"
-                    ? "Approving..."
+                    ? gt("Approving...")
                     : inlineConfirm.isArmed("approve-workflows")
-                      ? "Confirm approve?"
-                      : "Approve workflows to run"}
+                      ? gt("Confirm approve?")
+                      : gt("Approve workflows to run")}
                 </span>
               </span>
             </Button>
@@ -445,10 +456,10 @@ export function PullRequestApproveWorkflowsButton({
       />
       <TooltipPopup side="top">
         {pendingAction === "approve-workflows"
-          ? "Approving..."
+          ? gt("Approving...")
           : inlineConfirm.isArmed("approve-workflows")
-            ? "Confirm approve?"
-            : "Approve workflows to run"}
+            ? gt("Confirm approve?")
+            : gt("Approve workflows to run")}
       </TooltipPopup>
     </Tooltip>
   );

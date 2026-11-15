@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { Button } from "../../components/ui/Button";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { ConnectionTraceId } from "./ConnectionTraceId";
@@ -10,28 +11,41 @@ import { View } from "react-native";
 
 import { AppText as Text } from "../../components/ui/AppText";
 
+type Translate = ReturnType<typeof useGT>;
+
 function noticeTitle(
   phase: EnvironmentConnectionPhase,
   environmentLabel: string,
   awaitingApproval: boolean,
+  gt: Translate,
 ): string {
-  if (awaitingApproval) return `Waiting for ${environmentLabel} to approve this device`;
+  const environment = environmentLabel;
+  if (awaitingApproval)
+    return gt("Waiting for {environment} to approve this device", { environment });
   switch (phase) {
     case "offline":
-      return "You are offline";
+      return gt("You are offline");
     case "connecting":
-      return `Connecting to ${environmentLabel}...`;
+      return gt("Connecting to {environment}...", { environment });
     case "reconnecting":
-      return `Reconnecting to ${environmentLabel}...`;
+      return gt("Reconnecting to {environment}...", { environment });
     case "unsupported":
-      return "Client not supported";
+      return gt("Client not supported");
     case "error":
-      return `${environmentLabel} is unavailable`;
+      return gt("{environment} is unavailable", { environment });
     case "available":
-      return `${environmentLabel} is disconnected`;
+      return gt("{environment} is disconnected", { environment });
     case "connected":
       return "";
   }
+}
+
+// Callers pass an English resource id; known ones are translated for the sentence.
+function resourceLabel(resourceName: string, gt: Translate): string {
+  if (resourceName === "preview") return gt("preview");
+  if (resourceName === "review") return gt("review");
+  if (resourceName === "terminal") return gt("terminal");
+  return resourceName;
 }
 
 function noticeDetail(
@@ -39,23 +53,30 @@ function noticeDetail(
   resourceName: string,
   error: string | null,
   awaitingApproval: boolean,
+  gt: Translate,
 ): string {
   if (error && awaitingApproval) return error;
   if (error) {
-    return phase === "reconnecting" ? `The app will keep retrying automatically. ${error}` : error;
+    return phase === "reconnecting"
+      ? gt("The app will keep retrying automatically. {error}", { error })
+      : error;
   }
+  const resource = resourceLabel(resourceName, gt);
 
   switch (phase) {
     case "offline":
-      return `Cached data remains available. The ${resourceName} will load when your connection returns.`;
+      return gt(
+        "Cached data remains available. The {resource} will load when your connection returns.",
+        { resource },
+      );
     case "connecting":
     case "reconnecting":
-      return `The ${resourceName} will load as soon as the environment is ready.`;
+      return gt("The {resource} will load as soon as the environment is ready.", { resource });
     case "unsupported":
-      return "Use compatible versions of the app and server to connect.";
+      return gt("Use compatible versions of the app and server to connect.");
     case "available":
     case "error":
-      return `Reconnect the environment to load the ${resourceName}.`;
+      return gt("Reconnect the environment to load the {resource}.", { resource });
     case "connected":
       return "";
   }
@@ -67,6 +88,7 @@ export function EnvironmentConnectionNotice(props: {
   readonly resourceName: string;
   readonly onRetry: () => void;
 }) {
+  const gt = useGT();
   const isRetrying =
     props.connection.phase === "connecting" || props.connection.phase === "reconnecting";
 
@@ -89,6 +111,7 @@ export function EnvironmentConnectionNotice(props: {
             props.connection.phase,
             props.environmentLabel,
             props.connection.awaitingApproval === true,
+            gt,
           )}
         </Text>
         <Text className="text-center text-sm leading-normal text-foreground-muted">
@@ -97,6 +120,7 @@ export function EnvironmentConnectionNotice(props: {
             props.resourceName,
             props.connection.error,
             props.connection.awaitingApproval === true,
+            gt,
           )}
           {props.connection.traceId ? (
             <ConnectionTraceId traceId={props.connection.traceId} />
@@ -105,7 +129,7 @@ export function EnvironmentConnectionNotice(props: {
 
         {props.connection.phase !== "offline" && props.connection.phase !== "unsupported" ? (
           <View className="mt-1">
-            <Button label="Retry now" tone="secondary" onPress={props.onRetry} />
+            <Button label={gt("Retry now")} tone="secondary" onPress={props.onRetry} />
           </View>
         ) : null}
       </View>

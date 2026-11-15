@@ -6,6 +6,7 @@ import type {
   PullRequestRef,
   ScopedThreadRef,
 } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 import { useState } from "react";
 
 import { useOpenLink } from "~/browser/useOpenLink";
@@ -22,6 +23,7 @@ import { groupPullRequestChecks } from "./pullRequestDetail.logic";
 import {
   PullRequestCheckStatusIcon,
   pullRequestCheckStatusLabel,
+  pullRequestChecksStateLabel,
   pullRequestChecksStatePresentation,
   summarizePullRequestChecks,
 } from "./pullRequestPresentation";
@@ -36,6 +38,7 @@ function LazyChecksBody({
   reference: PullRequestRef;
   threadRef: ScopedThreadRef | null;
 }) {
+  const gt = useGT();
   const detailQuery = useEnvironmentQuery(
     pullRequestEnvironment.detail({ environmentId, input: reference }),
   );
@@ -45,7 +48,7 @@ function LazyChecksBody({
   if (detailQuery.data === null) {
     return (
       <p className="text-muted-foreground text-xs">
-        {detailQuery.isPending ? "Loading checks…" : "No checks reported"}
+        {detailQuery.isPending ? gt("Loading checks…") : gt("No checks reported")}
       </p>
     );
   }
@@ -59,6 +62,7 @@ function ChecksBody({
   checks: ReadonlyArray<PullRequestCheck>;
   threadRef: ScopedThreadRef | null;
 }) {
+  const gt = useGT();
   const openLink = useOpenLink(threadRef);
   const [showAll, setShowAll] = useState(false);
   const { attention, running, completed } = groupPullRequestChecks(checks);
@@ -66,7 +70,7 @@ function ChecksBody({
   const visibleChecks = [...attention, ...running, ...(showAll || !canCollapse ? completed : [])];
   const hasDetails = visibleChecks.some((check) => check.url !== null);
   if (checks.length === 0) {
-    return <p className="text-muted-foreground text-xs">No checks reported</p>;
+    return <p className="text-muted-foreground text-xs">{gt("No checks reported")}</p>;
   }
   return (
     <>
@@ -91,7 +95,7 @@ function ChecksBody({
                   <TooltipPopup side="top">{check.description ?? check.name}</TooltipPopup>
                 </Tooltip>
                 <span className="justify-self-end whitespace-nowrap text-muted-foreground">
-                  {pullRequestCheckStatusLabel(check)}
+                  {pullRequestCheckStatusLabel(check, gt)}
                 </span>
                 {check.url === null ? null : (
                   <button
@@ -101,11 +105,14 @@ function ChecksBody({
                       if (!check.url) return;
                       void openLink(check.url).catch((error: unknown) => {
                         console.error(error);
-                        toastManager.add({ type: "error", title: "Unable to open check details" });
+                        toastManager.add({
+                          type: "error",
+                          title: gt("Unable to open check details"),
+                        });
                       });
                     }}
                   >
-                    Details
+                    {gt("Details")}
                   </button>
                 )}
               </li>
@@ -120,7 +127,7 @@ function ChecksBody({
           aria-expanded={showAll}
           onClick={() => setShowAll(!showAll)}
         >
-          {showAll ? "Show less" : "Show all"}
+          {showAll ? gt("Show less") : gt("Show all")}
         </Button>
       ) : null}
     </>
@@ -148,22 +155,24 @@ export function PullRequestChecksPopover({
   className?: string;
   render?: React.ReactElement;
 }) {
+  const gt = useGT();
   const presentation = pullRequestChecksStatePresentation(checksState);
+  const stateLabel = pullRequestChecksStateLabel(checksState, gt);
   const incompleteCount =
     checks?.filter((check) => check.status === "pending" || check.status === "action-required")
       .length ?? 0;
   const failedCount =
     checks?.filter((check) => check.status === "failure" || check.status === "cancelled").length ??
     0;
-  const summary = checks === undefined || stale ? null : summarizePullRequestChecks(checks);
+  const summary = checks === undefined || stale ? null : summarizePullRequestChecks(checks, gt);
   return (
     <Popover>
       <PopoverTrigger
         nativeButton={variant === "count"}
         aria-label={
           variant === "count"
-            ? `Open checks: ${summary ?? presentation.label}`
-            : `Checks: ${presentation.label}`
+            ? gt("Open checks: {summary}", { summary: summary ?? stateLabel })
+            : gt("Checks: {state}", { state: stateLabel })
         }
         render={
           variant === "count" ? (
@@ -187,20 +196,22 @@ export function PullRequestChecksPopover({
                 <span className="whitespace-nowrap">
                   {checks.length - incompleteCount}/{checks.length}
                 </span>{" "}
-                checks
+                {gt("checks")}
               </span>
             ) : failedCount > 0 ? (
-              <span className="min-w-0 truncate tabular-nums">{failedCount} failed</span>
+              <span className="min-w-0 truncate tabular-nums">
+                {gt("{count} failed", { count: failedCount })}
+              </span>
             ) : null}
           </>
         ) : null}
       </PopoverTrigger>
       <PopoverPopup align="start" width="md" side="bottom">
-        <p className="mb-2 font-medium text-sm">{presentation.label}</p>
+        <p className="mb-2 font-medium text-sm">{stateLabel}</p>
         {summary === null ? null : <p className="mb-2 text-muted-foreground text-xs">{summary}</p>}
         {stale ? (
           <p className="text-muted-foreground text-xs">
-            Check details are out of date. Refresh the pull request to update them.
+            {gt("Check details are out of date. Refresh the pull request to update them.")}
           </p>
         ) : checks !== undefined ? (
           <ChecksBody checks={checks} threadRef={threadRef} />

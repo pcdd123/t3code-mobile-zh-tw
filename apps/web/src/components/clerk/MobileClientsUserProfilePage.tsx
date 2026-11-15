@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import type { RelayClientDeviceRecord } from "@t3tools/contracts/relay";
 import { SmartphoneIcon } from "lucide-react";
 
@@ -34,6 +35,7 @@ function MobileClientStatusBadge({
 }
 
 function MobileClientRow({ device }: { readonly device: RelayClientDeviceRecord }) {
+  const gt = useGT();
   return (
     <ClerkUserProfileRow icon={<SmartphoneIcon className="size-4" />}>
       <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
@@ -46,26 +48,30 @@ function MobileClientRow({ device }: { readonly device: RelayClientDeviceRecord 
           </p>
         </div>
         <p className="shrink-0 text-2xs leading-4 text-muted-foreground/75">
-          {mobileClientUpdatedAtLabel(device.updatedAt)}
+          {mobileClientUpdatedAtLabel(device.updatedAt, gt)}
         </p>
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
         <MobileClientStatusBadge
           enabled={device.notifications.enabled}
-          label="Push notifications"
+          label={gt("Push notifications")}
         />
-        <MobileClientStatusBadge enabled={device.liveActivities.enabled} label="Live Activities" />
+        <MobileClientStatusBadge
+          enabled={device.liveActivities.enabled}
+          label={gt("Live Activities")}
+        />
       </div>
       <p className="mt-1.5 text-xs leading-4.5 text-muted-foreground/80">
-        {mobileClientNotificationDetail(device)}
+        {mobileClientNotificationDetail(device, gt)}
       </p>
     </ClerkUserProfileRow>
   );
 }
 
 function MobileClientsSkeleton() {
+  const gt = useGT();
   return (
-    <div aria-label="Loading mobile clients" className="divide-y border-t" role="status">
+    <div aria-label={gt("Loading mobile clients")} className="divide-y border-t" role="status">
       {MOBILE_CLIENT_SKELETON_ROWS.map((row) => (
         <div key={row} className="py-4">
           <div className="flex gap-3">
@@ -86,16 +92,18 @@ function MobileClientsSkeleton() {
 }
 
 function EmptyMobileClients() {
+  const gt = useGT();
   return (
     <Empty size="compact">
       <EmptyMedia variant="icon">
         <SmartphoneIcon />
       </EmptyMedia>
       <EmptyHeader>
-        <EmptyTitle>No mobile clients</EmptyTitle>
+        <EmptyTitle>{gt("No mobile clients")}</EmptyTitle>
         <EmptyDescription>
-          Install T3 Code on your phone and sign in to T3 Connect to get push notifications and Live
-          Activities.
+          {gt(
+            "Install T3 Code on your phone and sign in to T3 Connect to get push notifications and Live Activities.",
+          )}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -103,6 +111,7 @@ function EmptyMobileClients() {
 }
 
 export function MobileClientsUserProfilePage() {
+  const gt = useGT();
   const devicesState = useManagedRelayDevices();
   const devices = devicesState.data ?? [];
   const isInitialLoad =
@@ -111,8 +120,8 @@ export function MobileClientsUserProfilePage() {
 
   return (
     <ClerkUserProfilePage
-      title="Mobile clients"
-      description="Mobile devices that get notifications from your environments."
+      title={gt("Mobile clients")}
+      description={gt("Mobile devices that get notifications from your environments.")}
       action={
         <ClerkUserProfileRefreshButton
           isPending={devicesState.isPending}
@@ -128,12 +137,12 @@ export function MobileClientsUserProfilePage() {
           >
             <div>
               <p className="font-medium text-destructive-foreground">
-                Could not load mobile clients
+                {gt("Could not load mobile clients")}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">{devicesState.error}</p>
             </div>
             <Button size="xs" variant="outline" onClick={devicesState.refresh}>
-              Try again
+              {gt("Try again")}
             </Button>
           </div>
         ) : null}

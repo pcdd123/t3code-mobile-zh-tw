@@ -22,6 +22,7 @@ const native = vi.hoisted(() => ({
 }));
 
 vi.mock("react-native", () => ({ Alert: { alert: vi.fn() } }));
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
 vi.mock("@effect/atom-react", () => ({
   useAtomValue: (atom: Parameters<typeof appAtomRegistry.get>[0]) => appAtomRegistry.get(atom),
 }));

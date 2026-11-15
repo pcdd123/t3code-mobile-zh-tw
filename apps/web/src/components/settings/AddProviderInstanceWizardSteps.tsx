@@ -1,3 +1,5 @@
+import { useGT } from "gt-react";
+
 import { WizardSteps } from "../ui/wizard";
 import {
   ADD_PROVIDER_WIZARD_STEPS,
@@ -29,9 +31,24 @@ export function AddProviderInstanceWizardSteps({
   onNavigation,
   disabled = false,
 }: AddProviderInstanceWizardStepsProps) {
+  const gt = useGT();
+  const stepLabel = (step: string) => {
+    switch (step) {
+      case "Provider":
+        return gt("Provider");
+      case "Identity":
+        return gt("Identity");
+      case "Config":
+        return gt("Config");
+      case "Sign in":
+        return gt("Sign in");
+      default:
+        return step;
+    }
+  };
   return (
     <WizardSteps
-      steps={steps}
+      steps={steps.map(stepLabel)}
       currentStep={currentStep}
       summaries={summaries}
       isStepDisabled={() => disabled}

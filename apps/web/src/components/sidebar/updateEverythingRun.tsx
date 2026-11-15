@@ -18,6 +18,7 @@ import { desktopUpdateStateAtom } from "~/state/desktopUpdate";
 import { serverEnvironment } from "~/state/server";
 import { resolveVersionMismatch } from "~/versionSkew";
 import type { ServerUpdateOutcome, ServerUpdateTarget } from "../ServerUpdateAction";
+import { localized } from "../Localized";
 import { stackedThreadToast, toastManager } from "../ui/toast";
 import {
   closeFinishedUpdateRun,
@@ -263,14 +264,20 @@ function takeSavedUpdateEverythingResult(): typeof SavedResult.Type | null {
 }
 
 export function showUpdateEverythingResult(result: UpdateEverythingResult): void {
-  const view = getUpdateEverythingToastView(result, APP_VERSION);
+  const view = getUpdateEverythingToastView(result, APP_VERSION, (message) => message);
   if (!view) return;
   toastManager.add(
     stackedThreadToast({
       type: view.type,
-      title: view.title,
+      title: localized((gt) => getUpdateEverythingToastView(result, APP_VERSION, gt)?.title),
       ...(view.description
-        ? { description: <span className="whitespace-pre-line">{view.description}</span> }
+        ? {
+            description: localized((gt) => (
+              <span className="whitespace-pre-line">
+                {getUpdateEverythingToastView(result, APP_VERSION, gt)?.description}
+              </span>
+            )),
+          }
         : {}),
     }),
   );
@@ -380,8 +387,13 @@ export function startDesktopUpdateLaunchNotice(): () => void {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Update did not apply",
-          description: `T3 Code is still on ${APP_VERSION}. Install ${notAppliedVersion} again from the update button.`,
+          title: localized((gt) => gt("Update did not apply")),
+          description: localized((gt) =>
+            gt(
+              "T3 Code is still on {currentVersion}. Install {version} again from the update button.",
+              { currentVersion: APP_VERSION, version: notAppliedVersion },
+            ),
+          ),
         }),
       );
     },

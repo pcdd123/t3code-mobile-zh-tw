@@ -1,4 +1,8 @@
 import type { PullRequestRef, PullRequestStack, ThreadPullRequestLink } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
+
+const STALE_STACK_NOTICE = "Stack data may be stale. We couldn’t refresh it.";
+const REFRESHING_STACK_NOTICE = "Refreshing stack… Showing saved data.";
 
 /** Saved membership supports navigation, never action head SHAs. */
 export function savedPullRequestStack(
@@ -64,9 +68,15 @@ export function pullRequestStackView(
       data === null
         ? null
         : query.error
-          ? "Stack data may be stale. We couldn’t refresh it."
+          ? STALE_STACK_NOTICE
           : !query.isSuccess || query.isPending
-            ? "Refreshing stack… Showing saved data."
+            ? REFRESHING_STACK_NOTICE
             : null,
   };
+}
+
+export function translatePullRequestStackNotice(notice: string, gt: ReturnType<typeof useGT>) {
+  if (notice === STALE_STACK_NOTICE) return gt("Stack data may be stale. We couldn’t refresh it.");
+  if (notice === REFRESHING_STACK_NOTICE) return gt("Refreshing stack… Showing saved data.");
+  return notice;
 }

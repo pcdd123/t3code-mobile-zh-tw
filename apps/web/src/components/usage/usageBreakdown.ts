@@ -1,4 +1,5 @@
 import type { UsageTokenTotals } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
 import {
   isModelCostUnknown,
   type CategoryCost,
@@ -44,6 +45,30 @@ const TYPE_COLORS = {
   output: ink(100),
   other: ink(44),
 };
+
+/** Segment labels stay English ids; this renders them in the viewer's language. */
+export function usageSegmentLabel(label: string, gt: ReturnType<typeof useGT>): string {
+  switch (label) {
+    case "Input":
+      return gt("Input");
+    case "Cache read":
+      return gt("Cache read");
+    case "Cache write":
+      return gt("Cache write");
+    case "Output":
+      return gt("Output");
+    case "Other":
+      return gt("Other");
+    case "Standard":
+      return gt("Standard");
+    case "Fast":
+      return gt("Fast");
+    case "Ultrafast":
+      return gt("Ultrafast");
+    default:
+      return label;
+  }
+}
 
 export function costTypeSegments(cost: CategoryCost): readonly ShareSegment[] {
   return [

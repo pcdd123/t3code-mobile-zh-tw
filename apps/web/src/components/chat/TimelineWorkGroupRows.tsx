@@ -22,6 +22,8 @@ import { Button } from "../ui/button";
 import { getVirtualizedScrollFadeClassName } from "../ui/scroll-area";
 import {
   liveWorkEntryLabel,
+  localizeLiveWorkEntryLabel,
+  localizeTimelineLabel,
   resolveWorkGroupScrollIndex,
   shouldFollowWorkGroupAppend,
   workEntryIsVisibleInGroup,
@@ -62,6 +64,7 @@ import {
   workEntryIconName,
 } from "./TimelineWorkEntryRow.logic";
 import { formatWorkingTimerNow } from "./TimelineWorkGroupRows.logic";
+import { useGT } from "gt-react";
 
 export const WorkGroupSection = memo(function WorkGroupSection({
   anchorKey,
@@ -76,6 +79,7 @@ export const WorkGroupSection = memo(function WorkGroupSection({
   isExpandedToolGroup: boolean;
   displayLabel?: string | undefined;
 }) {
+  const gt = useGT();
   const {
     workspaceRoot,
     routeThreadKey,
@@ -109,7 +113,7 @@ export const WorkGroupSection = memo(function WorkGroupSection({
   }
 
   return (
-    <section aria-label="Activity">
+    <section aria-label={gt("Activity")}>
       {nonEmptyEntries.map((workEntry) => (
         <SimpleWorkEntryRow
           key={workEntry.id}
@@ -194,6 +198,7 @@ function ExpandedWorkGroupEntries({
   groupedEntries: ReadonlyArray<TimelineWorkEntry>;
   workspaceRoot: string | undefined;
 }) {
+  const gt = useGT();
   const {
     workGroupViewState: viewState,
     onToggleWorkEntry,
@@ -329,7 +334,7 @@ function ExpandedWorkGroupEntries({
           onItemSizeChanged={updateExpandedContentHeight}
           tabIndex={0}
           role="region"
-          aria-label="Tool calls"
+          aria-label={gt("Tool calls")}
           data-tool-group-scroll
           style={{ maxHeight: `calc(min(18rem, 50dvh) + ${expandedContentHeight}px)` }}
           className={cn(
@@ -345,20 +350,21 @@ function ExpandedWorkGroupEntries({
 const workEntryKey = (entry: TimelineWorkEntry) => entry.id;
 
 export function WorkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "working" }> }) {
+  const gt = useGT();
   const { isCompacting, isPreparingWorktree, backgroundWorktreeSetup } =
     use(TimelineRowActivityCtx);
   const compacting = row.compacting === true || isCompacting;
   const shimmer = isPreparingWorktree || compacting;
   const label = isPreparingWorktree ? (
-    "Setting up worktree…"
+    gt("Setting up worktree…")
   ) : compacting ? (
     <CompactingLabel createdAt={row.createdAt} />
   ) : row.createdAt ? (
     <>
-      Working for <WorkingTimer createdAt={row.createdAt} />
+      {gt("Working for")} <WorkingTimer createdAt={row.createdAt} />
     </>
   ) : (
-    "Working..."
+    gt("Working...")
   );
   return (
     <div className="border-b border-border/60 pb-2 pt-1">
@@ -379,11 +385,12 @@ export function WorkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: 
 }
 
 function BackgroundWorktreeSetupChip({ snapshot }: { snapshot: WorktreeSetupSnapshot }) {
+  const gt = useGT();
   const ctx = use(TimelineRowCtx);
   const terminalId = snapshot.setupScript?.terminalId ?? null;
   const openTerminal = ctx.onOpenWorktreeSetupTerminal;
   const onOpenTerminal = openTerminal && terminalId ? () => openTerminal(terminalId) : null;
-  const scriptName = snapshot.setupScript?.name ?? "Setup script";
+  const scriptName = snapshot.setupScript?.name ?? gt("Setup script");
   return (
     <Popover>
       <PopoverTrigger
@@ -392,12 +399,14 @@ function BackgroundWorktreeSetupChip({ snapshot }: { snapshot: WorktreeSetupSnap
             variant="ghost-muted"
             size="micro"
             className="ml-auto min-w-0 shrink-0"
-            aria-label={`Background setup is still running: ${scriptName}. Show setup progress.`}
+            aria-label={gt("Background setup is still running: {script}. Show setup progress.", {
+              script: scriptName,
+            })}
           />
         }
       >
         <Spinner className="size-3 shrink-0" />
-        <span className="truncate">Background setup</span>
+        <span className="truncate">{gt("Background setup")}</span>
       </PopoverTrigger>
       <PopoverPopup side="bottom" align="end" width="lg" padding="compact">
         <WorktreeSetupCard
@@ -413,21 +422,23 @@ function BackgroundWorktreeSetupChip({ snapshot }: { snapshot: WorktreeSetupSnap
 }
 
 function CompactingLabel({ createdAt }: { createdAt: string | null }) {
+  const gt = useGT();
   return (
     <span className="inline-flex items-center gap-1.5">
       <Minimize2Icon aria-hidden="true" className="size-3" />
       {createdAt ? (
         <span>
-          Compacting for <WorkingTimer createdAt={createdAt} />
+          {gt("Compacting for")} <WorkingTimer createdAt={createdAt} />
         </span>
       ) : (
-        "Compacting…"
+        gt("Compacting…")
       )}
     </span>
   );
 }
 
 export function ThinkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "thinking" }> }) {
+  const gt = useGT();
   const ctx = use(TimelineRowCtx);
   const { isCompacting, isPreparingWorktree, liveAnswerPreview, providerStartingLabel } =
     use(TimelineRowActivityCtx);
@@ -436,7 +447,12 @@ export function ThinkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind:
   const live = ctx.pendingApprovals.size === 0;
   const activity = (
     <LiveActivityRow
-      label={providerStartingLabel ?? row.label ?? liveAnswerPreview ?? "Thinking"}
+      label={
+        providerStartingLabel ??
+        (row.label === undefined ? undefined : localizeTimelineLabel(gt, row.label)) ??
+        liveAnswerPreview ??
+        gt("Thinking")
+      }
       iconName="brain"
       active={live}
       shimmer={live}
@@ -512,6 +528,7 @@ function LiveActivityContent({
   active?: boolean;
   highlighted?: boolean;
 }) {
+  const gt = useGT();
   const showTrailingFailureMark =
     failed && iconName !== undefined && !toolIconAcceptsTint(toolIcon);
 
@@ -529,7 +546,7 @@ function LiveActivityContent({
                   : "text-icon-muted",
             )}
             role={announceFailure ? "img" : undefined}
-            aria-label={announceFailure ? "Tool call failed" : undefined}
+            aria-label={announceFailure ? gt("Tool call failed") : undefined}
           >
             <ToolActivityIconView
               icon={toolIcon}
@@ -565,10 +582,12 @@ export function LiveWorkEntryTimelineRow({
 }: {
   row: Extract<TimelineRow, { kind: "work-live" }>;
 }) {
+  const gt = useGT();
   const ctx = use(TimelineRowCtx);
   const threadTarget = useThreadReadTarget(row.entry, ctx.activeThreadEnvironmentId);
-  const label = liveWorkEntryLabel(row.entry, ctx.workspaceRoot, row.active);
-  const threadLabel = threadReadLabel(label, threadTarget);
+  const rawLabel = liveWorkEntryLabel(row.entry, ctx.workspaceRoot, row.active);
+  const threadLabel = threadReadLabel(rawLabel, threadTarget);
+  const label = localizeLiveWorkEntryLabel(gt, rawLabel);
 
   const item = row.entry.projectedItem?.item;
   const pendingApproval =
@@ -591,7 +610,9 @@ export function LiveWorkEntryTimelineRow({
       )}
       aria-label={
         failed
-          ? `${thoughtLine ? `${thoughtLine} ` : ""}${threadLabel?.text ?? label}, tool call failed`
+          ? gt("{preview}, tool call failed", {
+              preview: `${thoughtLine ? `${thoughtLine} ` : ""}${threadLabel?.text ?? label}`,
+            })
           : undefined
       }
       aria-expanded={row.expanded}
@@ -627,9 +648,9 @@ export function LiveWorkEntryTimelineRow({
         label={
           thoughtIsStatus ? (
             row.active ? (
-              "Thinking"
+              gt("Thinking")
             ) : (
-              "Thought"
+              gt("Thought")
             )
           ) : row.entry.itemType === "reasoning" ? (
             <ChatMarkdown
@@ -688,9 +709,12 @@ function WorkGroupHeader(props: {
   timestampFormat: TimestampFormat;
   onToggle: () => void;
 }) {
+  const gt = useGT();
   return (
     <WorkLogButton
-      aria-label={props.failed ? `${props.label}, tool call failed` : props.label}
+      aria-label={
+        props.failed ? gt("{preview}, tool call failed", { preview: props.label }) : props.label
+      }
       aria-expanded={props.expanded}
       onClick={props.onToggle}
       icon={

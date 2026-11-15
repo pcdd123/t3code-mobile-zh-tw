@@ -52,6 +52,7 @@ import { previewEnvironment } from "../../state/preview";
 import { readEnvironmentScope } from "../../state/session";
 import { useAtomCommand } from "../../state/use-atom-command";
 import type { ChatShortcutCommands } from "./useChatShortcuts";
+import { useGT } from "gt-react";
 const SCRIPT_TERMINAL_COLS = 120;
 const SCRIPT_TERMINAL_ROWS = 30;
 
@@ -85,6 +86,7 @@ interface ChatTerminalActionsInput {
  * code blocks, which run in a reused or new drawer terminal.
  */
 export function useChatTerminalActions(input: ChatTerminalActionsInput) {
+  const gt = useGT();
   const {
     environmentId,
     composerRef,
@@ -271,7 +273,9 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
         const error = squashAtomCommandFailure(openResult);
         setThreadError(
           activeThreadId,
-          error instanceof Error ? error.message : `Failed to run script "${script.name}".`,
+          error instanceof Error
+            ? error.message
+            : gt('Failed to run script "{name}".', { name: script.name }),
         );
       }
       return;
@@ -289,7 +293,9 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
         const error = squashAtomCommandFailure(writeResult);
         setThreadError(
           activeThreadId,
-          error instanceof Error ? error.message : `Failed to run script "${script.name}".`,
+          error instanceof Error
+            ? error.message
+            : gt('Failed to run script "{name}".', { name: script.name }),
         );
       }
       return;
@@ -309,8 +315,9 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: "Could not open preview",
-            description: error instanceof Error ? error.message : "An unexpected error occurred.",
+            title: gt("Could not open preview"),
+            description:
+              error instanceof Error ? error.message : gt("An unexpected error occurred."),
           }),
         );
       }
@@ -322,7 +329,7 @@ export function useChatTerminalActions(input: ChatTerminalActionsInput) {
     void runProjectScript(
       {
         id: "chat-code-block",
-        name: "Chat code block",
+        name: gt("Chat code block"),
         command,
         icon: "play",
         runOnWorktreeCreate: false,

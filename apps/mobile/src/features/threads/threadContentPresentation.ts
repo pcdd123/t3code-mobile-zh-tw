@@ -1,4 +1,5 @@
 import { type EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
+import type { useGT } from "gt-react-native";
 
 export type ThreadContentPresentation =
   | { readonly kind: "ready" }
@@ -44,4 +45,27 @@ export function projectThreadContentPresentation(input: {
     title: "Messages not cached",
     detail: "Reconnect this environment to load the conversation.",
   };
+}
+
+/** The localized title and detail of an unavailable presentation; the projection keeps English. */
+export function localizedThreadContentUnavailable(
+  presentation: Extract<ThreadContentPresentation, { readonly kind: "unavailable" }>,
+  gt: ReturnType<typeof useGT>,
+): { readonly title: string; readonly detail: string } {
+  switch (presentation.title) {
+    case "Thread unavailable":
+      return {
+        title: gt("Thread unavailable"),
+        detail: gt("This thread was deleted or is no longer available."),
+      };
+    case "Could not load conversation":
+      return { title: gt("Could not load conversation"), detail: presentation.detail };
+    case "Messages not cached":
+      return {
+        title: gt("Messages not cached"),
+        detail: gt("Reconnect this environment to load the conversation."),
+      };
+    default:
+      return presentation;
+  }
 }

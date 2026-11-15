@@ -9,6 +9,10 @@ import { expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => ({ diff: vi.fn() }));
 vi.mock("../../state/pull-requests", () => ({ composerPullRequests: { diff: mocks.diff } }));
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 
 import { usePullRequestDiff, usePullRequestDiffEntry } from "./usePullRequestDiff";
 import * as reviewModel from "../review/reviewModel";

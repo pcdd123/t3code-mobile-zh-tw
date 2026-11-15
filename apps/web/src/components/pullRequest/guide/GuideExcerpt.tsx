@@ -6,6 +6,7 @@ import type {
 } from "@pierre/diffs";
 import { FileDiff } from "@pierre/diffs/react";
 import type { PullRequestReviewGuideExcerpt, PullRequestReviewPosition } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 import { ArrowUpRightIcon } from "lucide-react";
 import { useState } from "react";
 
@@ -115,6 +116,7 @@ export function GuideExcerpt({
   onOpenFile: (path: string) => void;
 }) {
   // Keep selections outside ExcerptDiff to survive head reloads.
+  const gt = useGT();
   const [draft, setDraft] = useState<ExcerptDraft | null>(null);
   const slice = excerptSlice(file, excerpt);
 
@@ -139,16 +141,19 @@ export function GuideExcerpt({
         />
       ) : loading ? (
         <p className="rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground">
-          Loading {excerpt.path}...
+          {gt("Loading {path}...", { path: excerpt.path })}
         </p>
       ) : (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground">
           <span className="min-w-0 truncate">
-            <span className="font-mono text-foreground">{excerpt.path}</span> lines {excerpt.start}-
-            {excerpt.end} are not in the loaded diff.
+            <span className="font-mono text-foreground">{excerpt.path}</span>{" "}
+            {gt("lines {start}-{end} are not in the loaded diff.", {
+              start: excerpt.start,
+              end: excerpt.end,
+            })}
           </span>
           <Button size="xs" variant="outline" onClick={() => onOpenFile(excerpt.path)}>
-            Open in Code
+            {gt("Open in Code")}
           </Button>
         </div>
       )}
@@ -177,6 +182,7 @@ function ExcerptDiff({
   commenting: ExcerptCommenting | null;
   onOpenFile: (path: string) => void;
 }) {
+  const gt = useGT();
   const resolvedTheme = useRenderedAppearance();
   const loadExcerptFiles = excerptLoader(excerpt, file, slice.rows, loadDiffFiles);
 
@@ -299,13 +305,15 @@ function ExcerptDiff({
                 text=""
                 completionScope={commenting.canComment ? commenting.completionScope : null}
                 placeholder={
-                  commenting.canComment ? "Add a comment…" : "Ask the agent about these lines…"
+                  commenting.canComment
+                    ? gt("Add a comment…")
+                    : gt("Ask the agent about these lines…")
                 }
-                submitLabel={commenting.canComment ? "Add to review" : "Ask agent"}
+                submitLabel={commenting.canComment ? gt("Add to review") : gt("Ask agent")}
                 {...(commenting.canComment && onAskAgent !== null
                   ? {
                       secondaryAction: {
-                        label: "Ask agent",
+                        label: gt("Ask agent"),
                         onAction: (text: string) => askAgent(text),
                       },
                     }
@@ -332,13 +340,20 @@ function ExcerptDiff({
         renderHeaderMetadata={() => (
           <span className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="tabular-nums">
-              {excerpt.side === "old" ? "removed code, " : ""}showing {slice.shown} of {slice.total}{" "}
-              diff lines
+              {excerpt.side === "old"
+                ? gt("removed code, showing {shown} of {total} diff lines", {
+                    shown: slice.shown,
+                    total: slice.total,
+                  })
+                : gt("showing {shown} of {total} diff lines", {
+                    shown: slice.shown,
+                    total: slice.total,
+                  })}
             </span>
             <Button
               size="icon-xs"
               variant="ghost-muted"
-              aria-label={`Open ${excerpt.path} in Code`}
+              aria-label={gt("Open {path} in Code", { path: excerpt.path })}
               onClick={() => onOpenFile(excerpt.path)}
             >
               <ArrowUpRightIcon aria-hidden />

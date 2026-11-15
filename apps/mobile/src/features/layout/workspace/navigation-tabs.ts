@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
+import { useGT } from "gt-react-native";
 import { Platform } from "react-native";
 import {
   NAVIGATION_TAB_LABELS,
@@ -17,6 +18,13 @@ export const WORKSPACE_TAB_LABELS = {
   ...NAVIGATION_TAB_LABELS,
   ...(Platform.OS === "ios" ? { threads: "Chats", pullRequests: "PRs" } : {}),
 };
+
+export function useWorkspaceTabLabels(): Readonly<Record<NavigationTab, string>> {
+  const gt = useGT();
+  return Platform.OS === "ios"
+    ? { threads: gt("Chats"), pullRequests: gt("PRs"), usage: gt("Usage") }
+    : { threads: gt("Threads"), pullRequests: gt("Pulls"), usage: gt("Usage") };
+}
 
 export const NAVIGATION_TAB_ICONS = {
   threads: "text.bubble",

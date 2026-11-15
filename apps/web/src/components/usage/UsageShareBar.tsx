@@ -1,7 +1,9 @@
 import { formatPercent } from "@t3tools/shared/usageFormat";
+import { useGT } from "gt-react";
 import type { ReactNode } from "react";
 
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
+import { usageSegmentLabel } from "./usageBreakdown";
 
 export interface ShareSegment {
   readonly label: string;
@@ -20,7 +22,14 @@ export function UsageShareBar({
   readonly format: (value: number) => string;
   readonly aside?: ReactNode;
 }) {
-  const visible = segments.filter((segment) => segment.value > 0);
+  const gt = useGT();
+  const visible = segments
+    .filter((segment) => segment.value > 0)
+    .map((segment) => ({
+      ...segment,
+      key: segment.label,
+      label: usageSegmentLabel(segment.label, gt),
+    }));
   const total = visible.reduce((sum, segment) => sum + segment.value, 0);
   if (total <= 0) return null;
 
@@ -36,7 +45,7 @@ export function UsageShareBar({
         className="flex h-2 gap-0.5"
       >
         {visible.map((segment) => (
-          <Tooltip key={segment.label}>
+          <Tooltip key={segment.key}>
             <TooltipTrigger
               render={
                 <div
@@ -53,7 +62,7 @@ export function UsageShareBar({
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
         {visible.map((segment) => (
-          <span key={segment.label} className="flex items-center gap-1.5">
+          <span key={segment.key} className="flex items-center gap-1.5">
             <span
               aria-hidden
               className="size-2 rounded-xs"

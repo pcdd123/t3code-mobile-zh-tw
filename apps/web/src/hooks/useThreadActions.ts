@@ -1,3 +1,5 @@
+import { useGT } from "gt-react";
+import { localized } from "../components/Localized";
 import {
   parseScopedThreadKey,
   scopeProjectRef,
@@ -194,8 +196,9 @@ export async function navigateAfterThreadDeletion(navigate: () => Promise<void>)
     toastManager.add(
       stackedThreadToast({
         type: "error",
-        title: "Thread deleted, but navigation failed",
-        description: error instanceof Error ? error.message : "An error occurred.",
+        title: localized((gt) => gt("Thread deleted, but navigation failed")),
+        description:
+          error instanceof Error ? error.message : localized((gt) => gt("An error occurred.")),
       }),
     );
   }
@@ -276,6 +279,7 @@ function threadOperationFailure(target: ScopedThreadRef) {
 }
 
 export function useThreadActions() {
+  const gt = useGT();
   const archiveThreadMutation = useOrchestrationCommand(threadEnvironment.archive, {
     reportFailure: false,
   });
@@ -422,7 +426,7 @@ export function useThreadActions() {
       action: "Archived",
       claim: action,
       undo: () => unarchiveThread(threadRef, { navigate: shouldNavigateToDraft }),
-      failureTitle: "Failed to undo archive",
+      failureTitle: gt("Failed to undo archive"),
     });
 
     if (shouldNavigateToDraft && router.state.location.href === requestingRouteHref) {
@@ -694,10 +698,13 @@ export function useThreadActions() {
         stackedThreadToast({
           type: "error",
           title: removalFailed
-            ? "Failed to delete worktree"
-            : "Worktree deleted, but Git status refresh failed",
+            ? gt("Failed to delete worktree")
+            : gt("Worktree deleted, but Git status refresh failed"),
           description: removalFailed
-            ? `Could not remove ${displayWorktreePath ?? orphanedWorktreePath}. ${message}`
+            ? gt("Could not remove {path}. {message}", {
+                path: displayWorktreePath ?? orphanedWorktreePath,
+                message,
+              })
             : message,
         }),
       );
@@ -800,7 +807,7 @@ export function useThreadActions() {
         action: "Unpinned",
         claim: action,
         undo: () => runUndoPlan(target, undoPlan),
-        failureTitle: "Failed to undo unpin",
+        failureTitle: gt("Failed to undo unpin"),
       });
     } else {
       action.finish();
@@ -844,7 +851,7 @@ export function useThreadActions() {
       action: "Settled",
       claim: action,
       undo: () => runUndoPlan(target, undoPlan),
-      failureTitle: "Failed to undo settle",
+      failureTitle: gt("Failed to undo settle"),
     });
     return result;
   };
@@ -957,7 +964,7 @@ export function useThreadActions() {
       action: "Snoozed",
       claim: action,
       undo: () => runUndoPlan(target, ThreadUndo.planThreadUndo("snooze")),
-      failureTitle: "Failed to wake thread",
+      failureTitle: gt("Failed to wake thread"),
     });
     return result;
   };

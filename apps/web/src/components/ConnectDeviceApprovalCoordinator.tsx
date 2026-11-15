@@ -108,7 +108,7 @@ function ConnectDeviceRequestToasts({
       toasts.current.delete(id);
     }
     for (const { id, request, remainingMs } of live) {
-      const device = describeConnectDeviceClient(request);
+      const device = describeConnectDeviceClient(request, gt);
       const title = gt("A device wants to connect to {environment}", {
         environment: environmentLabel,
       });

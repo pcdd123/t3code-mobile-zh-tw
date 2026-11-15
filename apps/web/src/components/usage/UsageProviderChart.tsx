@@ -1,5 +1,6 @@
 import { ProviderInstanceIcon } from "../chat/ProviderInstanceIcon";
 import type { UsageProviderKind } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 import { useLayoutEffect, useRef, useState } from "react";
 
 import type { DailyTotals, HourlyTotals } from "@t3tools/shared/usageMerge";
@@ -236,6 +237,7 @@ function UsageChartTooltip({
   readonly loadingProviders: ReadonlySet<UsageProviderKind>;
   readonly format: (value: number) => string;
 }) {
+  const gt = useGT();
   const partial = providers.some((provider) => loadingProviders.has(provider));
   return (
     <div
@@ -271,7 +273,7 @@ function UsageChartTooltip({
         );
       })}
       <div className="mt-1 flex items-center justify-between gap-3 border-t border-border pt-1">
-        <span className="text-muted-foreground">Total</span>
+        <span className="text-muted-foreground">{gt("Total")}</span>
         <span className={cn("tabular-nums", partial ? "text-muted-foreground" : "text-foreground")}>
           {format(column?.total ?? 0)}
         </span>
@@ -418,6 +420,7 @@ export function UsageProviderChart({
   timeZone,
   hour12,
 }: UsageProviderChartProps) {
+  const gt = useGT();
   const periods = resolution === "hour" ? hours : days;
   const totals: readonly (DailyTotals | HourlyTotals)[] = resolution === "hour" ? hourly : daily;
   const byPeriod = new Map(
@@ -467,7 +470,15 @@ export function UsageProviderChart({
           loadingProviders={loadingProviders}
           format={format}
           formatTooltipPeriod={formatTooltipPeriod}
-          ariaLabel={`${resolution === "hour" ? "Hourly" : "Daily"} ${metric === "tokens" ? "processed tokens" : "cost"} by provider`}
+          ariaLabel={
+            resolution === "hour"
+              ? metric === "tokens"
+                ? gt("Hourly processed tokens by provider")
+                : gt("Hourly cost by provider")
+              : metric === "tokens"
+                ? gt("Daily processed tokens by provider")
+                : gt("Daily cost by provider")
+          }
         >
           {scale.ticks.map((tick) => {
             const y = toY(tick);

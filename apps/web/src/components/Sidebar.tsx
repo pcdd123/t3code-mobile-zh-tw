@@ -1267,16 +1267,16 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
         const clicked = await settlePromise(() =>
           api.contextMenu.show(
             [
-              { id: "new-thread", label: "New thread" },
-              { id: "copy-path", label: "Copy path" },
+              { id: "new-thread", label: gt("New thread") },
+              { id: "copy-path", label: gt("Copy path") },
               ...(canPinProject(group)
                 ? [
                     group.pinned
-                      ? { id: "unpin", label: "Unpin project", icon: "pin-off" }
-                      : { id: "pin", label: "Pin project", icon: "pin" },
+                      ? { id: "unpin", label: gt("Unpin project"), icon: "pin-off" }
+                      : { id: "pin", label: gt("Pin project"), icon: "pin" },
                   ]
                 : []),
-              { id: "project-settings", label: "Project settings", icon: "settings" },
+              { id: "project-settings", label: gt("Project settings"), icon: "settings" },
             ],
             position,
           ),
@@ -3182,7 +3182,9 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
                                     variant="ghost-muted"
                                     tabIndex={-1}
                                     aria-hidden="true"
-                                    title={`Project settings for ${project.displayName}`}
+                                    title={gt("Project settings for {project}", {
+                                      project: project.displayName,
+                                    })}
                                     onPointerDown={(event) => event.stopPropagation()}
                                     onClick={(event) => {
                                       void handleProjectSettings(event, project);

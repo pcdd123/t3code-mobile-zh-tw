@@ -3,6 +3,7 @@ import type {
   ServerSettingsPatch,
   UsageModelPriceOverride,
 } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
 
 export interface UsagePriceTarget {
   readonly environmentId: EnvironmentId;
@@ -20,6 +21,28 @@ export type UsagePriceChange =
 export type UsagePriceWriteResult =
   | { readonly status: "saved" }
   | { readonly status: "failed"; readonly error: string };
+
+/** Availability and write errors stay English ids; this renders them in the viewer's language. */
+export function usagePriceStatusText(text: string, gt: ReturnType<typeof useGT>): string {
+  switch (text) {
+    case "Offline":
+      return gt("Offline");
+    case "Prices not loaded":
+      return gt("Prices not loaded");
+    case "Checking permissions…":
+      return gt("Checking permissions…");
+    case "Read-only access":
+      return gt("Read-only access");
+    case "Environment removed":
+      return gt("Environment removed");
+    case "Update server to map models":
+      return gt("Update server to map models");
+    case "Could not save. Try again.":
+      return gt("Could not save. Try again.");
+    default:
+      return text;
+  }
+}
 
 /** Destinations settle independently; retries pass only failures. */
 export async function writeUsagePrices(input: {

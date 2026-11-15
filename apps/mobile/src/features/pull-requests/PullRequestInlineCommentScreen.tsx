@@ -2,6 +2,7 @@ import { settlePromise } from "@t3tools/client-runtime/state/runtime";
 import { AsyncResult } from "effect/reactivity";
 import * as Dialog from "../../components/ui/Dialog";
 import { useFocusEffect, useNavigation, type StaticScreenProps } from "@react-navigation/native";
+import { useGT } from "gt-react-native";
 import { useRef, useState } from "react";
 import { View } from "react-native";
 import type { PullRequestReviewPosition } from "@t3tools/contracts";
@@ -27,6 +28,7 @@ export type InlineCommentParams = PullRequestParams & {
   readonly code: string;
 };
 export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<InlineCommentParams>) {
+  const gt = useGT();
   const params = route.params;
   const navigation = useNavigation();
   const store = usePullRequestReviewDraft(params);
@@ -84,13 +86,13 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
   return (
     <PullRequestSheetContent
       busy={busy}
-      title={saved ? "Edit review comment" : "Review comment"}
-      subtitle={`#${params.number} · ${reviewPositionLabel(params.position)}`}
+      title={saved ? gt("Edit review comment") : gt("Review comment")}
+      subtitle={`#${params.number} · ${reviewPositionLabel(params.position, gt)}`}
       footer={
         <Button
           fullWidth
           tone="contrast"
-          label={busy ? "Saving…" : "Save draft"}
+          label={busy ? gt("Saving…") : gt("Save draft")}
           loading={busy}
           disabled={
             !store.ready ||
@@ -118,8 +120,8 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
         onBlur={completions.onBlur}
         editable={store.ready && !busy}
         autoFocus
-        accessibilityLabel="Inline review comment"
-        placeholder="Write feedback on this line…"
+        accessibilityLabel={gt("Inline review comment")}
+        placeholder={gt("Write feedback on this line…")}
         placeholderTextColorClassName="accent-foreground-muted"
         maxLength={65536}
         value={body}
@@ -128,11 +130,11 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
         style={{ textAlignVertical: "top" }}
       />
       <Text className="text-xs text-foreground-muted">
-        Saved comments are private until you submit your review.
+        {gt("Saved comments are private until you submit your review.")}
       </Text>
       {stale ? (
         <Text className="text-sm text-danger-foreground">
-          The branch changed. Return to the current diff and select the line again.
+          {gt("The branch changed. Return to the current diff and select the line again.")}
         </Text>
       ) : null}
       {store.error || detail.error ? (
@@ -140,12 +142,12 @@ export function PullRequestInlineCommentScreen({ route }: StaticScreenProps<Inli
       ) : null}
       {saved ? (
         <Button
-          label="Delete draft"
+          label={gt("Delete draft")}
           onPress={() =>
-            Dialog.alert("Delete this draft?", "Your other review comments will be kept.", [
-              { text: "Cancel", style: "cancel" },
+            Dialog.alert(gt("Delete this draft?"), gt("Your other review comments will be kept."), [
+              { text: gt("Cancel"), style: "cancel" },
               {
-                text: "Delete",
+                text: gt("Delete"),
                 style: "destructive",
                 onPress: () => {
                   store.update((draft) => ({

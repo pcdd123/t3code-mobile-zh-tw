@@ -11,6 +11,9 @@ import {
   type CustomModelDraft,
 } from "./customModelEditor.logic";
 
+const gt = (message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? ""));
+
 const draft = (overrides: Partial<CustomModelDraft>): CustomModelDraft => ({
   slug: "my-model",
   name: "",
@@ -163,20 +166,21 @@ describe("customModelEditor.logic", () => {
       })),
     });
 
-    expect(validateDraft(draft({ descriptors: [select("", [{ id: "a" }])] }))).toBe(
+    expect(validateDraft(draft({ descriptors: [select("", [{ id: "a" }])] }), gt)).toBe(
       "Option 1 needs an id.",
     );
     expect(
       validateDraft(
         draft({ descriptors: [select("effort", [{ id: "a" }]), select("effort", [{ id: "b" }])] }),
+        gt,
       ),
     ).toBe('Option 2: id "effort" is used twice.');
-    expect(validateDraft(draft({ descriptors: [select("effort", [])] }))).toBe(
+    expect(validateDraft(draft({ descriptors: [select("effort", [])] }), gt)).toBe(
       "Option 1 needs at least one choice.",
     );
     expect(
-      validateDraft(draft({ descriptors: [select("effort", [{ id: "a" }, { id: "a" }])] })),
+      validateDraft(draft({ descriptors: [select("effort", [{ id: "a" }, { id: "a" }])] }), gt),
     ).toBe('Option 1: choice "a" is used twice.');
-    expect(validateDraft(draft({ descriptors: [select("effort", [{ id: "a" }])] }))).toBeNull();
+    expect(validateDraft(draft({ descriptors: [select("effort", [{ id: "a" }])] }), gt)).toBeNull();
   });
 });

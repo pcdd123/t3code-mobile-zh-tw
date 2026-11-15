@@ -54,6 +54,7 @@ import { useOrchestrationCommand } from "../../state/use-orchestration-command";
 import { toastManager } from "../ui/toast";
 
 import type { ChatComposerHandle } from "./ChatComposer";
+import { useGT } from "gt-react";
 
 const EMPTY_PENDING_USER_INPUT_ANSWERS: Record<string, PendingUserInputDraftAnswer> = {};
 const NO_PENDING_REQUESTS = { approvals: [], userInputs: [] } as const;
@@ -106,6 +107,7 @@ export function usePendingThreadRequests(input: {
   readonly composerRef: RefObject<ChatComposerHandle | null>;
   readonly setThreadError: (threadId: ThreadId, error: string | null) => void;
 }) {
+  const gt = useGT();
   const {
     environmentId,
     activeThreadId,
@@ -280,7 +282,7 @@ export function usePendingThreadRequests(input: {
       const error = squashAtomCommandFailure(result);
       setThreadError(
         activeThreadId,
-        error instanceof Error ? error.message : "Failed to submit approval decision.",
+        error instanceof Error ? error.message : gt("Failed to submit approval decision."),
       );
     }
     setRespondingRequestIds((existing) => existing.filter((id) => id !== requestId));
@@ -320,7 +322,7 @@ export function usePendingThreadRequests(input: {
       if (!uploaded) {
         setThreadError(
           activeThreadId,
-          "Wait for attachments to finish uploading, or remove failed uploads.",
+          gt("Wait for attachments to finish uploading, or remove failed uploads."),
         );
         return;
       }
@@ -346,7 +348,7 @@ export function usePendingThreadRequests(input: {
       const error = squashAtomCommandFailure(result);
       setThreadError(
         activeThreadId,
-        error instanceof Error ? error.message : "Failed to submit user input.",
+        error instanceof Error ? error.message : gt("Failed to submit user input."),
       );
     }
     userInputResponsesInFlight.current.delete(responseKey);
@@ -368,7 +370,7 @@ export function usePendingThreadRequests(input: {
       const error = squashAtomCommandFailure(result);
       setThreadError(
         activeThreadId,
-        error instanceof Error ? error.message : "Failed to dismiss the question.",
+        error instanceof Error ? error.message : gt("Failed to dismiss the question."),
       );
     }
     setRespondingUserInputRequestIds((existing) => existing.filter((id) => id !== requestId));
@@ -405,8 +407,8 @@ export function usePendingThreadRequests(input: {
       });
       toastManager.add({
         type: "info",
-        title: "Your typed text was set aside",
-        description: "It will be back in the composer once the question is answered.",
+        title: gt("Your typed text was set aside"),
+        description: gt("It will be back in the composer once the question is answered."),
         data: { threadRef: activeThreadId ? { environmentId, threadId: activeThreadId } : null },
       });
       if (activeThreadId) {

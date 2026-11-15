@@ -11,6 +11,7 @@ import {
   type ServerProvider,
 } from "@t3tools/contracts";
 import { deriveSubagentElapsedMs, formatDuration } from "@t3tools/shared/orchestrationTiming";
+import { useGT } from "gt-react-native";
 import { useState, type ReactNode } from "react";
 import { ScrollView, View } from "react-native";
 
@@ -26,6 +27,8 @@ import { SUBAGENT_TONE_TEXT_CLASS, SubagentStatusDot } from "./SubagentStatusDot
 import { SubagentStopButton } from "./SubagentStopButton";
 import {
   nextWorkflowSelection,
+  localizeSubagentRowPresentation,
+  localizedWorkflowRailTitle,
   resolveSubagentRowPresentation,
   workflowMemberDetail,
   workflowMemberMetadata,
@@ -48,6 +51,7 @@ export function ThreadWorkflowGroup(props: {
   readonly group: SubagentWorkflowGroup;
   readonly onOpen: (threadId: ThreadId) => void;
 }) {
+  const gt = useGT();
   const { group } = props;
   const provider = useEnvironmentServerConfig(props.environmentId)?.providers.find(
     (candidate) => candidate.instanceId === props.subagent.providerInstanceId,
@@ -56,7 +60,21 @@ export function ThreadWorkflowGroup(props: {
   const rail = workflowRail(group);
   const open = rail.find((item) => item.key === selected);
   const label = group.workflow.workflowName ?? group.workflow.title;
-  const statusLabel = resolveSubagentRowPresentation(props.subagent).statusLabel;
+  const statusLabel = localizeSubagentRowPresentation(
+    resolveSubagentRowPresentation(props.subagent),
+    props.subagent.status,
+    gt,
+  ).statusLabel;
+  const toneLabel = (tone: WorkflowRailTone) =>
+    tone === "working"
+      ? gt("working")
+      : tone === "completed"
+        ? gt("completed")
+        : tone === "failed"
+          ? gt("failed")
+          : tone === "queued"
+            ? gt("queued")
+            : gt("stopped");
 
   return (
     <View className="my-2">
@@ -64,8 +82,11 @@ export function ThreadWorkflowGroup(props: {
         <View className="flex-row items-center">
           <RowPressable
             accessibilityRole="button"
-            accessibilityLabel={`${label} workflow, ${statusLabel}`}
-            accessibilityHint={open ? "Collapses the workflow" : "Opens the current phase"}
+            accessibilityLabel={gt("{name} workflow, {status}", {
+              name: label,
+              status: statusLabel,
+            })}
+            accessibilityHint={open ? gt("Collapses the workflow") : gt("Opens the current phase")}
             accessibilityState={{ expanded: open !== undefined }}
             disabled={rail.length === 0}
             onPress={() => setSelected(nextWorkflowSelection(rail, selected))}
@@ -103,13 +124,22 @@ export function ThreadWorkflowGroup(props: {
                 item.tone === "working" || item.tone === "failed"
                   ? `${item.completedCount}/${item.members.length}`
                   : null;
+              const title = localizedWorkflowRailTitle(item, gt);
               return (
                 <Chip
                   key={item.key}
                   icon={RAIL_ICON[item.tone]}
-                  label={count ? `${count} ${item.title}` : item.title}
+                  label={count ? `${count} ${title}` : title}
                   selected={item.key === selected}
-                  accessibilityLabel={`${item.title} phase, ${item.tone}${count ? `, ${count} completed` : ""}`}
+                  accessibilityLabel={
+                    count
+                      ? gt("{title} phase, {state}, {count} completed", {
+                          title,
+                          state: toneLabel(item.tone),
+                          count,
+                        })
+                      : gt("{title} phase, {state}", { title, state: toneLabel(item.tone) })
+                  }
                   onPress={() => setSelected(nextWorkflowSelection(rail, selected, item.key))}
                 />
               );
@@ -121,7 +151,7 @@ export function ThreadWorkflowGroup(props: {
             textRole="footnote"
             className="border-t border-border-subtle px-4 py-3 text-foreground-muted"
           >
-            No agents yet
+            {gt("No agents yet")}
           </Text>
         ) : (
           open.members.map((member) => (
@@ -145,19 +175,24 @@ function WorkflowMemberRow(props: {
   readonly provider: ServerProvider | undefined;
   readonly onOpen: (threadId: ThreadId) => void;
 }) {
+  const gt = useGT();
   const { member } = props;
   const threadId = member.childThreadId === null ? null : ThreadId.make(member.childThreadId);
   const shell = useThreadShell(
     threadId === null ? null : scopeThreadRef(props.environmentId, threadId),
   );
   const canOpen = threadId !== null && shell !== null;
-  const presentation = resolveSubagentRowPresentation({
-    title: member.title,
-    prompt: "",
-    status: member.status,
-    result: null,
-    childThreadId: threadId,
-  });
+  const presentation = localizeSubagentRowPresentation(
+    resolveSubagentRowPresentation({
+      title: member.title,
+      prompt: "",
+      status: member.status,
+      result: null,
+      childThreadId: threadId,
+    }),
+    member.status,
+    gt,
+  );
   const { detail, error } = workflowMemberDetail(member);
   const metadata = workflowMemberMetadata(member, props.provider);
   const labels = [metadata.model, metadata.effort].filter((value) => value !== null);
@@ -171,7 +206,10 @@ function WorkflowMemberRow(props: {
         ...(metadata.speed === null ? [] : [metadata.speed]),
         ...(error === null ? [] : [error]),
       ].join(", ")}
-      accessibilityHint={canOpen ? "Opens this agent's thread" : "Its thread is not available yet"}
+      accessibilityHint={
+        canOpen ? gt("Opens this agent's thread") : gt("Its thread is not available yet")
+      }
+
       disabled={!canOpen}
       onPress={() => threadId !== null && props.onOpen(threadId)}
       className="min-h-11 flex-row gap-3 border-t border-border-subtle px-4 py-3 active:opacity-70"

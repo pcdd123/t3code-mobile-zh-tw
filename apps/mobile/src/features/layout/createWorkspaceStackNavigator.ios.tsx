@@ -29,6 +29,7 @@ import {
   type ReactNode,
 } from "react";
 import { StyleSheet, View } from "react-native";
+import { useGT } from "gt-react-native";
 import { Split, type SplitHostCommands } from "react-native-screens";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -207,6 +208,7 @@ function EmptyDetailHeader(props: { readonly onCompose: (() => void) | undefined
 function WorkspaceColumns(
   props: ViewProps & { readonly primary: Route; readonly detail: Route[] },
 ) {
+  const gt = useGT();
   const {
     layout,
     setPrimarySidebarVisible,
@@ -480,7 +482,8 @@ function WorkspaceColumns(
                     pointerEvents="box-none"
                   >
                     <WorkspacePaneDivider
-                      accessibilityLabel="Resize inspector"
+                      accessibilityLabel={gt("Resize inspector")}
+
                       currentWidth={inspectorWidth}
                       resizeDirection={-1}
                       onResizeStart={() => {

@@ -611,7 +611,7 @@ export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps
   });
   const voiceInput = useVoiceInputController({
     ownerKey: composerDraftKey,
-    label: props.selectedThread.title || "Untitled thread",
+    label: props.selectedThread.title || gt("Untitled thread"),
     readDraftMessage: () => getComposerDraftSnapshot(composerDraftKey).text,
     selection: composerMenu.selection,
     onChangeDraftMessage: (text) => setComposerDraftText(composerDraftKey, text),
@@ -865,11 +865,11 @@ export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps
         disabled={!props.canOperateThread}
         accessibilityLabel={
           compactBeforeSend.keepFullHistory
-            ? `Next send keeps all ${compactTokens} tokens of history`
-            : `Next send compacts ${compactTokens} tokens of history first`
+            ? gt("Next send keeps all {tokens} tokens of history", { tokens: compactTokens })
+            : gt("Next send compacts {tokens} tokens of history first", { tokens: compactTokens })
         }
         accessibilityHint={
-          compactBeforeSend.keepFullHistory ? "Compacts first" : "Keeps the full history"
+          compactBeforeSend.keepFullHistory ? gt("Compacts first") : gt("Keeps the full history")
         }
         onPress={compactBeforeSend.toggleKeepFullHistory}
       />
@@ -1267,7 +1267,7 @@ export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps
 
         {props.connectionState === "connected" && operateDenied ? (
           <Text className="pt-2 text-xs text-foreground-muted">
-            This connection cannot control this task. You can still edit your draft.
+            {gt("This connection cannot control this task. You can still edit your draft.")}
           </Text>
         ) : null}
       </Animated.View>

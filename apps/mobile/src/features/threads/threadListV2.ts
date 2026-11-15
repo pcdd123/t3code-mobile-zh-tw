@@ -151,6 +151,8 @@ export function layoutThreadListV2RowMenuActions(input: {
   readonly reorder: readonly MenuAction[];
   readonly pin: readonly MenuAction[];
   readonly secondary: readonly MenuAction[];
+  readonly moreLabel?: string;
+  readonly arrangeLabel?: string;
 }): MenuAction[] {
   if (!input.nested) {
     return [...input.direct, ...input.reorder, ...input.pin, ...input.secondary];
@@ -160,14 +162,15 @@ export function layoutThreadListV2RowMenuActions(input: {
     ...input.pin,
     {
       id: "more",
-      title: "More",
+      title: input.moreLabel ?? "More",
       image: "ellipsis.circle",
       subactions: [
         ...(input.reorder.length > 1
           ? [
               {
                 id: "arrange-menu",
-                title: "Arrange",
+                title: input.arrangeLabel ?? "Arrange",
+
                 image: "arrow.up.arrow.down",
                 subactions: [...input.reorder],
               },

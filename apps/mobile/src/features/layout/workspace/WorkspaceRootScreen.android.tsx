@@ -5,6 +5,7 @@ import { NAVIGATION_TAB_ORDER } from "./navigation-tab-order";
 import { WorkspaceExtraTab } from "./WorkspaceExtraTab";
 import type { ReactNode } from "react";
 import { View } from "react-native";
+import { useGT } from "gt-react-native";
 import { SafeAreaInsetsContext, useSafeAreaInsets } from "react-native-safe-area-context";
 import { NativeStackScreenOptions } from "../../../native/StackHeader";
 import { AppBar } from "../../../components/ui/AppBar";
@@ -34,6 +35,7 @@ export function WorkspaceRootScreen() {
 }
 
 function WorkspaceRoot() {
+  const gt = useGT();
   const floatingTabsEnabled = useAndroidFloatingTabs();
   const { layout, startNewTask, workspacePageWidth } = useAdaptiveWorkspaceLayout();
   const workspace = useWorkspaceTabs()!;
@@ -102,7 +104,8 @@ function WorkspaceRoot() {
                   ) : layout.usesSplitView ? (
                     <>
                       <NativeStackScreenOptions options={{ headerShown: false }} />
-                      <AppBar embedded title="Pull requests" />
+                      <AppBar embedded title={gt("Pull requests")} />
+
                       <WorkspaceEmptyDetail tab="pullRequests" />
                     </>
                   ) : (

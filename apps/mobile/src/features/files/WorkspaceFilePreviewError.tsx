@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import type { EnvironmentId } from "@t3tools/contracts";
 import { View } from "react-native";
 
@@ -12,6 +13,7 @@ export function WorkspaceFilePreviewError(props: {
   readonly reason: AssetUrlFailureReason;
   readonly onRetry: () => void;
 }) {
+  const gt = useGT();
   const { environmentId, onRetry } = props;
   const environment = useEnvironmentPresentation(environmentId);
   const retryEnvironment = useRetryEnvironment();
@@ -24,7 +26,7 @@ export function WorkspaceFilePreviewError(props: {
     return (
       <View className="flex-1 bg-sheet">
         <EnvironmentConnectionNotice
-          environmentLabel={environment.presentation?.entry.target.label ?? "Environment"}
+          environmentLabel={environment.presentation?.entry.target.label ?? gt("Environment")}
           connection={
             environment.presentation?.connection ?? {
               phase: "available",
@@ -42,9 +44,9 @@ export function WorkspaceFilePreviewError(props: {
   return (
     <View className="flex-1 items-center justify-center bg-sheet px-6">
       <EmptyState
-        title="Preview unavailable"
-        detail="This file may be missing, unsupported, or unavailable on this environment."
-        actionLabel="Try again"
+        title={gt("Preview unavailable")}
+        detail={gt("This file may be missing, unsupported, or unavailable on this environment.")}
+        actionLabel={gt("Try again")}
         onAction={props.onRetry}
       />
     </View>

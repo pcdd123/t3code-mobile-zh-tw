@@ -4,6 +4,10 @@ const mocks = vi.hoisted(() => ({
   notificationAsync: vi.fn(() => Promise.resolve()),
 }));
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("expo-haptics", () => ({
   NotificationFeedbackType: { Success: "success", Error: "error" },
   notificationAsync: mocks.notificationAsync,

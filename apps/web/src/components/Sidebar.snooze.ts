@@ -11,6 +11,7 @@ import { getI18nSnapshot } from "../i18n/runtime";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 import { serverEnvironment } from "../state/server";
 import { formatShortTimestamp } from "../timestampFormat";
+import { localized } from "./Localized";
 import { toastManager } from "./ui/toast";
 
 export { snoozeWakeLabel, type SnoozePreset };
@@ -40,8 +41,8 @@ export function pickSnoozePreset(
   if (!picked) {
     toastManager.add({
       type: "warning",
-      title: "Could not snooze thread",
-      description: "That snooze time has passed. Choose another time.",
+      title: localized((gt) => gt("Could not snooze thread")),
+      description: localized((gt) => gt("That snooze time has passed. Choose another time.")),
     });
   }
   return picked;

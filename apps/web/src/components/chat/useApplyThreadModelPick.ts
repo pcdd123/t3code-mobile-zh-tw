@@ -10,9 +10,11 @@ import { type ComposerThreadTarget, useComposerDraftStore } from "../../composer
 import { environmentThreadShells, threadEnvironment } from "../../state/threads";
 import { useOrchestrationCommand } from "../../state/use-orchestration-command";
 import { stackedThreadToast, toastManager } from "../ui/toast";
+import { useGT } from "gt-react";
 
 /** Sets an existing thread's composer pick on the thread, so any next turn runs on it. */
 export function useApplyThreadModelPick() {
+  const gt = useGT();
   const registry = useContext(RegistryContext);
   const setModelSelection = useOrchestrationCommand(threadEnvironment.setModelSelection, {
     label: "change model",
@@ -39,8 +41,10 @@ export function useApplyThreadModelPick() {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Could not apply model selection",
-          description: `This model pick was not saved. ${error instanceof Error ? error.message : "Try again."}`,
+          title: gt("Could not apply model selection"),
+          description: gt("This model pick was not saved. {reason}", {
+            reason: error instanceof Error ? error.message : gt("Try again."),
+          }),
         }),
       );
     }

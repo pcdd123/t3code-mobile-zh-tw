@@ -5,6 +5,10 @@ import { expect, it, vi } from "vite-plus/test";
 
 const queries = vi.hoisted(() => [] as { cwd: string | null; searchQuery: string }[]);
 
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("@t3tools/client-runtime/state/filesystem", () => ({
   resolveFilesystemReadAccess: () => ({ canReadFiles: true, isPending: false }),
 }));

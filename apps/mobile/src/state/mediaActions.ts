@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { settlePromise, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
 import * as Dialog from "../components/ui/Dialog";
 import type { MediaActionsSource } from "../lib/mediaActionsSource";
@@ -41,6 +42,7 @@ function canReadHostMedia(environmentId: EnvironmentId | null): boolean {
 }
 
 export function useMediaActions(source: MediaActionsSource | undefined, onOpenFile?: () => void) {
+  const gt = useGT();
   const navigation = useNavigation();
   const hostEnvironmentId =
     source &&
@@ -75,8 +77,8 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
       .catch((error: unknown) => {
         if (!request.signal.aborted) {
           Dialog.alert(
-            kind === "share" ? "Could not share file" : "Could not save image",
-            error instanceof Error ? error.message : "Try again.",
+            kind === "share" ? gt("Could not share file") : gt("Could not save image"),
+            error instanceof Error ? error.message : gt("Try again."),
           );
         }
       })
@@ -91,7 +93,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
   const hostUri = async (source: MediaActionsSource, signal: AbortSignal) => {
     const uri = "uri" in source ? normalizeNativeMarkdownUrl(source.uri) : await refresh();
     if (signal.aborted || !canReadHostMedia(hostEnvironmentId)) return null;
-    if (uri === null) throw new Error("The file could not be loaded. Reconnect and try again.");
+    if (uri === null) throw new Error(gt("The file could not be loaded. Reconnect and try again."));
     return uri;
   };
 
@@ -151,7 +153,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "copy-full-path" as const,
-                  title: "Copy full path",
+                  title: gt("Copy full path"),
                   run: () => copyTextWithHaptic(formatFilePathForClipboard(reference.path)),
                 },
               ]
@@ -160,7 +162,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "copy-relative-path" as const,
-                  title: "Copy relative path",
+                  title: gt("Copy relative path"),
                   run: () =>
                     copyTextWithHaptic(formatFilePathForClipboard(relativePath, reference.path)),
                 },
@@ -170,7 +172,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "copy-url" as const,
-                  title: "Copy URL",
+                  title: gt("Copy URL"),
                   run: () => copyTextWithHaptic(reference.url),
                 },
               ]
@@ -179,7 +181,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "open-file" as const,
-                  title: "Open in file viewer",
+                  title: gt("Open in file viewer"),
                   disabled: !canReadMedia,
                   run: () => {
                     if (!canReadHostMedia(hostEnvironmentId)) return;
@@ -197,7 +199,7 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             ? [
                 {
                   id: "save-image" as const,
-                  title: busy === "save-image" ? "Saving image…" : "Save image",
+                  title: busy === "save-image" ? gt("Saving image…") : gt("Save image"),
                   run: saveImage,
                   disabled: busy !== null || !canReadMedia,
                 },
@@ -207,10 +209,10 @@ export function useMediaActions(source: MediaActionsSource | undefined, onOpenFi
             id: "save" as const,
             title:
               busy === "share"
-                ? "Opening share sheet…"
+                ? gt("Opening share sheet…")
                 : canSaveImageToLibrary(source.mimeType)
-                  ? "Share"
-                  : "Save or share",
+                  ? gt("Share")
+                  : gt("Save or share"),
             run: share,
             disabled: busy !== null || !canReadMedia,
           },

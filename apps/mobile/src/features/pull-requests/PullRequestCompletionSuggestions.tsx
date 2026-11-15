@@ -1,3 +1,4 @@
+import { useGT } from "gt-react-native";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
 import { AppText as Text } from "../../components/ui/AppText";
@@ -6,24 +7,30 @@ import { PullRequestAvatar } from "./PullRequestPresentation";
 import type { PullRequestCompletion } from "@t3tools/shared/pullRequestComposerTrigger";
 import type { usePullRequestCompletions } from "./usePullRequestCompletions";
 
-const COPY = {
-  mention: {
-    label: "Mention a user",
-    pending: "Searching users...",
-    failed: "Couldn't search users on the host",
-    none: "No matching users",
-  },
-  reference: {
-    label: "Reference an issue or change request",
-    pending: "Searching...",
-    failed: "Couldn't search the host",
-    none: "No matching issues or change requests",
-  },
-} as const;
+type Translate = ReturnType<typeof useGT>;
 
-const STATE_LABEL = { open: "Open", closed: "Closed", merged: "Merged" } as const;
+function completionCopy(kind: "mention" | "reference", gt: Translate) {
+  return kind === "mention"
+    ? {
+        label: gt("Mention a user"),
+        pending: gt("Searching users..."),
+        failed: gt("Couldn't search users on the host"),
+        none: gt("No matching users"),
+      }
+    : {
+        label: gt("Reference an issue or change request"),
+        pending: gt("Searching..."),
+        failed: gt("Couldn't search the host"),
+        none: gt("No matching issues or change requests"),
+      };
+}
+
+function stateLabel(state: "open" | "closed" | "merged", gt: Translate) {
+  return state === "open" ? gt("Open") : state === "closed" ? gt("Closed") : gt("Merged");
+}
 
 function CompletionRow({ completion }: { readonly completion: PullRequestCompletion }) {
+  const gt = useGT();
   if (completion.kind === "mention") {
     const { actor } = completion;
     return (
@@ -50,7 +57,7 @@ function CompletionRow({ completion }: { readonly completion: PullRequestComplet
         {candidate.title}
       </Text>
       <Text className="shrink-0 text-xs text-foreground-tertiary">
-        {STATE_LABEL[candidate.state]}
+        {stateLabel(candidate.state, gt)}
       </Text>
     </>
   );
@@ -62,8 +69,9 @@ export function PullRequestCompletionSuggestions({
 }: {
   readonly completions: ReturnType<typeof usePullRequestCompletions>;
 }) {
+  const gt = useGT();
   if (completions.kind === null) return null;
-  const copy = COPY[completions.kind];
+  const copy = completionCopy(completions.kind, gt);
   return (
     <GlassSurface
       glassEffectStyle="clear"
@@ -81,7 +89,7 @@ export function PullRequestCompletionSuggestions({
             <Pressable
               key={completion.token}
               accessibilityRole="button"
-              accessibilityLabel={`Insert ${completion.token}`}
+              accessibilityLabel={gt("Insert {token}", { token: completion.token })}
               onPress={() => completions.select(completion)}
               className="flex-row items-center gap-2.5 border-border px-3.5 py-2.5 active:opacity-60"
               style={{

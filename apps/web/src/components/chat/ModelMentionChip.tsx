@@ -9,6 +9,7 @@ import { contextChipAccentWithHueOf } from "~/themePalette";
 import { ContextChipPopover } from "../contextChipParts";
 import { ProviderInstanceIcon, providerLogoColor } from "./ProviderInstanceIcon";
 import { getDisplayModelName } from "./providerIconUtils";
+import { useGT } from "gt-react";
 
 interface ModelMentionPresentation {
   readonly label: string;
@@ -90,6 +91,7 @@ export function ModelMentionChip(props: {
   model: string;
   source: string;
 }) {
+  const gt = useGT();
   const presentation = useAtomValue(
     modelMentionPresentationAtom(
       `${props.environmentId ?? ""}\u0000${modelMentionKey(props.instanceId, props.model)}`,
@@ -112,7 +114,7 @@ export function ModelMentionChip(props: {
         />
       }
       label={presentation.label}
-      accessibleLabel={`Model ${presentation.label}`}
+      accessibleLabel={gt("Model {name}", { name: presentation.label })}
       copyMarkdown={props.source}
     >
       <div className="space-y-1 p-2 text-sm">

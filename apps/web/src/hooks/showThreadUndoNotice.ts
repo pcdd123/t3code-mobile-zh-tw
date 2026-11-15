@@ -1,3 +1,4 @@
+import { englishGt, localized, type Translate } from "../components/Localized";
 import {
   type AtomCommandResult,
   isAtomCommandInterrupted,
@@ -45,9 +46,12 @@ function threadUndoNoticeSummary(notice: Pick<UndoNotice, "action" | "count">): 
   return `${notice.action} ${countLabel(notice.action, notice.count)}`;
 }
 
-export function threadUndoLabel(keybindings: Parameters<typeof shortcutLabelForCommand>[0]) {
+export function threadUndoLabel(
+  keybindings: Parameters<typeof shortcutLabelForCommand>[0],
+  gt: Translate = englishGt,
+) {
   const shortcut = shortcutLabelForCommand(keybindings, "thread.undo");
-  return shortcut ? `${shortcut} to undo` : "Undo";
+  return shortcut ? gt("{shortcut} to undo", { shortcut }) : gt("Undo");
 }
 
 let announcedSummary: string | null = null;
@@ -107,7 +111,10 @@ function refreshNotice() {
               stackedThreadToast({
                 type: "error",
                 title: failureTitle,
-                description: error instanceof Error ? error.message : "An error occurred.",
+                description:
+                  error instanceof Error
+                    ? error.message
+                    : localized((gt) => gt("An error occurred.")),
               }),
             );
           };

@@ -3,6 +3,7 @@ import { memo } from "react";
 
 import { cn } from "~/lib/utils";
 import { ComposerBanner } from "./ComposerBanner";
+import { useGT } from "gt-react";
 
 export const ComposerStashBadge = memo(function ComposerStashBadge(props: {
   count: number;
@@ -11,6 +12,7 @@ export const ComposerStashBadge = memo(function ComposerStashBadge(props: {
   pulseKey: number;
   onToggleMenu: () => void;
 }) {
+  const gt = useGT();
   if (props.count === 0) return null;
   const pulsed = props.pulseKey > 0;
   const count = (
@@ -37,7 +39,7 @@ export const ComposerStashBadge = memo(function ComposerStashBadge(props: {
       <ComposerBanner.Row
         render={<button type="button" />}
         data-prompt-stash-badge="true"
-        aria-label={`Stashed prompts: ${props.count}. Open stash.`}
+        aria-label={gt("Stashed prompts: {count}. Open stash.", { count: props.count })}
         aria-expanded={props.menuOpen}
         className={cn(
           "transition-colors duration-200",
@@ -54,7 +56,7 @@ export const ComposerStashBadge = memo(function ComposerStashBadge(props: {
         <ComposerBanner.Icon>
           <BookmarkIcon />
         </ComposerBanner.Icon>
-        <ComposerBanner.Content>Stash</ComposerBanner.Content>
+        <ComposerBanner.Content>{gt("Stash")}</ComposerBanner.Content>
         <ComposerBanner.Actions>{count}</ComposerBanner.Actions>
       </ComposerBanner.Row>
     </ComposerBanner.Root>

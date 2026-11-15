@@ -5,6 +5,7 @@ import {
   type RuntimeMode,
 } from "@t3tools/contracts";
 import { View } from "react-native";
+import { useGT } from "gt-react-native";
 
 import { AppText } from "../../components/ui/AppText";
 import { Button } from "../../components/ui/Button";
@@ -12,7 +13,7 @@ import {
   updateComposerDraftSettings,
   useComposerDraftSettings,
 } from "../../state/use-composer-drafts";
-import { runtimeModeChoicesForSupportedModes } from "./thread-settings-options";
+import { runtimeModeChoicesForSupportedModes, runtimeModeLabel } from "./thread-settings-options";
 
 /**
  * Shown while a thread's mode is above its environment's managed ceiling, where the server
@@ -24,6 +25,7 @@ export function ManagedRuntimeModeNotice(props: {
   readonly supportedRuntimeModes: ReadonlyArray<RuntimeMode> | undefined;
   readonly policy: ManagedPolicySummary | undefined;
 }) {
+  const gt = useGT();
   const draftSettings = useComposerDraftSettings(props.threadKey);
   const runtimeMode = draftSettings.runtimeMode ?? props.threadRuntimeMode;
   const denial = managedRuntimeModeDenial(props.policy, runtimeMode);
@@ -34,15 +36,19 @@ export function ManagedRuntimeModeNotice(props: {
     runtimeMode,
     choices.map((choice) => choice.mode),
   );
-  const targetLabel = choices.find((choice) => choice.mode === target)?.label;
+  const targetLabel =
+    target !== undefined && choices.some((choice) => choice.mode === target)
+      ? runtimeModeLabel(target, gt)
+      : undefined;
   return (
     <View className="gap-2 px-4 pb-3">
       <AppText textRole="footnote" className="text-foreground-muted">
-        {`${denial} Switch this thread's mode to continue.`}
+        {gt("{reason} Switch this thread's mode to continue.", { reason: denial })}
       </AppText>
       {target === undefined || targetLabel === undefined ? null : (
         <Button
-          label={`Switch to ${targetLabel}`}
+          label={gt("Switch to {mode}", { mode: targetLabel })}
+
           onPress={() => updateComposerDraftSettings(props.threadKey, { runtimeMode: target })}
         />
       )}

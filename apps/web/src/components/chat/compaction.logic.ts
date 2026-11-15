@@ -3,6 +3,7 @@ import {
   resolveSelectableProviderInstanceEntry,
   type ProviderInstanceEntry,
 } from "../../providerInstances";
+import type { useGT } from "gt-react";
 
 function providerSupportsManualCompaction(
   provider: ProviderInstanceEntry | null | undefined,
@@ -34,9 +35,14 @@ export function hasAvailableCompactionProvider(input: {
   );
 }
 
-export function formatContextWindowCompactionMessage(autoCompactThreshold?: number | null): string {
+export function formatContextWindowCompactionMessage(
+  gt: ReturnType<typeof useGT>,
+  autoCompactThreshold?: number | null,
+): string {
   if (typeof autoCompactThreshold === "number" && autoCompactThreshold > 0) {
-    return `Compacts automatically at about ${autoCompactThreshold.toLocaleString("en-US")} tokens.`;
+    return gt("Compacts automatically at about {count} tokens.", {
+      count: autoCompactThreshold.toLocaleString("en-US"),
+    });
   }
-  return "Context compacts automatically when needed.";
+  return gt("Context compacts automatically when needed.");
 }

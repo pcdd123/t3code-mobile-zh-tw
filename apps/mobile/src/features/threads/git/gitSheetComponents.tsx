@@ -1,5 +1,6 @@
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { SymbolView } from "../../../components/ui/AppSymbol";
+import type { useGT } from "gt-react-native";
 import type { ComponentProps } from "react";
 import { View } from "react-native";
 import { Button } from "../../../components/ui/Button";
@@ -36,33 +37,41 @@ export function statusSummary(
     readonly pr?: { readonly state?: string; readonly number?: number } | null;
     readonly sourceControlProvider?: { readonly kind: string } | null;
   } | null,
+  gt: ReturnType<typeof useGT>,
 ): string {
   if (!gitStatus) {
-    return "Loading branch status\u2026";
+    return gt("Loading branch status…");
   }
 
   if (!gitStatus.isRepo) {
-    return "Not a git repository";
+    return gt("Not a git repository");
   }
 
   const parts: string[] = [];
   if (gitStatus.hasWorkingTreeChanges) {
     const fileCount = gitStatus.workingTree?.files.length ?? 0;
-    parts.push(`${fileCount} file${fileCount === 1 ? "" : "s"} changed`);
+    parts.push(
+      fileCount === 1 ? gt("1 file changed") : gt("{count} files changed", { count: fileCount }),
+    );
   } else {
-    parts.push("Clean");
+    parts.push(gt("Clean"));
   }
   if ((gitStatus.aheadCount ?? 0) > 0) {
-    parts.push(`${gitStatus.aheadCount} ahead`);
+    parts.push(gt("{count} ahead", { count: gitStatus.aheadCount ?? 0 }));
   }
   if ((gitStatus.behindCount ?? 0) > 0) {
-    parts.push(`${gitStatus.behindCount} behind`);
+    parts.push(gt("{count} behind", { count: gitStatus.behindCount ?? 0 }));
   }
   if (gitStatus.pr?.state === "open") {
     const { shortLabel } = sourceControlClients.get(
       gitStatus.sourceControlProvider?.kind,
     ).changeRequest;
-    parts.push(`${shortLabel} #${gitStatus.pr.number} open`);
+    parts.push(
+      gt("{changeRequest} #{number} open", {
+        changeRequest: shortLabel,
+        number: gitStatus.pr.number ?? "",
+      }),
+    );
   }
 
   return parts.join(" \u00b7 ");

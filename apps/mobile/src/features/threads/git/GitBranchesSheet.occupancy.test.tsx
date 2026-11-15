@@ -9,6 +9,10 @@ const checkout = vi.hoisted(() => ({
 }));
 
 vi.mock("@react-navigation/native", () => ({ useNavigation: () => ({}) }));
+vi.mock("gt-react-native", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
 vi.mock("../../../components/ui/SheetHeader", () => ({ SheetHeader: () => null }));
 vi.mock("../../../components/ui/FitSheet", () => ({
   FitSheet: ({ children }: { children: ReactNode }) => <div>{children}</div>,

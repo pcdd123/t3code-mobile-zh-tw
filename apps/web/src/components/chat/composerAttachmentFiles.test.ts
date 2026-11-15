@@ -138,6 +138,7 @@ describe("composer attachment files", () => {
     ).toBe(PROVIDER_SEND_TURN_MAX_FILE_BYTES);
     expect(
       fileAttachmentCapabilityBlockReason({
+        gt: (message: string) => message,
         files: [{ name: "pending.zip", sizeBytes: PROVIDER_SEND_TURN_MAX_FILE_BYTES }],
         attachmentUploadsCapabilityKnown: false,
         supportsAttachmentUploads: false,

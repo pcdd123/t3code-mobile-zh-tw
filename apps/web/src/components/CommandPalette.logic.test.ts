@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { EnvironmentId, ProjectId, ProviderInstanceId, ThreadId } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
 import type { Thread } from "../types";
 import { makeThreadFixture } from "../test-fixtures";
 import {
@@ -16,6 +17,11 @@ import {
   reduceCommandPaletteSearchState,
   type CommandPaletteUiState,
 } from "./CommandPalette.logic";
+
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_: string, key: string) =>
+    String(values?.[key] ?? ""),
+  )) as unknown as ReturnType<typeof useGT>;
 
 describe("linked pull request thread navigation", () => {
   it("keeps archived relations searchable and routes them through the PR environment", async () => {
@@ -43,7 +49,13 @@ describe("linked pull request thread navigation", () => {
       },
     );
     expect(state.openIntent).toEqual({ kind: "search", query, linkedThreads });
-    const items = buildLinkedThreadActionItems({ ...linkedThreads, query, icon: null, runThread });
+    const items = buildLinkedThreadActionItems({
+      ...linkedThreads,
+      query,
+      icon: null,
+      runThread,
+      gt,
+    });
     const groups = filterCommandPaletteGroups({
       activeGroups: [],
       query,
@@ -168,6 +180,7 @@ describe("buildThreadActionItems", () => {
     const remote = makeThread({ environmentId: EnvironmentId.make("remote-copy") });
     const runThread = vi.fn(async () => {});
     const items = buildThreadActionItems({
+      gt,
       threads: [local, remote],
       activeThread: remote,
       projectByKey: new Map([
@@ -185,6 +198,7 @@ describe("buildThreadActionItems", () => {
 
   it("ranks thread title matches ahead of contextual project-name matches", () => {
     const threadItems = buildThreadActionItems({
+      gt,
       threads: [
         makeThread({
           id: ThreadId.make("thread-context-match"),
@@ -252,6 +266,7 @@ describe("buildThreadActionItems", () => {
         projectSearchItems: [],
         threadSearchItems: [
           ...buildThreadActionItems({
+            gt,
             threads: [makeThread({ title: "Thread about t3code" })],
             projectByKey: new Map(),
             icon: null,
@@ -275,6 +290,7 @@ describe("buildThreadActionItems", () => {
       makeThread({ id: ThreadId.make("message"), title: "Fix schema validation" }),
     ];
     const items = buildThreadActionItems({
+      gt,
       threads,
       projectByKey: new Map(),
       icon: null,
@@ -311,6 +327,7 @@ describe("buildThreadActionItems", () => {
       run: async () => undefined,
     });
     const threadSearchItems = buildThreadActionItems({
+      gt,
       threads: [
         makeThread({
           title: "Compaction prompt timing and cache age",
@@ -352,6 +369,7 @@ describe("buildThreadActionItems", () => {
       run: async () => undefined,
     });
     const threadSearchItems = buildThreadActionItems({
+      gt,
       threads: [makeThread({ title: "Upgrade to pnpm 12" })],
       projectByKey: new Map(),
       icon: null,
@@ -409,6 +427,7 @@ describe("buildThreadActionItems", () => {
       makeThread({ id: ThreadId.make("thread-other"), title: "New thread button" }),
     ];
     const threadSearchItems = buildThreadActionItems({
+      gt,
       threads,
       activeThread: threads[1]!,
       projectByKey: new Map(),
@@ -443,6 +462,7 @@ describe("buildThreadActionItems", () => {
 
   it("lists a project above threads that only hold its name when the name is typed", () => {
     const threadSearchItems = buildThreadActionItems({
+      gt,
       threads: [makeThread({ title: "Lakebed performance gains" })],
       projectByKey: new Map(),
       icon: null,
@@ -473,6 +493,7 @@ describe("buildThreadActionItems", () => {
   it("keeps a command first over a thread in daily use that matches as well", () => {
     const now = Date.parse("2026-10-23T00:00:00.000Z");
     const threadSearchItems = buildThreadActionItems({
+      gt,
       threads: [
         makeThread({
           title: "New onboarding flow",
@@ -645,6 +666,7 @@ describe("buildThreadActionItems", () => {
       updatedAt: "2026-03-04T00:00:00.000Z",
     });
     const items = buildThreadActionItems({
+      gt,
       threads: [idThread, titleThread],
       projectByKey: new Map([[`${LOCAL_ENVIRONMENT_ID}:${PROJECT_ID}`, { title: "T3 Code" }]]),
       icon: null,
@@ -669,6 +691,7 @@ describe("buildThreadActionItems", () => {
   it("hides subagent threads but keeps forks", () => {
     const parentId = ThreadId.make("parent");
     const items = buildThreadActionItems({
+      gt,
       threads: [
         makeThread({ id: parentId, title: "Parent" }),
         makeThread({
@@ -703,6 +726,7 @@ describe("buildThreadActionItems", () => {
 
   it("ranks word-start title matches above newer mid-word matches", () => {
     const items = buildThreadActionItems({
+      gt,
       threads: [
         makeThread({
           id: ThreadId.make("mid-word"),
@@ -743,6 +767,7 @@ describe("buildThreadActionItems", () => {
 
   it("breaks ties between equal matches by latest user message", () => {
     const items = buildThreadActionItems({
+      gt,
       threads: [
         makeThread({
           id: ThreadId.make("prefix-stale"),
@@ -825,6 +850,7 @@ it.each([
   "https://github.com/pingdotgg/t3code/pull/10839",
 ])("finds linked threads from PR query %s", (query) => {
   const items = buildThreadActionItems({
+    gt,
     threads: [
       makeThread({
         title: "Implementation",

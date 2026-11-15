@@ -1,4 +1,5 @@
 import { EnvironmentId } from "@t3tools/contracts";
+import { useGT, useMessages } from "gt-react";
 import { LayersIcon } from "lucide-react";
 
 import { Button } from "../ui/button";
@@ -9,12 +10,14 @@ import { SettingsPageContainer } from "./settingsLayout";
 import { ALL_ENVIRONMENTS_VALUE, selectEnvironmentAxis } from "./settingsScopeAxis";
 
 export function ProjectsSettings() {
+  const gt = useGT();
+  const m = useMessages();
   const { search: value, scope, selectScope } = useSettingsScope();
   const unavailable =
     scope.kind === "unavailable" ? (
       <SettingsPageContainer>
         <div className="flex flex-col items-start gap-3">
-          <p className="text-sm text-muted-foreground">{scope.message}</p>
+          <p className="text-sm text-muted-foreground">{m(scope.message)}</p>
           {value.machine || value.checkout ? (
             <Button
               variant="outline"
@@ -22,7 +25,7 @@ export function ProjectsSettings() {
               onClick={() => selectScope(selectEnvironmentAxis(value, ALL_ENVIRONMENTS_VALUE))}
             >
               <LayersIcon />
-              Show all environments
+              {gt("Show all environments")}
             </Button>
           ) : null}
         </div>
@@ -47,7 +50,7 @@ export function ProjectsSettings() {
         unavailable
       ) : (
         <SettingsScopeNotice target="project">
-          Choose a project to manage its name, icon, checkouts and actions.
+          {gt("Choose a project to manage its name, icon, checkouts and actions.")}
         </SettingsScopeNotice>
       )}
     </div>

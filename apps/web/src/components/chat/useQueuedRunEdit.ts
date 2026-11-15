@@ -66,6 +66,7 @@ import {
   recoverQueuedMessageEdit,
 } from "./queuedMessageEdit";
 import type { EditQueuedRunRequest } from "./QueuedRunsControl";
+import { useGT } from "gt-react";
 
 interface EditingQueuedRun {
   readonly threadId: ThreadId;
@@ -105,14 +106,16 @@ async function submitQueuedRunEdit(input: {
   readonly editing: EditingQueuedRun;
   readonly content: QueuedRunEditContent;
   readonly editQueuedRun: ReturnType<typeof useEditQueuedRunCommand>;
+  readonly gt: ReturnType<typeof useGT>;
 }): Promise<string | null> {
-  const { environmentId, draftTarget, editing, content } = input;
+  const { gt, environmentId, draftTarget, editing, content } = input;
   const editText = content.prompt.trim();
   const newAttachments = [...content.images, ...content.files];
   const uploadFiles = async (files: ReadonlyArray<ComposerFileAttachment>) => {
     const validateFiles = () => {
       const config = appAtomRegistry.get(environmentServerConfigsAtom).get(environmentId) ?? null;
       const reason = fileAttachmentCapabilityBlockReason({
+        gt,
         files,
         attachmentUploadsCapabilityKnown: config !== null,
         supportsAttachmentUploads: config !== null,
@@ -126,7 +129,7 @@ async function submitQueuedRunEdit(input: {
     await awaitAttachmentUploads(files.map((file) => file.id));
     validateFiles();
     const uploaded = getUploadedAttachments({ environmentId, images: files });
-    if (uploaded === null) throw new Error("Retry or remove failed uploads before saving.");
+    if (uploaded === null) throw new Error(gt("Retry or remove failed uploads before saving."));
     return uploaded;
   };
   try {
@@ -181,9 +184,9 @@ async function submitQueuedRunEdit(input: {
         },
       },
     });
-    return result._tag === "Failure" ? "Could not save the edited queued message." : null;
+    return result._tag === "Failure" ? gt("Could not save the edited queued message.") : null;
   } catch (error) {
-    return error instanceof Error ? error.message : "Could not save the edited queued message.";
+    return error instanceof Error ? error.message : gt("Could not save the edited queued message.");
   }
 }
 
@@ -201,6 +204,7 @@ export function useQueuedRunEdit(input: {
   readonly promptRef: { current: string };
   readonly composerRef: RefObject<ChatComposerHandle | null>;
 }) {
+  const gt = useGT();
   const {
     environmentId,
     routeThreadRef,
@@ -305,15 +309,19 @@ export function useQueuedRunEdit(input: {
           const title = appAtomRegistry.get(
             environmentThreadShells.threadShellAtom(threadRef),
           )?.title;
-          const where = title === undefined ? "" : ` in “${title}”`;
+
           toastManager.add(
             stackedThreadToast({
               type: recovery === "kept" ? "info" : "warning",
-              title: "Queued message is no longer queued",
+              title: gt("Queued message is no longer queued"),
               description:
                 recovery === "kept"
-                  ? `Your unsaved edit${where} was kept in the composer.`
-                  : `Your unsaved edit${where} was discarded.`,
+                  ? title === undefined
+                    ? gt("Your unsaved edit was kept in the composer.")
+                    : gt("Your unsaved edit in “{title}” was kept in the composer.", { title })
+                  : title === undefined
+                    ? gt("Your unsaved edit was discarded.")
+                    : gt("Your unsaved edit in “{title}” was discarded.", { title }),
             }),
           );
         },
@@ -349,7 +357,9 @@ export function useQueuedRunEdit(input: {
     ) {
       setThreadError(
         editing.threadId,
-        `A message can have at most ${PROVIDER_SEND_TURN_MAX_ATTACHMENTS} attachments.`,
+        gt("A message can have at most {count} attachments.", {
+          count: PROVIDER_SEND_TURN_MAX_ATTACHMENTS,
+        }),
       );
       return;
     }
@@ -364,6 +374,7 @@ export function useQueuedRunEdit(input: {
     const finishSave = queuedRunEdits.startSave(editKey);
     if (finishSave === null) return;
     const error = await submitQueuedRunEdit({
+      gt,
       environmentId,
       draftTarget,
       editing,

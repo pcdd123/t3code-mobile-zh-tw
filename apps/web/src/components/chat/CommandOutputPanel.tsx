@@ -8,6 +8,7 @@ import { useServerConfigs } from "../../state/entities";
 import { orchestrationEnvironment } from "../../state/orchestration";
 import { useEnvironmentQuery } from "../../state/query";
 import { useInitialOutputReady, type TurnItemSource } from "./timelineRowContext";
+import { useGT } from "gt-react";
 
 const FOLLOW_SLACK_PX = 8;
 
@@ -30,6 +31,7 @@ export function CommandOutputPanel(props: {
   readonly itemId: TurnItemId;
   readonly source?: TurnItemSource["commandOutput"] | undefined;
 }) {
+  const gt = useGT();
   const input = { threadId: props.threadId, itemId: props.itemId };
   const { data, error } = useEnvironmentQuery<CommandOutputView, unknown>(
     props.source
@@ -49,9 +51,17 @@ export function CommandOutputPanel(props: {
   });
 
   if (text.length === 0) {
-    if (error) return <div className="text-destructive">Couldn&apos;t load output: {error}</div>;
-    if (data === null) return <div className="text-muted-foreground italic">Loading output…</div>;
-    return data.running ? null : <div className="text-muted-foreground italic">No output.</div>;
+    if (error)
+      return (
+        <div className="text-destructive">
+          {gt("Couldn't load output: {error}", { error: String(error) })}
+        </div>
+      );
+    if (data === null)
+      return <div className="text-muted-foreground italic">{gt("Loading output…")}</div>;
+    return data.running ? null : (
+      <div className="text-muted-foreground italic">{gt("No output.")}</div>
+    );
   }
   // Parse after all hooks to preserve the text/theme compiler cache.
   const spans = terminalOutputSpans(text, TERMINAL_PALETTES[resolvedTheme]);
@@ -65,7 +75,9 @@ export function CommandOutputPanel(props: {
       }}
       className="max-h-80 overflow-auto text-muted-foreground"
     >
-      {data?.output.truncated ? <div className="italic">Earlier output not shown</div> : null}
+      {data?.output.truncated ? (
+        <div className="italic">{gt("Earlier output not shown")}</div>
+      ) : null}
       {spans.map((span, index) =>
         span.style === null ? (
           span.text

@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import {
   cancelEnvironmentSpeechModelDownload,
   downloadEnvironmentSpeechModel,
@@ -142,6 +143,7 @@ export function useVoiceTranscriptionDestination() {
 }
 
 export function useEnvironmentSpeechInput(input: HookInput) {
+  const gt = useGT();
   const navigate = useNavigate();
   const destination = useVoiceTranscriptionDestination();
   const prepared = destination.prepared;
@@ -322,8 +324,8 @@ export function useEnvironmentSpeechInput(input: HookInput) {
       onPostProcessingError: () =>
         toastManager.add({
           type: "warning",
-          title: "Transcript cleanup failed",
-          description: "The original transcript was added.",
+          title: gt("Transcript cleanup failed"),
+          description: gt("The original transcript was added."),
         }),
       readDraft,
       commitDraft: (text, selection) => {
@@ -347,7 +349,7 @@ export function useEnvironmentSpeechInput(input: HookInput) {
       controller.dispose();
       if (controllerRef.current === controller) controllerRef.current = null;
     };
-  }, [prepared, grantId, cloudProvider, cloudModel]);
+  }, [prepared, grantId, cloudProvider, cloudModel, gt]);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- probes the chosen environment's speech status once its connection is available
   useEffect(() => {
@@ -443,8 +445,10 @@ export function useEnvironmentSpeechInput(input: HookInput) {
         error: choice
           ? null
           : catalog
-            ? "No model matches your language. Choose a model or change the language in Voice settings."
-            : "Could not load transcription models. Check the connection and try again.",
+            ? gt(
+                "No model matches your language. Choose a model or change the language in Voice settings.",
+              )
+            : gt("Could not load transcription models. Check the connection and try again."),
       }));
     },
   );
@@ -480,7 +484,7 @@ export function useEnvironmentSpeechInput(input: HookInput) {
       setQueuedStart(null);
       toastManager.add({
         type: "error",
-        title: "Could not start voice input",
+        title: gt("Could not start voice input"),
         description: error instanceof Error ? error.message : String(error),
       });
       return;
@@ -494,7 +498,7 @@ export function useEnvironmentSpeechInput(input: HookInput) {
     if (!latestStatus.supported) {
       toastManager.add({
         type: "error",
-        title: "Voice input is not available",
+        title: gt("Voice input is not available"),
         description: latestStatus.reason,
       });
       return;
@@ -523,7 +527,7 @@ export function useEnvironmentSpeechInput(input: HookInput) {
           setSetup((current) => ({
             ...current,
             downloading: false,
-            error: "The model downloaded, but this environment could not select it. Try again.",
+            error: gt("The model downloaded, but this environment could not select it. Try again."),
           }));
           return;
         }
@@ -538,14 +542,16 @@ export function useEnvironmentSpeechInput(input: HookInput) {
         ...current,
         downloading: false,
         step: ready ? 1 : current.step,
-        error: ready ? null : "The model is not ready. Try downloading it again.",
+        error: ready ? null : gt("The model is not ready. Try downloading it again."),
       }));
     } catch {
       if (request !== startRequestRef.current) return;
       setSetup((current) => ({
         ...current,
         downloading: false,
-        error: "Could not download the model. Check this environment's connection and try again.",
+        error: gt(
+          "Could not download the model. Check this environment's connection and try again.",
+        ),
       }));
     }
   });

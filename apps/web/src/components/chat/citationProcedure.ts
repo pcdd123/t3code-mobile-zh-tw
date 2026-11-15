@@ -2,6 +2,8 @@ import { useAtomValue } from "@effect/atom-react";
 import { type AtomCommandSuccess, runAtomCommand } from "@t3tools/client-runtime/state/runtime";
 import { sentMessageFromToolItem } from "@t3tools/shared/toolOutput";
 import { Atom, type AtomRegistry } from "effect/reactivity";
+import { useGT } from "gt-react";
+import { createElement } from "react";
 import type { TimelineEntry } from "../../session-logic";
 import { environmentThreadDetails, threadEnvironment } from "../../state/threads";
 import { toastManager } from "../ui/toast";
@@ -36,6 +38,29 @@ type HistoryPageResult = AtomCommandSuccess<
 >;
 
 const MAX_CITATION_PAGES = 20;
+
+/** Outcomes keep English text as their id; the toast translates it when it renders. */
+function CitationToastText({ text }: { readonly text: string }) {
+  const gt = useGT();
+  switch (text) {
+    case "Could not load the cited response":
+      return gt("Could not load the cited response");
+    case "Load earlier turns, then click the citation to try again. Your saved quote is unchanged.":
+      return gt(
+        "Load earlier turns, then click the citation to try again. Your saved quote is unchanged.",
+      );
+    case "The cited response is unavailable":
+      return gt("The cited response is unavailable");
+    case "It may have been removed. The selected text is still saved in your citation.":
+      return gt("It may have been removed. The selected text is still saved in your citation.");
+    case "The citation does not refer to an assistant response":
+      return gt("The citation does not refer to an assistant response");
+    case "The selected text is still saved in your citation.":
+      return gt("The selected text is still saved in your citation.");
+    default:
+      return text;
+  }
+}
 
 const COULD_NOT_LOAD = {
   _tag: "failed",
@@ -222,8 +247,8 @@ const citedHistoryAtom = Atom.family(
         if (outcome._tag === "failed") {
           toastManager.add({
             type: "warning",
-            title: outcome.title,
-            description: outcome.description,
+            title: createElement(CitationToastText, { text: outcome.title }),
+            description: createElement(CitationToastText, { text: outcome.description }),
           });
         }
         get.setSelf({ _tag: outcome._tag });

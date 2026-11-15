@@ -1,5 +1,6 @@
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/models";
 import { scopedThreadKey, scopeThreadRef } from "@t3tools/client-runtime/environment";
+import { useGT } from "gt-react";
 import { ChevronDownIcon, SquarePenIcon } from "lucide-react";
 import { memo } from "react";
 
@@ -43,6 +44,7 @@ export const SidebarProjectFolderHeader = memo(function SidebarProjectFolderHead
   onNewThread: (group: SidebarProjectSnapshot) => void;
   onContextMenu: (group: SidebarProjectSnapshot, position: { x: number; y: number }) => void;
 }) {
+  const gt = useGT();
   const { group, collapsed, hiddenThreads } = props;
   const rowId = sidebarFolderRowId(group.projectKey);
   const localLastVisitedAtById = useUiStateStore((state) => state.threadLastVisitedAtById);
@@ -106,14 +108,16 @@ export const SidebarProjectFolderHeader = memo(function SidebarProjectFolderHead
                 data-sidebar-action-for={rowId}
                 size="icon-xs"
                 variant="ghost-muted"
-                aria-label={`New thread in ${group.displayName}`}
+                aria-label={gt("New thread in {project}", { project: group.displayName })}
                 onClick={() => props.onNewThread(group)}
               />
             }
           >
             <SquarePenIcon aria-hidden />
           </TooltipTrigger>
-          <TooltipPopup>New thread in {group.displayName}</TooltipPopup>
+          <TooltipPopup>
+            {gt("New thread in {project}", { project: group.displayName })}
+          </TooltipPopup>
         </Tooltip>
       </span>
     </li>

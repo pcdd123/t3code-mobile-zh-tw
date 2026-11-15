@@ -1,6 +1,7 @@
 import { providerClients } from "@t3tools/client-runtime/provider-clients";
 import type { EnvironmentId, UsageLimitsReport } from "@t3tools/contracts";
 import { Pressable, ScrollView, View } from "react-native";
+import { useGT } from "gt-react-native";
 
 import { SymbolView } from "../../components/ui/AppSymbol";
 import { AppText as Text } from "../../components/ui/AppText";
@@ -17,10 +18,11 @@ export function ComposerUsageLimits({
   readonly maxHeight: number;
   readonly onClose: () => void;
 }) {
+  const gt = useGT();
   const now = Date.parse(report.createdAt);
   const close = (
     <Pressable
-      accessibilityLabel="Dismiss usage limits"
+      accessibilityLabel={gt("Dismiss usage limits")}
       accessibilityRole="button"
       hitSlop={12}
       onPress={onClose}
@@ -73,7 +75,8 @@ export function ComposerUsageLimits({
         })}
         {report.accounts.length === 0 ? (
           <View className="flex-row items-center gap-3 px-4 pt-3">
-            <Text className="min-w-0 flex-1 text-base text-foreground">Usage limits</Text>
+            <Text className="min-w-0 flex-1 text-base text-foreground">{gt("Usage limits")}</Text>
+
             {close}
           </View>
         ) : null}

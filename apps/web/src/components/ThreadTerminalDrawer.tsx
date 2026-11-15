@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { workspaceAreaProps } from "../lib/workspaceFocus";
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
 import {
@@ -401,31 +402,39 @@ export type TerminalContextMenuAction =
   | "select-all"
   | "scroll-to-bottom";
 
-function terminalSelectionMenuItems(options?: {
-  canAddToChat?: boolean;
-}): ContextMenuItem<"add-to-chat" | "copy">[] {
+function terminalSelectionMenuItems(
+  gt: ReturnType<typeof useGT>,
+  options?: {
+    canAddToChat?: boolean;
+  },
+): ContextMenuItem<"add-to-chat" | "copy">[] {
   return [
     ...(options?.canAddToChat === false
       ? []
-      : ([{ id: "add-to-chat", label: "Add to chat" }] satisfies ContextMenuItem<"add-to-chat">[])),
-    { id: "copy", label: "Copy" },
+      : ([
+          { id: "add-to-chat", label: gt("Add to chat") },
+        ] satisfies ContextMenuItem<"add-to-chat">[])),
+    { id: "copy", label: gt("Copy") },
   ];
 }
 
-function terminalContextMenuItems(options: {
-  hasSelection: boolean;
-  canAddToChat?: boolean;
-  readOnly?: boolean;
-}): ContextMenuItem<TerminalContextMenuAction>[] {
+function terminalContextMenuItems(
+  gt: ReturnType<typeof useGT>,
+  options: {
+    hasSelection: boolean;
+    canAddToChat?: boolean;
+    readOnly?: boolean;
+  },
+): ContextMenuItem<TerminalContextMenuAction>[] {
   const { hasSelection, canAddToChat = true } = options;
   return [
-    ...terminalSelectionMenuItems({ canAddToChat }).map((item) => ({
+    ...terminalSelectionMenuItems(gt, { canAddToChat }).map((item) => ({
       ...item,
       disabled: !hasSelection,
     })),
-    { id: "paste", label: "Paste", ...(options.readOnly ? { disabled: true } : {}) },
-    { id: "select-all", label: "Select all" },
-    { id: "scroll-to-bottom", label: "Jump to latest" },
+    { id: "paste", label: gt("Paste"), ...(options.readOnly ? { disabled: true } : {}) },
+    { id: "select-all", label: gt("Select all") },
+    { id: "scroll-to-bottom", label: gt("Jump to latest") },
   ];
 }
 
@@ -508,6 +517,7 @@ function TerminalSessionViewport({
   visible,
   keybindings,
 }: TerminalViewportProps) {
+  const gt = useGT();
   const containerRef = useRef<HTMLDivElement>(null);
   const autoFocusedRef = useRef(false);
   const terminalRef = useRef<GhosttyTerminalSurface | null>(null);
@@ -643,7 +653,10 @@ function TerminalSessionViewport({
         shouldHandleTerminalExit(status, synchronized, hasHandledExitRef.current, version)
       ) {
         hasHandledExitRef.current = true;
-        writeSystemMessage(terminal, status === "closed" ? "Terminal closed" : "Process exited");
+        writeSystemMessage(
+          terminal,
+          status === "closed" ? gt("Terminal closed") : gt("Process exited"),
+        );
         window.setTimeout(() => {
           if (hasHandledExitRef.current) {
             handleSessionExited();
@@ -877,7 +890,7 @@ function TerminalSessionViewport({
         let clicked: TerminalContextMenuAction | null;
         try {
           clicked = await localApi.contextMenu.show(
-            terminalContextMenuItems({
+            terminalContextMenuItems(gt, {
               hasSelection: selectionAction !== null,
               canAddToChat: canAddSelectionToChat(),
               readOnly: !hasTerminalWriteAccess(),
@@ -992,7 +1005,7 @@ function TerminalSessionViewport({
             void localApi.shell.openExternal(text).catch((error: unknown) => {
               writeSystemMessage(
                 latestTerminal,
-                error instanceof Error ? error.message : "Unable to open link",
+                error instanceof Error ? error.message : gt("Unable to open link"),
               );
             });
           };
@@ -1005,8 +1018,8 @@ function TerminalSessionViewport({
               toastManager.add(
                 stackedThreadToast({
                   type: "error",
-                  title: "Unable to open link",
-                  description: error instanceof Error ? error.message : "An error occurred.",
+                  title: gt("Unable to open link"),
+                  description: error instanceof Error ? error.message : gt("An error occurred."),
                 }),
               );
             },
@@ -1022,7 +1035,7 @@ function TerminalSessionViewport({
           const error = squashAtomCommandFailure(result);
           writeSystemMessage(
             latestTerminal,
-            error instanceof Error ? error.message : "Unable to open path",
+            error instanceof Error ? error.message : gt("Unable to open path"),
           );
         })();
       }
@@ -1091,7 +1104,7 @@ function TerminalSessionViewport({
         mount.focus({ preventScroll: true });
       }
     };
-  }, [cwd, environmentId, terminalId]);
+  }, [cwd, environmentId, gt, terminalId]);
 
   const attachContainer = (mount: HTMLDivElement) => {
     containerRef.current = mount;
@@ -1308,6 +1321,7 @@ function TerminalSidebarGroup({
   onActiveTerminalChange: (terminalId: string) => void;
   onCloseTerminal: (terminalId: string) => void;
 }) {
+  const gt = useGT();
   const isGroupActive = terminalGroup.terminalIds.includes(activeTerminalId);
   const groupActiveTerminalId = isGroupActive
     ? activeTerminalId
@@ -1315,10 +1329,10 @@ function TerminalSidebarGroup({
   const terminalCount = terminalGroup.terminalIds.length;
   const isSplitGroup = terminalCount > 1;
   const groupLabel = !isSplitGroup
-    ? "Single"
+    ? gt("Single")
     : terminalGroup.splitDirection === "vertical"
-      ? "Stacked"
-      : "Side by side";
+      ? gt("Stacked")
+      : gt("Side by side");
   const GroupIcon = !isSplitGroup
     ? Square
     : terminalGroup.splitDirection === "vertical"
@@ -1347,9 +1361,13 @@ function TerminalSidebarGroup({
         {terminalGroup.terminalIds.map((terminalId) => {
           const isActive = terminalId === activeTerminalId;
           const terminalLabel = terminalLabelById.get(terminalId) ?? "Terminal";
-          const closeTerminalLabel = `Close ${terminalLabel}${
-            isActive && closeShortcutLabel ? ` (${closeShortcutLabel})` : ""
-          }`;
+          const closeTerminalLabel =
+            isActive && closeShortcutLabel
+              ? gt("Close {terminal} ({shortcut})", {
+                  terminal: terminalLabel,
+                  shortcut: closeShortcutLabel,
+                })
+              : gt("Close {terminal}", { terminal: terminalLabel });
           return (
             <div
               key={terminalId}
@@ -1415,6 +1433,7 @@ export default function ThreadTerminalDrawer({
   terminalLabelsById,
   terminalLaunchLocationsById,
 }: ThreadTerminalDrawerProps) {
+  const gt = useGT();
   const canOperateTerminal = useEnvironmentScope(threadRef.environmentId, AuthTerminalOperateScope);
   const terminalArea = workspaceAreaProps("terminal", 5, "Terminal");
   const isPanel = mode === "panel";
@@ -1568,21 +1587,21 @@ export default function ThreadTerminalDrawer({
       ...(runtimeEnv ? { runtimeEnv } : {}),
     };
   const splitTerminalActionLabel = hasReachedSplitLimit
-    ? `Split Terminal Horizontally (max ${MAX_TERMINALS_PER_GROUP} per group)`
+    ? gt("Split Terminal Horizontally (max {max} per group)", { max: MAX_TERMINALS_PER_GROUP })
     : splitShortcutLabel
-      ? `Split Terminal Horizontally (${splitShortcutLabel})`
-      : "Split Terminal Horizontally";
+      ? gt("Split Terminal Horizontally ({shortcut})", { shortcut: splitShortcutLabel })
+      : gt("Split Terminal Horizontally");
   const splitTerminalVerticalActionLabel = hasReachedSplitLimit
-    ? `Split Terminal Vertically (max ${MAX_TERMINALS_PER_GROUP} per group)`
+    ? gt("Split Terminal Vertically (max {max} per group)", { max: MAX_TERMINALS_PER_GROUP })
     : splitVerticalShortcutLabel
-      ? `Split Terminal Vertically (${splitVerticalShortcutLabel})`
-      : "Split Terminal Vertically";
+      ? gt("Split Terminal Vertically ({shortcut})", { shortcut: splitVerticalShortcutLabel })
+      : gt("Split Terminal Vertically");
   const newTerminalActionLabel = newShortcutLabel
-    ? `New Terminal (${newShortcutLabel})`
-    : "New Terminal";
+    ? gt("New Terminal ({shortcut})", { shortcut: newShortcutLabel })
+    : gt("New Terminal");
   const closeTerminalActionLabel = closeShortcutLabel
-    ? `Close Terminal (${closeShortcutLabel})`
-    : "Close Terminal";
+    ? gt("Close Terminal ({shortcut})", { shortcut: closeShortcutLabel })
+    : gt("Close Terminal");
   const onSplitTerminalAction = () => {
     if (!canOperateTerminal || hasReachedSplitLimit) return;
     onSplitTerminal();
@@ -1723,7 +1742,7 @@ export default function ThreadTerminalDrawer({
       >
         {resizeHandle}
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>No terminal sessions for this thread yet.</p>
+          <p>{gt("No terminal sessions for this thread yet.")}</p>
           <Button
             size="xs"
             variant="outline"

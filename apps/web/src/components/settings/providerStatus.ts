@@ -3,6 +3,9 @@ import type {
   ServerProviderVersionAdvisory,
   ServerProviderCompatibilityAdvisory,
 } from "@t3tools/contracts";
+import type { useGT } from "gt-react";
+
+type Translate = ReturnType<typeof useGT>;
 
 export const PROVIDER_STATUS_STYLES = {
   disabled: {
@@ -44,61 +47,65 @@ export function getProviderStatusKey(provider: ServerProvider | undefined): Prov
   return provider?.status ?? "warning";
 }
 
-export function getProviderSummary(provider: ServerProvider | undefined) {
+export function getProviderSummary(provider: ServerProvider | undefined, gt: Translate) {
   if (!provider) {
     return {
-      headline: "Checking provider status",
-      detail: "Waiting for the server to report installation and authentication details.",
+      headline: gt("Checking provider status"),
+      detail: gt("Waiting for the server to report installation and authentication details."),
     };
   }
   if (!provider.enabled || provider.status === "disabled") {
     return {
-      headline: "Disabled",
+      headline: gt("Disabled"),
       detail:
-        provider.message ?? "This provider is installed but disabled for new sessions in T3 Code.",
+        provider.message ??
+        gt("This provider is installed but disabled for new sessions in T3 Code."),
     };
   }
   if (!provider.installed) {
     return {
-      headline: "Not found",
-      detail: provider.message ?? "CLI not detected on PATH.",
+      headline: gt("Not found"),
+      detail: provider.message ?? gt("CLI not detected on PATH."),
     };
   }
   if (provider.auth.status === "unauthenticated") {
     const authLabel = provider.auth.label ?? provider.auth.type;
     return {
-      headline: authLabel ? `Not authenticated · ${authLabel}` : "Not authenticated",
+      headline: authLabel
+        ? gt("Not authenticated · {authLabel}", { authLabel })
+        : gt("Not authenticated"),
       detail: provider.message ?? null,
     };
   }
   if (isAntigravitySignInUnchecked(provider)) {
     return {
-      headline: "Installed · Sign-in not checked",
+      headline: gt("Installed · Sign-in not checked"),
       detail: provider.message ?? null,
     };
   }
   if (provider.status === "warning") {
     return {
-      headline: "Needs attention",
+      headline: gt("Needs attention"),
       detail:
-        provider.message ?? "The provider is installed, but the server could not fully verify it.",
+        provider.message ??
+        gt("The provider is installed, but the server could not fully verify it."),
     };
   }
   if (provider.status === "error") {
     return {
-      headline: "Unavailable",
-      detail: provider.message ?? "The provider failed its startup checks.",
+      headline: gt("Unavailable"),
+      detail: provider.message ?? gt("The provider failed its startup checks."),
     };
   }
   if (provider.auth.status === "authenticated") {
     const authLabel = provider.auth.label ?? provider.auth.type;
     return {
-      headline: authLabel ? `Authenticated · ${authLabel}` : "Authenticated",
+      headline: authLabel ? gt("Authenticated · {authLabel}", { authLabel }) : gt("Authenticated"),
       detail: provider.message ?? null,
     };
   }
   return {
-    headline: "Available",
+    headline: gt("Available"),
     detail: provider.message ?? null,
   };
 }
@@ -113,16 +120,22 @@ export function getProviderVersionLabel(version: string | null | undefined) {
   return /^\d/.test(version) ? `v${version}` : version;
 }
 
-const COMPATIBILITY_TITLES = {
-  graceful: "Limited support",
-  unsupported: "Unsupported version",
-  broken: "Known broken version",
-} as const;
+function compatibilityTitle(status: "graceful" | "unsupported" | "broken", gt: Translate) {
+  switch (status) {
+    case "graceful":
+      return gt("Limited support");
+    case "unsupported":
+      return gt("Unsupported version");
+    case "broken":
+      return gt("Known broken version");
+  }
+}
 
 export function getProviderVersionAdvisoryPresentation(
   advisory: ServerProviderVersionAdvisory | undefined,
-  compatibility?: ServerProviderCompatibilityAdvisory | undefined,
-  showCompatibility = true,
+  compatibility: ServerProviderCompatibilityAdvisory | undefined,
+  showCompatibility: boolean,
+  gt: Translate,
 ): {
   readonly title: string;
   readonly detail: string;
@@ -145,10 +158,12 @@ export function getProviderVersionAdvisoryPresentation(
     // Latest package versions cannot be updated into recommendations requiring another package.
     const isAlreadyLatest = advisory?.status === "current";
     return {
-      title: COMPATIBILITY_TITLES[compatibility.status],
+      title: compatibilityTitle(compatibility.status, gt),
       detail:
         compatibility.message ??
-        (recommendation ? `Use ${recommendation} for full support.` : "Update for full support."),
+        (recommendation
+          ? gt("Use {recommendation} for full support.", { recommendation })
+          : gt("Update for full support.")),
       updateCommand:
         targetVersion || latestIsIncompatible || isAlreadyLatest
           ? null
@@ -166,7 +181,7 @@ export function getProviderVersionAdvisoryPresentation(
     return null;
   }
 
-  const label = "Update available";
+  const label = gt("Update available");
   const version = advisory.latestVersion;
   const versionLabel = getProviderVersionLabel(version);
 
@@ -175,8 +190,8 @@ export function getProviderVersionAdvisoryPresentation(
     detail:
       advisory.message ??
       (versionLabel
-        ? `${label}: install ${versionLabel}.`
-        : `${label}: install the latest provider version.`),
+        ? gt("Update available: install {version}.", { version: versionLabel })
+        : gt("Update available: install the latest provider version.")),
     updateCommand: advisory.updateCommand,
     emphasis: "normal" as const,
     targetVersion: null,

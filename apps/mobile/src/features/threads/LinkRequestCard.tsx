@@ -61,6 +61,47 @@ const ACCESS_CHOICES: ReadonlyArray<{
 const accessLabel = (access: AuthMcpClientAccess) =>
   ACCESS_CHOICES.find((choice) => choice.access === access)?.label ?? access;
 
+function localizedAccessLabel(access: AuthMcpClientAccess, gt: ReturnType<typeof useGT>): string {
+  switch (access) {
+    case "read-only":
+      return gt("Read only");
+    case "approval-required":
+      return gt("Supervised");
+    case "auto-accept-edits":
+      return gt("Auto-accept edits");
+    case "auto":
+      return gt("Auto");
+    case "full-access":
+      return gt("Full access");
+    default:
+      return accessLabel(access);
+  }
+}
+
+function linkRequestStatusLabel(item: LinkRequestItem, gt: ReturnType<typeof useGT>): string {
+  switch (item.linkStatus) {
+    case "linked": {
+      const target = item.linkedLabel ?? linkRequestTargetName(item);
+      return item.linkedAccess === undefined
+        ? gt("Linked {target}", { target })
+        : gt("Linked {target} · {access}", {
+            target,
+            access: localizedAccessLabel(item.linkedAccess, gt),
+          });
+    }
+    case "declined":
+      return gt("Declined");
+    case "failed":
+      return gt("Could not link: {reason}", {
+        reason: item.failure ?? gt("the other environment refused"),
+      });
+    case "cancelled":
+      return gt("Request ended");
+    default:
+      return gt("Waiting for an answer in the original thread");
+  }
+}
+
 const LINK_SYMBOL: AppSymbolName = { ios: "link", android: "desktop_windows" };
 
 /** Whether the agent left the machine for the user to pick. */
@@ -77,6 +118,7 @@ export function LinkRequestCard(props: {
   readonly projectedItem: OrchestrationV2ProjectedTurnItem;
   readonly iconColor: ColorValue;
 }) {
+  const gt = useGT();
   const { item, visibility } = props.projectedItem;
   if (item.type !== "link_request") return null;
   const display = linkRequestDisplay(item, visibility, accessLabel);
@@ -95,7 +137,7 @@ export function LinkRequestCard(props: {
     <View className="mb-3 min-h-9 flex-row items-center gap-2 px-1">
       <SymbolView name={icon} size={13} tintColor={props.iconColor} type="monochrome" />
       <Text className="flex-1 font-sans text-sm text-foreground-muted" numberOfLines={2}>
-        {display.label}
+        {linkRequestStatusLabel(item, gt)}
       </Text>
     </View>
   );

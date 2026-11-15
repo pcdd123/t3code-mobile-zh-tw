@@ -2,6 +2,7 @@ import { SymbolView } from "../../components/ui/AppSymbol";
 import { Menu } from "../../components/ui/Menu";
 import type { MenuAction } from "@react-native-menu/menu";
 import * as Haptics from "expo-haptics";
+import { useGT } from "gt-react-native";
 import {
   createContext,
   use,
@@ -87,14 +88,16 @@ function resolveSecondaryAction(input: {
   readonly onDelete: () => void;
   readonly secondaryAction: ThreadSwipeAction | null | undefined;
   readonly threadTitle: string;
+  readonly gt: ReturnType<typeof useGT>;
 }): ThreadSwipeSecondaryAction | null {
+  const { gt } = input;
   if (input.secondaryAction === null) return null;
   if (input.secondaryAction === undefined) {
     return {
-      accessibilityLabel: `Delete ${input.threadTitle}`,
+      accessibilityLabel: gt("Delete {title}", { title: input.threadTitle }),
       tone: "danger",
       icon: "trash",
-      label: "Delete",
+      label: gt("Delete"),
       onPress: () => {
         input.close();
         input.onDelete();
@@ -240,6 +243,7 @@ interface ThreadSwipeableProps {
 }
 
 export function ThreadSwipeable(props: ThreadSwipeableProps) {
+  const gt = useGT();
   const swipeableRef = useRef<SwipeableMethods | null>(null);
   const hasSecondaryAction = props.secondaryAction !== null;
   const actionsWidth = swipeActionsWidth(hasSecondaryAction);
@@ -447,6 +451,7 @@ export function ThreadSwipeable(props: ThreadSwipeableProps) {
       onDelete,
       secondaryAction,
       threadTitle,
+      gt,
     ];
     const cached = rightActions.current;
     if (cached && deps.every((dep, index) => Object.is(dep, cached.deps[index]))) {
@@ -471,7 +476,9 @@ export function ThreadSwipeable(props: ThreadSwipeableProps) {
             onDelete,
             secondaryAction,
             threadTitle,
+            gt,
           })}
+
           translation={translation}
         />
       </Animated.View>

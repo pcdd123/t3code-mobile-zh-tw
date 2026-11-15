@@ -8,6 +8,7 @@ import type { ReviewDiffPreviewSource } from "@t3tools/contracts";
 import { quoteGitPatchPath } from "@t3tools/shared/gitPatchPath";
 import * as Arr from "effect/Array";
 import { pipe } from "effect/Function";
+import type { useGT } from "gt-react-native";
 import * as Order from "effect/Order";
 
 export type ReviewSectionKind = "turn" | "working-tree" | "branch-range";
@@ -686,4 +687,78 @@ export function applyReviewDiffMetadata(
     return stat ? { ...file, additions: stat.additions, deletions: stat.deletions } : file;
   });
   return { ...previewDiff, ...totals, files, fileCount: selectedSection.files.length, notice };
+}
+
+const REVIEW_TURN_TITLE = /^Turn (\d+)$/;
+const REVIEW_FILES_CHANGED = /^(\d+) files changed$/;
+const REVIEW_DIFF_STATUS = /^Diff (\S+)$/;
+
+/**
+ * Localizes the English section titles, subtitles, notices and row messages this module and the
+ * native diff adapter produce; anything else, such as a ref range or a server message, is kept.
+ */
+export function localizeReviewText(text: string, gt: ReturnType<typeof useGT>): string {
+  switch (text) {
+    case "Changes":
+      return gt("Changes");
+    case "Staged, unstaged, and untracked files":
+      return gt("Staged, unstaged, and untracked files");
+    case "Base branch unavailable":
+      return gt("Base branch unavailable");
+    case "1 file changed":
+      return gt("1 file changed");
+    case "Non-text file":
+      return gt("Non-text file");
+    case "Diff preview is not available for this file format.":
+      return gt("Diff preview is not available for this file format.");
+    case "Large diff":
+      return gt("Large diff");
+    case "Large diffs are not rendered by default.":
+      return gt("Large diffs are not rendered by default.");
+    case "Load diff":
+      return gt("Load diff");
+    case "Diff output hit the server size cap. Showing the available excerpt.":
+      return gt("Diff output hit the server size cap. Showing the available excerpt.");
+    case "Diff was truncated before it could be parsed completely. Showing the raw excerpt.":
+      return gt(
+        "Diff was truncated before it could be parsed completely. Showing the raw excerpt.",
+      );
+    case "Unsupported diff format. Showing raw patch.":
+      return gt("Unsupported diff format. Showing raw patch.");
+    case "Failed to parse patch. Showing raw patch.":
+      return gt("Failed to parse patch. Showing raw patch.");
+    case "This preview exceeds the size limit. Changes shown are incomplete.":
+      return gt("This preview exceeds the size limit. Changes shown are incomplete.");
+    case "This preview exceeds the size limit. Changes shown are incomplete. Counts include all changes.":
+      return gt(
+        "This preview exceeds the size limit. Changes shown are incomplete. Counts include all changes.",
+      );
+    case "This diff is too large to show in full.":
+      return gt("This diff is too large to show in full.");
+    case "Unsupported format. Diff contents are not available.":
+      return gt("Unsupported format. Diff contents are not available.");
+    case "This file was renamed without modifications.":
+      return gt("This file was renamed without modifications.");
+    case "Old and new files have no newline at end of file.":
+      return gt("Old and new files have no newline at end of file.");
+    case "New file has no newline at end of file.":
+      return gt("New file has no newline at end of file.");
+    case "Old file has no newline at end of file.":
+      return gt("Old file has no newline at end of file.");
+    case "File preview exceeds the size limit. Counts include all changes.":
+      return gt("File preview exceeds the size limit. Counts include all changes.");
+    case "Could not display file preview.":
+      return gt("Could not display file preview.");
+    case "Could not load diff. Select the file to retry.":
+      return gt("Could not load diff. Select the file to retry.");
+    case "Loading diff…":
+      return gt("Loading diff…");
+  }
+  const turn = REVIEW_TURN_TITLE.exec(text);
+  if (turn) return gt("Turn {number}", { number: turn[1]! });
+  const files = REVIEW_FILES_CHANGED.exec(text);
+  if (files) return gt("{count} files changed", { count: files[1]! });
+  const status = REVIEW_DIFF_STATUS.exec(text);
+  if (status) return gt("Diff {status}", { status: status[1]! });
+  return text;
 }

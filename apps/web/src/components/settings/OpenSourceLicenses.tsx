@@ -6,6 +6,7 @@ import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import { FetchHttpClient, HttpClient } from "effect/http";
 import { Atom } from "effect/reactivity";
+import { useGT } from "gt-react";
 import { useState } from "react";
 
 import {
@@ -21,6 +22,19 @@ import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collaps
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../ui/input-group";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { SettingsPageContainer, SettingsSection } from "./settingsLayout";
+
+const MANIFEST_LOAD_FAILED = "The license manifest could not load.";
+const MANIFEST_TIMED_OUT = "The license manifest took too long to load.";
+const MANIFEST_STATUS_FAILED = /^The license manifest request failed with status (\d+)\.$/u;
+
+function manifestErrorText(message: string, gt: ReturnType<typeof useGT>): string {
+  if (message === MANIFEST_LOAD_FAILED) return gt("The license manifest could not load.");
+  if (message === MANIFEST_TIMED_OUT) return gt("The license manifest took too long to load.");
+  const status = MANIFEST_STATUS_FAILED.exec(message)?.[1];
+  return status === undefined
+    ? message
+    : gt("The license manifest request failed with status {status}.", { status });
+}
 
 class LicenseManifestLoadError extends Schema.TaggedError<LicenseManifestLoadError>()(
   "LicenseManifestLoadError",
@@ -44,7 +58,7 @@ const licenseManifestAtom = Atom.make(
       try: () => decodeThirdPartyLicenseManifest(body),
       catch: (error) =>
         new LicenseManifestLoadError({
-          message: error instanceof Error ? error.message : "The license manifest could not load.",
+          message: error instanceof Error ? error.message : MANIFEST_LOAD_FAILED,
         }),
     });
   }).pipe(
@@ -54,10 +68,7 @@ const licenseManifestAtom = Atom.make(
     }),
     Effect.timeoutOrElse({
       duration: "30 seconds",
-      orElse: () =>
-        Effect.fail(
-          new LicenseManifestLoadError({ message: "The license manifest took too long to load." }),
-        ),
+      orElse: () => Effect.fail(new LicenseManifestLoadError({ message: MANIFEST_TIMED_OUT })),
     }),
     Effect.provide(FetchHttpClient.layer),
   ),
@@ -72,6 +83,7 @@ function LicenseNoticeRow({
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
 }) {
+  const gt = useGT();
   return (
     <Collapsible open={open} onOpenChange={onOpenChange}>
       <article>
@@ -93,11 +105,11 @@ function LicenseNoticeRow({
           </CollapsibleTrigger>
           {entry.sourceUrl ? (
             <Button
-              aria-label={`View project source for ${entry.name}`}
+              aria-label={gt("View project source for {name}", { name: entry.name })}
               className="me-3 shrink-0 sm:me-4"
               render={<a href={entry.sourceUrl} rel="noreferrer noopener" target="_blank" />}
               size="icon-micro"
-              title="Project source"
+              title={gt("Project source")}
               variant="ghost-muted"
             >
               <ExternalLinkIcon aria-hidden className="size-3" />
@@ -125,11 +137,17 @@ function LicenseCount({
   filteredCount: number;
   totalCount: number;
 }) {
+  const gt = useGT();
   return (
     <p className="whitespace-nowrap text-xs font-normal text-muted-foreground tabular-nums">
       {filteredCount === totalCount
-        ? `${String(totalCount)} notices`
-        : `${String(filteredCount)} of ${String(totalCount)}`}
+        ? totalCount === 1
+          ? gt("1 notice")
+          : gt("{count} notices", { count: String(totalCount) })
+        : gt("{filtered} of {total}", {
+            filtered: String(filteredCount),
+            total: String(totalCount),
+          })}
     </p>
   );
 }
@@ -149,6 +167,7 @@ function LicenseHeaderAction({
   filteredCount: number;
   totalCount: number;
 }) {
+  const gt = useGT();
   if (!searchOpen) {
     return (
       <div className="flex items-center gap-1.5">
@@ -157,7 +176,7 @@ function LicenseHeaderAction({
           <TooltipTrigger
             render={
               <Button
-                aria-label="Search open-source licenses"
+                aria-label={gt("Search open-source licenses")}
                 onClick={() => onSearchOpenChange(true)}
                 size="icon-micro"
                 type="button"
@@ -167,7 +186,7 @@ function LicenseHeaderAction({
               </Button>
             }
           />
-          <TooltipPopup side="top">Search licenses</TooltipPopup>
+          <TooltipPopup side="top">{gt("Search licenses")}</TooltipPopup>
         </Tooltip>
       </div>
     );
@@ -183,7 +202,7 @@ function LicenseHeaderAction({
           <SearchIcon aria-hidden className="size-3" />
         </InputGroupAddon>
         <InputGroupInput
-          aria-label="Search open-source licenses"
+          aria-label={gt("Search open-source licenses")}
           autoFocus
           onBlur={() => {
             if (query.length === 0) onSearchOpenChange(false);
@@ -195,7 +214,7 @@ function LicenseHeaderAction({
             onQueryChange("");
             onSearchOpenChange(false);
           }}
-          placeholder="Search licenses"
+          placeholder={gt("Search licenses")}
           size="sm"
           type="search"
           value={query}
@@ -206,22 +225,26 @@ function LicenseHeaderAction({
 }
 
 function LicenseManifestError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const gt = useGT();
   return (
     <div className="flex flex-col items-start gap-3 px-3 py-5 sm:px-4">
       <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-medium text-foreground">Open-source notices are unavailable</h3>
+        <h3 className="text-sm font-medium text-foreground">
+          {gt("Open-source notices are unavailable")}
+        </h3>
         <p className="max-w-[70ch] text-pretty text-xs leading-normal text-muted-foreground/80">
-          {message}
+          {manifestErrorText(message, gt)}
         </p>
       </div>
       <Button type="button" size="xs" variant="outline" onClick={onRetry}>
-        Try again
+        {gt("Try again")}
       </Button>
     </div>
   );
 }
 
 export function OpenSourceLicensesPanel() {
+  const gt = useGT();
   const result = useAtomValue(licenseManifestAtom);
   const retry = useAtomRefresh(licenseManifestAtom);
   const [query, setQuery] = useState("");
@@ -233,7 +256,7 @@ export function OpenSourceLicensesPanel() {
   const errorMessage =
     result._tag === "Failure" && !result.waiting
       ? Option.match(Cause.findErrorOption(result.cause), {
-          onNone: () => "The license manifest could not load.",
+          onNone: () => MANIFEST_LOAD_FAILED,
           onSome: (error) => error.message,
         })
       : null;
@@ -241,7 +264,7 @@ export function OpenSourceLicensesPanel() {
   return (
     <SettingsPageContainer>
       <SettingsSection
-        title="Third-party notices"
+        title={gt("Third-party notices")}
         headerAction={
           manifest ? (
             <LicenseHeaderAction
@@ -271,7 +294,7 @@ export function OpenSourceLicensesPanel() {
               })
             ) : (
               <p className="px-3 py-8 text-center text-sm/6 text-muted-foreground sm:px-4">
-                No licenses match that search.
+                {gt("No licenses match that search.")}
               </p>
             )}
           </div>
@@ -279,7 +302,7 @@ export function OpenSourceLicensesPanel() {
           <LicenseManifestError message={errorMessage} onRetry={retry} />
         ) : (
           <p className="px-3 py-5 text-sm/6 text-muted-foreground sm:px-4">
-            Loading open-source notices…
+            {gt("Loading open-source notices…")}
           </p>
         )}
       </SettingsSection>

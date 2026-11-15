@@ -1,4 +1,5 @@
 import type { EnvironmentId, SecretProviderConfig, SecretProviderId } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 
@@ -34,7 +35,10 @@ const SECRET_PROVIDER_KINDS: Readonly<
   one_password: { name: "1Password", icon: OnePasswordIcon },
 };
 
+const VOICE_USE_PREFIX = "Voice · ";
+
 export function SecretsSettingsPanel() {
+  const gt = useGT();
   const { scope, environment } = useSettingsScope();
   const connected = environment?.connection.phase === "connected";
   return (
@@ -44,7 +48,9 @@ export function SecretsSettingsPanel() {
       environment.serverConfig.secretProviderSettings !== true ? (
         <SettingsSection {...searchableSetting("secret-providers")}>
           <p className="px-4 py-3 text-sm text-muted-foreground">
-            Update T3 Code on {environment.label} to manage its secret providers.
+            {gt("Update T3 Code on {environment} to manage its secret providers.", {
+              environment: environment.label,
+            })}
           </p>
         </SettingsSection>
       ) : connected ? (
@@ -56,7 +62,9 @@ export function SecretsSettingsPanel() {
       ) : (
         <SettingsSection {...searchableSetting("secret-providers")}>
           <p className="px-4 py-3 text-sm text-muted-foreground">
-            Connect an environment to manage the secret providers its provider variables read from.
+            {gt(
+              "Connect an environment to manage the secret providers its provider variables read from.",
+            )}
           </p>
         </SettingsSection>
       )}
@@ -71,6 +79,7 @@ function EnvironmentSecretProviders({
   readonly environment: EnvironmentPresentation;
   readonly projectScoped: boolean;
 }) {
+  const gt = useGT();
   const environmentId = environment.environmentId;
   const sessionState = useEnvironmentSessionState(environmentId);
   // The server requires the same grant for secret providers as for provider settings.
@@ -103,20 +112,22 @@ function EnvironmentSecretProviders({
           !readOnly ? (
             <Button size="xs" variant="outline" onClick={() => setDialog({ mode: "add" })}>
               <PlusIcon className="size-3" aria-hidden />
-              Add provider
+              {gt("Add provider")}
             </Button>
           ) : null
         }
       >
         {projectScoped ? (
           <p className="px-4 pt-3 text-xs text-muted-foreground">
-            Environment-wide setting. Select an environment to change it.
+            {gt("Environment-wide setting. Select an environment to change it.")}
           </p>
         ) : null}
         {entries.length === 0 ? (
           <SettingsRow
-            title="No secret providers configured."
-            description="Add a 1Password account, then pick it as the source of a provider variable."
+            title={gt("No secret providers configured.")}
+            description={gt(
+              "Add a 1Password account, then pick it as the source of a provider variable.",
+            )}
           />
         ) : (
           entries.map(([id, config]) => {
@@ -142,14 +153,14 @@ function EnvironmentSecretProviders({
                       <span className="shrink-0">{kind.name} ·</span>
                       <RedactedSensitiveText
                         value={classified.account}
-                        ariaLabel="Toggle account visibility"
-                        revealTooltip="Click to reveal account"
-                        hideTooltip="Click to hide account"
+                        ariaLabel={gt("Toggle account visibility")}
+                        revealTooltip={gt("Click to reveal account")}
+                        hideTooltip={gt("Click to hide account")}
                         className="max-w-full truncate"
                       />
                     </span>
                   ) : (
-                    `Unsupported provider (${config.kind})`
+                    gt("Unsupported provider ({kind})", { kind: config.kind })
                   )
                 }
                 control={
@@ -161,7 +172,7 @@ function EnvironmentSecretProviders({
                           variant="ghost"
                           onClick={() => setDialog({ mode: "edit", id })}
                         >
-                          Edit
+                          {gt("Edit")}
                         </Button>
                       ) : null}
                       <RemoveSecretProviderButton
@@ -202,20 +213,23 @@ function RemoveSecretProviderButton({
   readonly label: string;
   readonly onConfirm: () => void;
 }) {
+  const gt = useGT();
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button size="xs" variant="ghost" onClick={() => setOpen(true)}>
-        Remove
+        {gt("Remove")}
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogPopup>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove {label}?</AlertDialogTitle>
+            <AlertDialogTitle>{gt("Remove {name}?", { name: label })}</AlertDialogTitle>
             <SecretProviderUses environmentId={environmentId} id={id} label={label} />
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
+            <AlertDialogClose render={<Button variant="outline" />}>
+              {gt("Cancel")}
+            </AlertDialogClose>
             <Button
               variant="destructive"
               onClick={() => {
@@ -223,7 +237,7 @@ function RemoveSecretProviderButton({
                 onConfirm();
               }}
             >
-              Remove provider
+              {gt("Remove provider")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogPopup>
@@ -241,22 +255,29 @@ function SecretProviderUses({
   readonly id: SecretProviderId;
   readonly label: string;
 }) {
+  const gt = useGT();
   const uses = secretProviderUses(useEnvironmentSettings(environmentId), id);
   if (uses.length === 0) {
     return (
       <AlertDialogDescription>
-        Nothing reads from {label}. The secrets themselves are untouched.
+        {gt("Nothing reads from {name}. The secrets themselves are untouched.", { name: label })}
       </AlertDialogDescription>
     );
   }
   return (
     <>
       <AlertDialogDescription>
-        These read from {label} and will be unset. The secrets themselves are untouched.
+        {gt("These read from {name} and will be unset. The secrets themselves are untouched.", {
+          name: label,
+        })}
       </AlertDialogDescription>
       <ul className="max-h-48 list-disc space-y-0.5 overflow-y-auto ps-5 text-sm wrap-anywhere">
         {uses.map((use) => (
-          <li key={use.id}>{use.label}</li>
+          <li key={use.id}>
+            {use.id.startsWith("voice:") && use.label.startsWith(VOICE_USE_PREFIX)
+              ? gt("Voice · {provider}", { provider: use.label.slice(VOICE_USE_PREFIX.length) })
+              : use.label}
+          </li>
         ))}
       </ul>
     </>

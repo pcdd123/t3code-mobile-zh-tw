@@ -1,7 +1,13 @@
+import type { useGT } from "gt-react-native";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { WorkspaceState } from "../../state/workspaceModel";
 import { workspaceConnectionStatusPresentation } from "./workspace-connection-status";
+
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_, key: string) => String(values?.[key] ?? ""))) as ReturnType<
+  typeof useGT
+>;
 
 function workspaceState(overrides: Partial<WorkspaceState> = {}): WorkspaceState {
   return {
@@ -49,7 +55,7 @@ describe("workspace connection status", () => {
               ],
       });
 
-      expect(workspaceConnectionStatusPresentation(state)).toBeNull();
+      expect(workspaceConnectionStatusPresentation(state, gt)).toBeNull();
     },
   );
 
@@ -73,7 +79,7 @@ describe("workspace connection status", () => {
       ],
     });
 
-    expect(workspaceConnectionStatusPresentation(state)).toEqual({
+    expect(workspaceConnectionStatusPresentation(state, gt)).toEqual({
       label: "Syncing threads...",
       showsProgress: true,
     });

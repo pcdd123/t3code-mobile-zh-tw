@@ -24,10 +24,12 @@ import { InlineButton } from "../ui/button";
 import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
 import type { ComposerBannerStackItem } from "./ComposerBannerStack";
 import { ComposerServerUpdateIcon } from "./ComposerServerUpdateStatus";
+import { useGT } from "gt-react";
 
 export function useAutoBalanceUpdateBanner(
   environments: readonly EnvironmentPresentation[],
 ): ComposerBannerStackItem | null {
+  const gt = useGT();
   const updateStates = useAtomValue(
     environmentUpdateStatesAtom(
       environmentIdsKey(environments.map(({ environmentId }) => environmentId)),
@@ -80,8 +82,17 @@ export function useAutoBalanceUpdateBanner(
   );
   const count = running || failed || machines.length;
   const status = running ? "running" : failed ? "failed" : "idle";
-  const prefix = running ? "Updating" : failed ? "Could not update" : "Update available for";
-  const title = `${prefix} ${count} ${count === 1 ? "machine" : "machines"}`;
+  const title = running
+    ? count === 1
+      ? gt("Updating 1 machine")
+      : gt("Updating {count} machines", { count })
+    : failed
+      ? count === 1
+        ? gt("Could not update 1 machine")
+        : gt("Could not update {count} machines", { count })
+      : count === 1
+        ? gt("Update available for 1 machine")
+        : gt("Update available for {count} machines", { count });
   return {
     id: `auto-balance-server-updates-${dismissedNotices.size}`,
     variant: failed ? "error" : "default",
@@ -92,7 +103,7 @@ export function useAutoBalanceUpdateBanner(
         <PopoverTrigger
           render={<InlineButton />}
           className="max-w-full"
-          aria-label={`${title}. View machines`}
+          aria-label={gt("{title}. View machines", { title })}
         >
           <span className="min-w-0 truncate">{title}</span>
         </PopoverTrigger>
@@ -105,14 +116,14 @@ export function useAutoBalanceUpdateBanner(
                   <ServerUpdateProgress state={machine.state} />
                 ) : !machine.remoteUpdate ? (
                   <>
-                    <div className="text-muted-foreground">Manual update required</div>
+                    <div className="text-muted-foreground">{gt("Manual update required")}</div>
                     <ServerUpdateAction {...machine} />
                   </>
                 ) : (
                   <div className="text-muted-foreground">
                     {machine.connected
-                      ? `Ready to update to ${machine.targetVersion}`
-                      : "Reconnect this machine to update"}
+                      ? gt("Ready to update to {version}", { version: machine.targetVersion })
+                      : gt("Reconnect this machine to update")}
                   </div>
                 )}
               </div>
@@ -122,7 +133,11 @@ export function useAutoBalanceUpdateBanner(
       </Popover>
     ),
     description:
-      manual > 0 ? `${manual} ${manual === 1 ? "needs" : "need"} a manual update` : undefined,
+      manual === 1
+        ? gt("1 needs a manual update")
+        : manual > 0
+          ? gt("{count} need a manual update", { count: manual })
+          : undefined,
     actions:
       running === 0 && targets.length > 0 ? (
         <ServerUpdatesAction
@@ -130,14 +145,16 @@ export function useAutoBalanceUpdateBanner(
           variant="ghost"
           label={
             failed > 0
-              ? "Retry"
+              ? gt("Retry")
               : targets.length === machines.length
-                ? "Update all"
-                : `Update ${targets.length} ${targets.length === 1 ? "machine" : "machines"}`
+                ? gt("Update all")
+                : targets.length === 1
+                  ? gt("Update 1 machine")
+                  : gt("Update {count} machines", { count: targets.length })
           }
         />
       ) : undefined,
-    dismissLabel: "Dismiss update notice",
+    dismissLabel: gt("Dismiss update notice"),
     ...(running
       ? {}
       : {

@@ -88,6 +88,7 @@ import {
   TIMELINE_MINIMAP_TARGET_OFFSET,
   timelineTurnFoldRunIdsByEntryId,
   liveAnswerPreview,
+  localizeTimelineLabel,
   type MessagesTimelineRow,
   type TimelineLatestRun,
 } from "./MessagesTimeline.logic";
@@ -1209,16 +1210,19 @@ const ConversationTimeline = memo(function ConversationTimeline({
       <div className="messages-timeline-row-frame">
         <div className="chat-content-lane pt-1 sm:pt-2">
           <TimelineSystemDivider
-            label={parentThreadLink.sideChat ? "Context from" : "Subagent of"}
+            label={parentThreadLink.sideChat ? gt("Context from") : gt("Subagent of")}
             detail={
               parentThreadLink.environmentLabel === undefined
                 ? parentThreadLink.title
-                : `${parentThreadLink.title} on ${parentThreadLink.environmentLabel}`
+                : gt("{title} on {environment}", {
+                    title: parentThreadLink.title,
+                    environment: parentThreadLink.environmentLabel,
+                  })
             }
             icon={parentThreadLink.sideChat ? MessagesSquareIcon : BotIcon}
             {...(parentThreadLink.open === undefined
               ? {}
-              : { actionLabel: "Open parent thread", onAction: parentThreadLink.open })}
+              : { actionLabel: gt("Open parent thread"), onAction: parentThreadLink.open })}
           />
         </div>
       </div>
@@ -1721,10 +1725,11 @@ function ContextCompactionTimelineRow({
 }: {
   row: Extract<TimelineRow, { kind: "context-compaction" }>;
 }) {
+  const gt = useGT();
   const label =
     row.title && row.label.startsWith("Context compacted")
-      ? row.title + row.label.slice("Context compacted".length)
-      : row.label;
+      ? localizeTimelineLabel(gt, row.title) + row.label.slice("Context compacted".length)
+      : localizeTimelineLabel(gt, row.label);
   const content = (
     <span className="flex min-w-0 items-center gap-1.5">
       {row.failed ? (
@@ -1734,9 +1739,10 @@ function ContextCompactionTimelineRow({
       )}
       {row.tokenCounts ? (
         <>
-          {row.title ?? "Context compacted"} {row.tokenCounts.before}
+          {row.title ? localizeTimelineLabel(gt, row.title) : gt("Context compacted")}{" "}
+          {row.tokenCounts.before}
           <ArrowRightIcon aria-hidden="true" className="size-3" />
-          {row.tokenCounts.after} tokens
+          {gt("{count} tokens", { count: row.tokenCounts.after })}
         </>
       ) : (
         label
@@ -1772,6 +1778,7 @@ function useDeferredWorkLoading(
   row: { expanded: boolean; deferredWorkItemIds?: ReadonlyArray<string> },
   onToggle: () => void,
 ) {
+  const gt = useGT();
   const ctx = use(TimelineRowCtx);
   const loadWork = useAtomCommand(threadEnvironment.loadEarlierHistory, { reportFailure: false });
   const ref = parseScopedThreadKey(ctx.routeThreadKey);
@@ -1796,7 +1803,7 @@ function useDeferredWorkLoading(
   useEffect(() => {
     if (row.expanded && anchorsKey && environmentId && threadId) loadOnExpand();
   }, [row.expanded, anchorsKey, environmentId, threadId]);
-  const error = anchorsKey && failed ? "Couldn't load work. Click to retry." : null;
+  const error = anchorsKey && failed ? gt("Couldn't load work. Click to retry.") : null;
   const loading = ref !== null && row.expanded && anchorsKey !== "" && !failed;
   const toggle = () => {
     setFailed(false);
@@ -1825,6 +1832,7 @@ function WorkHistorySkeleton() {
 }
 
 function TurnFoldTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "turn-fold" }> }) {
+  const gt = useGT();
   const ctx = use(TimelineRowCtx);
   const { loading, error, toggle } = useDeferredWorkLoading(row, () =>
     ctx.onToggleTurnFold(row.runId),
@@ -1842,7 +1850,7 @@ function TurnFoldTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "turn-
           className="flex cursor-pointer select-none items-center gap-1 rounded-md px-1 text-sm leading-relaxed text-muted-foreground tabular-nums transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/70"
         >
           <span>
-            {row.label}
+            {localizeTimelineLabel(gt, row.label)}
             {error ? ` · ${error}` : ""}
           </span>
           {row.expanded ? (
@@ -1886,7 +1894,7 @@ function AttemptFoldTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "at
           <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
         )}
         <span className="text-xs font-medium text-foreground/80">
-          {row.label}
+          {localizeTimelineLabel(gt, row.label)}
           {error ? ` · ${error}` : ""}
         </span>
         <span className="text-2xs text-muted-foreground">{gt("Cut off by a steer")}</span>

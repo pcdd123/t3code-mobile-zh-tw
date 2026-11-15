@@ -1,3 +1,5 @@
+import { useGT } from "gt-react";
+import { withSlot } from "../Localized";
 import { T3CHAT_PLAN_TUNNEL_LIMITS, type RelayT3ChatLink } from "@t3tools/contracts/relay";
 import { MessageSquareIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -12,30 +14,38 @@ import {
 } from "./ClerkUserProfilePage";
 import { useT3ChatLink } from "./useT3ChatLink";
 
-const upgradeLink = (
-  <a className="underline" href={T3CHAT_SUBSCRIPTION_URL} target="_blank" rel="noopener noreferrer">
-    Upgrade on T3 Chat
-  </a>
-);
-
-function planLabel(link: RelayT3ChatLink): ReactNode {
+function planLabel(link: RelayT3ChatLink, gt: ReturnType<typeof useGT>): ReactNode {
+  const upgradeLink = (
+    <a
+      className="underline"
+      href={T3CHAT_SUBSCRIPTION_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {gt("Upgrade on T3 Chat")}
+    </a>
+  );
   switch (link.plan) {
     case "premier":
-      return `Premier · up to ${T3CHAT_PLAN_TUNNEL_LIMITS.premier} tunnels`;
+      return gt("Premier · up to {count} tunnels", { count: T3CHAT_PLAN_TUNNEL_LIMITS.premier });
     case "pro":
-      return (
-        <>
-          Pro · up to {T3CHAT_PLAN_TUNNEL_LIMITS.pro} tunnels. {upgradeLink} to Premier for{" "}
-          {T3CHAT_PLAN_TUNNEL_LIMITS.premier}.
-        </>
+      return withSlot(
+        (slot) =>
+          gt("Pro · up to {pro} tunnels. {upgrade} to Premier for {premier}.", {
+            pro: T3CHAT_PLAN_TUNNEL_LIMITS.pro,
+            upgrade: slot,
+            premier: T3CHAT_PLAN_TUNNEL_LIMITS.premier,
+          }),
+        upgradeLink,
       );
     case "free":
-      return <>{upgradeLink} for more tunnels</>;
+      return withSlot((slot) => gt("{upgrade} for more tunnels", { upgrade: slot }), upgradeLink);
   }
 }
 
 /** Links a T3 Chat account so paid subscribers get more tunnels. */
 export function T3ChatUserProfilePage() {
+  const gt = useGT();
   const { linkState, pending, linkUrl, link: handleLink, unlink: handleUnlink } = useT3ChatLink();
   const usage = useManagedTunnelUsage();
 
@@ -45,7 +55,10 @@ export function T3ChatUserProfilePage() {
   return (
     <ClerkUserProfilePage
       title="T3 Chat"
-      description={`Link a paid T3 Chat account for more T3 Connect tunnels: up to ${T3CHAT_PLAN_TUNNEL_LIMITS.pro} with Pro, ${T3CHAT_PLAN_TUNNEL_LIMITS.premier} with Premier.`}
+      description={gt(
+        "Link a paid T3 Chat account for more T3 Connect tunnels: up to {pro} with Pro, {premier} with Premier.",
+        { pro: T3CHAT_PLAN_TUNNEL_LIMITS.pro, premier: T3CHAT_PLAN_TUNNEL_LIMITS.premier },
+      )}
       action={
         <ClerkUserProfileRefreshButton
           disabled={pending !== null}
@@ -56,12 +69,14 @@ export function T3ChatUserProfilePage() {
     >
       {linkState.error ? (
         <div className="border-t py-3 text-xs" role="alert">
-          <p className="font-medium text-destructive-foreground">Could not load T3 Chat link</p>
+          <p className="font-medium text-destructive-foreground">
+            {gt("Could not load T3 Chat link")}
+          </p>
           <p className="mt-0.5 text-muted-foreground">{linkState.error}</p>
         </div>
       ) : data === null ? null : !data.available ? (
         <p className="border-t py-4 text-xs text-muted-foreground">
-          This T3 Connect server does not support T3 Chat linking.
+          {gt("This T3 Connect server does not support T3 Chat linking.")}
         </p>
       ) : (
         <ul className="border-t">
@@ -69,27 +84,24 @@ export function T3ChatUserProfilePage() {
             <div className="flex items-start gap-4">
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-sm leading-4.5 font-medium text-foreground">
-                  {link ? link.email : "Not linked"}
+                  {link ? link.email : gt("Not linked")}
                 </h3>
                 <p className="mt-1 text-xs leading-4.5 text-muted-foreground">
-                  {link ? (
-                    planLabel(link)
-                  ) : linkUrl ? (
-                    <>
-                      Confirm on{" "}
-                      <a
-                        className="underline"
-                        href={linkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        t3.chat
-                      </a>
-                      , then select Refresh.
-                    </>
-                  ) : (
-                    "You confirm the link on t3.chat."
-                  )}
+                  {link
+                    ? planLabel(link, gt)
+                    : linkUrl
+                      ? withSlot(
+                          (slot) => gt("Confirm on {site}, then select Refresh.", { site: slot }),
+                          <a
+                            className="underline"
+                            href={linkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            t3.chat
+                          </a>,
+                        )
+                      : gt("You confirm the link on t3.chat.")}
                 </p>
               </div>
               {link ? (
@@ -99,11 +111,11 @@ export function T3ChatUserProfilePage() {
                   disabled={pending !== null}
                   onClick={() => void handleUnlink()}
                 >
-                  {pending === "unlink" ? "Unlinking…" : "Unlink"}
+                  {pending === "unlink" ? gt("Unlinking…") : gt("Unlink")}
                 </Button>
               ) : (
                 <Button size="sm" disabled={pending !== null} onClick={() => void handleLink()}>
-                  {pending === "link" ? "Opening…" : "Link T3 Chat"}
+                  {pending === "link" ? gt("Opening…") : gt("Link T3 Chat")}
                 </Button>
               )}
             </div>

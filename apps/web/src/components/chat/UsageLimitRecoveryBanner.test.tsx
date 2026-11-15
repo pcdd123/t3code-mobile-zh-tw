@@ -1,13 +1,19 @@
 import { RunId } from "@t3tools/contracts";
 import type { TimestampFormat } from "@t3tools/contracts/settings";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { usageLimitRecoveryBannerItem } from "./UsageLimitRecoveryBanner";
 
+vi.mock("gt-react", () => ({
+  useGT: () => (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? "")),
+}));
+
 const stoppedAt = new Date(2026, 9, 20, 12, 0);
 
 function bannerDescription(resetAt: Date, timestampFormat: TimestampFormat) {
-  return usageLimitRecoveryBannerItem({
+  const { description } = usageLimitRecoveryBannerItem({
     runId: RunId.make("run-1"),
     errorCode: null,
     resetAt: resetAt.toISOString(),
@@ -18,7 +24,8 @@ function bannerDescription(resetAt: Date, timestampFormat: TimestampFormat) {
     recovery: null,
     timestampFormat,
     onChange: async () => {},
-  }).description;
+  });
+  return renderToStaticMarkup(<>{description}</>);
 }
 
 describe("usageLimitRecoveryBannerItem", () => {

@@ -10,6 +10,7 @@ import {
   visibleThreadPullRequests,
 } from "@t3tools/client-runtime/thread-pull-requests";
 import { canStartThreadPullRequestWatch } from "@t3tools/client-runtime/thread-pull-request-compatibility";
+import { useGT } from "gt-react";
 import {
   ArrowUpRightIcon,
   EyeIcon,
@@ -52,36 +53,46 @@ import {
 import {
   PullRequestDiffStat,
   PullRequestReviewDecisionGlyph,
+  pullRequestChecksStateLabel,
   pullRequestChecksStatePresentation,
 } from "./pullRequestPresentation";
 import { PullRequestGlyph } from "./pullRequestIcons";
 import { pullRequestQuickActions } from "./pullRequestList.logic";
 import { PullRequestSpeedActions, PullRequestSpeedModeContext } from "./PullRequestSpeedActions";
 
-const SOURCE_LABELS: Record<ThreadPullRequestLink["source"], string> = {
-  manual: "Linked by you",
-  created: "Created from this thread",
-  agent: "Linked by the agent",
-  stack: "Found in the stack",
-  "stack-dismissed": "Dismissed",
-};
+function sourceLabel(source: ThreadPullRequestLink["source"], gt: ReturnType<typeof useGT>) {
+  switch (source) {
+    case "manual":
+      return gt("Linked by you");
+    case "created":
+      return gt("Created from this thread");
+    case "agent":
+      return gt("Linked by the agent");
+    case "stack":
+      return gt("Found in the stack");
+    case "stack-dismissed":
+      return gt("Dismissed");
+  }
+}
 
 function ChecksGlyph({
   state,
 }: {
   state: NonNullable<ThreadPullRequestLink["snapshot"]>["checksState"] & string;
 }) {
+  const gt = useGT();
   const presentation = pullRequestChecksStatePresentation(state);
+  const label = pullRequestChecksStateLabel(state, gt);
   return (
     <Tooltip>
       <TooltipTrigger render={<span className="inline-flex shrink-0" />}>
         <presentation.Icon
           role="img"
-          aria-label={presentation.label}
+          aria-label={label}
           className={cn("size-3.5", presentation.toneClassName)}
         />
       </TooltipTrigger>
-      <TooltipPopup>{presentation.label}</TooltipPopup>
+      <TooltipPopup>{label}</TooltipPopup>
     </Tooltip>
   );
 }
@@ -103,6 +114,7 @@ function LinkRowImpl({
   onSetWatching: ((link: ThreadPullRequestLink, watching: boolean) => void) | null;
   canStartWatch: boolean;
 }) {
+  const gt = useGT();
   const openPrLink = useOpenPrLink(threadRef);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
@@ -145,7 +157,7 @@ function LinkRowImpl({
       {depth > 0 ? <span aria-hidden className="-ml-2 h-6 w-px shrink-0 bg-border/70" /> : null}
       {snapshot === null ? (
         <PullRequestGlyph.pullRequest
-          aria-label="Waiting for host state"
+          aria-label={gt("Waiting for host state")}
           className="size-4 shrink-0 text-muted-foreground"
         />
       ) : (
@@ -186,7 +198,7 @@ function LinkRowImpl({
                 #{link.number}
               </TooltipTrigger>
               <TooltipPopup>
-                {SOURCE_LABELS[link.source]} · <RelativeTime timestamp={link.linkedAt} />
+                {sourceLabel(link.source, gt)} · <RelativeTime timestamp={link.linkedAt} />
               </TooltipPopup>
             </Tooltip>
           }
@@ -197,11 +209,12 @@ function LinkRowImpl({
                 {watching ? (
                   <Tooltip>
                     <TooltipTrigger render={<span className="inline-flex shrink-0" />}>
-                      <EyeIcon role="img" aria-label="Watching" className="size-3.5" />
+                      <EyeIcon role="img" aria-label={gt("Watching")} className="size-3.5" />
                     </TooltipTrigger>
                     <TooltipPopup>
-                      Watching: the agent wakes when checks finish, someone comments, or the branch
-                      conflicts
+                      {gt(
+                        "Watching: the agent wakes when checks finish, someone comments, or the branch conflicts",
+                      )}
                     </TooltipPopup>
                   </Tooltip>
                 ) : null}
@@ -248,8 +261,14 @@ function LinkRowImpl({
                   </TooltipTrigger>
                   <TooltipPopup>
                     {stack.kind === "native"
-                      ? `${sourceControlClients.hostLabelForChangeRequestUrl(link.url)} stack of ${stack.size}: merging a layer lands the ones below it.`
-                      : `${stack.size} ${linkHost.changeRequest.plural} chained by base branch.`}
+                      ? gt("{host} stack of {size}: merging a layer lands the ones below it.", {
+                          host: sourceControlClients.hostLabelForChangeRequestUrl(link.url),
+                          size: stack.size,
+                        })
+                      : gt("{size} {terms} chained by base branch.", {
+                          size: stack.size,
+                          terms: linkHost.changeRequest.plural,
+                        })}
                   </TooltipPopup>
                 </Tooltip>
               ) : null}
@@ -312,7 +331,7 @@ function LinkRowImpl({
               <Button
                 variant="ghost"
                 size="icon-micro"
-                aria-label={`Actions for #${link.number}`}
+                aria-label={gt("Actions for #{number}", { number: link.number })}
                 className="relative"
               >
                 <MoreHorizontalIcon className="size-3.5" />
@@ -327,21 +346,21 @@ function LinkRowImpl({
           >
             <MenuItem onClick={() => void writeTextToClipboard(link.url, "link")}>
               <LinkIcon className="size-3.5" />
-              Copy link
+              {gt("Copy link")}
             </MenuItem>
             <MenuItem onClick={(event) => openPrLink(event, link.url, threadRef)}>
               <ArrowUpRightIcon className="size-3.5" />
-              Open
+              {gt("Open")}
             </MenuItem>
             {onSetWatching !== null && open && (watching || canStartWatch) ? (
               <MenuItem onClick={() => onSetWatching(link, !watching)}>
                 {watching ? <EyeOffIcon className="size-3.5" /> : <EyeIcon className="size-3.5" />}
-                {watching ? "Stop watching" : "Watch for changes"}
+                {watching ? gt("Stop watching") : gt("Watch for changes")}
               </MenuItem>
             ) : null}
             <MenuItem onClick={() => onUnlink(link)}>
               <PullRequestGlyph.unlink className="size-3.5" />
-              {link.source === "stack" ? "Dismiss from thread" : "Unlink from thread"}
+              {link.source === "stack" ? gt("Dismiss from thread") : gt("Unlink from thread")}
             </MenuItem>
           </MenuPopup>
         </Menu>
@@ -365,12 +384,13 @@ const lineKey = (line: PullRequestListLine) =>
   `${line.link.host}/${line.link.repository}#${line.link.number}`;
 
 export function ThreadPullRequestsPanel({ threadRef }: { threadRef: ScopedThreadRef }) {
+  const gt = useGT();
   const configs = useServerConfigs();
   if (configs.get(threadRef.environmentId) === undefined) {
     return (
       <PullRequestsUnavailableState
-        title="Linked pull requests unavailable"
-        error="This environment does not support multiple linked pull requests."
+        title={gt("Linked pull requests unavailable")}
+        error={gt("This environment does not support multiple linked pull requests.")}
       />
     );
   }
@@ -378,6 +398,7 @@ export function ThreadPullRequestsPanel({ threadRef }: { threadRef: ScopedThread
 }
 
 function EnabledThreadPullRequestsPanel({ threadRef }: { threadRef: ScopedThreadRef }) {
+  const gt = useGT();
   const thread = useThreadShell(threadRef);
   const projects = useProjects();
   const environmentProjects = projects
@@ -433,14 +454,15 @@ function EnabledThreadPullRequestsPanel({ threadRef }: { threadRef: ScopedThread
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
         <PullRequestGlyph.link aria-hidden className="size-6 text-muted-foreground/60" />
-        <p className="text-sm font-medium">No linked pull requests</p>
+        <p className="text-sm font-medium">{gt("No linked pull requests")}</p>
         <p className="max-w-60 text-xs text-muted-foreground">
-          Pull requests the agent opens from this thread land here. Link one yourself from a URL or
-          a number.
+          {gt(
+            "Pull requests the agent opens from this thread land here. Link one yourself from a URL or a number.",
+          )}
         </p>
         <Button size="sm" variant="outline" onClick={openLinkDialog}>
           <PlusIcon className="size-3.5" />
-          Link pull request
+          {gt("Link pull request")}
         </Button>
       </div>
     );
@@ -478,17 +500,17 @@ function EnabledThreadPullRequestsPanel({ threadRef }: { threadRef: ScopedThread
         />
         <footer className="flex items-center justify-between border-t border-border/60 px-2 py-1.5 text-2xs text-muted-foreground">
           <span>
-            {openCount} open · {linkCount} linked
+            {gt("{openCount} open · {linkCount} linked", { openCount, linkCount })}
             {lastSynced ? (
               <>
-                {" · synced "}
+                {` · ${gt("synced")} `}
                 <RelativeTime timestamp={lastSynced} />
               </>
             ) : null}
           </span>
           <Button size="xs" variant="ghost" onClick={openLinkDialog}>
             <PlusIcon className="size-3.5" />
-            Link
+            {gt("Link")}
           </Button>
         </footer>
       </div>

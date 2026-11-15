@@ -1,3 +1,4 @@
+import { useGT } from "gt-react";
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import {
   type EnvironmentId,
@@ -175,9 +176,9 @@ function failureCause<A>(result: AsyncResult.AsyncResult<A, unknown>): unknown {
   return result._tag === "Failure" ? Cause.squash(result.cause) : null;
 }
 
-function errorMessage(cause: unknown): string | null {
+function errorMessage(cause: unknown, gt: ReturnType<typeof useGT>): string | null {
   if (cause === null) return null;
-  return cause instanceof Error ? cause.message : "Workspace query failed.";
+  return cause instanceof Error ? cause.message : gt("Workspace query failed.");
 }
 
 const isProjectReadFileError = Schema.is(ProjectReadFileError);
@@ -189,6 +190,7 @@ export function useProjectEntriesQuery(
   directoryPath?: string,
   revision?: string | null,
 ): ProjectQueryState<ProjectListEntriesResult> {
+  const gt = useGT();
   const fileAccess = useFilesystemReadAccess(environmentId);
   const { canReadFiles } = fileAccess;
   const atom = canReadFiles
@@ -202,8 +204,8 @@ export function useProjectEntriesQuery(
     error: fileAccess.isPending
       ? null
       : canReadFiles
-        ? errorMessage(failureCause(result))
-        : (fileAccess.error ?? "This connection cannot read host files."),
+        ? errorMessage(failureCause(result), gt)
+        : (fileAccess.error ?? gt("This connection cannot read host files.")),
     isPending: fileAccess.isPending || result.waiting,
     refresh,
   };
@@ -243,6 +245,7 @@ export function useProjectFileQuery(
   relativePath: string | null,
   enabled = true,
 ): ProjectFileQueryState {
+  const gt = useGT();
   // Read media-like paths too; a failed read is how folders with those names are detected.
   const fileAccess = useFilesystemReadAccess(environmentId);
   const { canReadFiles } = fileAccess;
@@ -272,9 +275,9 @@ export function useProjectFileQuery(
         ? null
         : canReadFiles
           ? isMissing && !optimisticFile
-            ? `'${relativePath}' does not exist.`
-            : errorMessage(cause)
-          : (fileAccess.error ?? "This connection cannot read host files."),
+            ? gt("'{path}' does not exist.", { path: relativePath })
+            : errorMessage(cause, gt)
+          : (fileAccess.error ?? gt("This connection cannot read host files.")),
     isPending: isQueryEnabled && (fileAccess.isPending || result.waiting),
     readError,
     isNotFile,

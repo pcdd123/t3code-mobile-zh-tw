@@ -183,17 +183,21 @@ export function PendingUserInputCard(props: PendingUserInputCardProps) {
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Expand user input, ${questionCount} question${
-          questionCount === 1 ? "" : "s"
-        }`}
+        accessibilityLabel={
+          questionCount === 1
+            ? gt("Expand user input, 1 question")
+            : gt("Expand user input, {count} questions", { count: questionCount })
+        }
         onPress={props.onToggleCollapsed}
         className="min-h-10 flex-1 flex-row items-center gap-2 active:opacity-70"
       >
         <Text className="font-t3-bold text-2xs uppercase tracking-[1.1px] text-foreground-secondary">
-          User input needed
+          {gt("User input needed")}
         </Text>
         <Text className="font-sans text-xs text-foreground-muted">
-          {questionCount} question{questionCount === 1 ? "" : "s"}
+          {questionCount === 1
+            ? gt("1 question")
+            : gt("{count} questions", { count: questionCount })}
         </Text>
         <View className="flex-1" />
         <SymbolView
@@ -205,7 +209,8 @@ export function PendingUserInputCard(props: PendingUserInputCardProps) {
       </Pressable>
       {props.onStopThread ? (
         <ControlPill
-          accessibilityLabel="Stop"
+          accessibilityLabel={gt("Stop")}
+
           icon="stop.fill"
           variant="danger"
           className="h-9 w-9"

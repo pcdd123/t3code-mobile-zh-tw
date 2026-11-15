@@ -1,4 +1,5 @@
 import type { EnvironmentId, PullRequestRef, PullRequestReviewGuide } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 
 import { createPullRequestDiffFileContentsLoader } from "~/lib/diffFileContents";
@@ -42,6 +43,7 @@ export function GuideTour({
   onFinish: (() => void) | null;
   onOpenFile: (path: string) => void;
 }) {
+  const gt = useGT();
   const key = guideProgressKey(guideRunKey(environmentId, reference), guide.headSha);
   const tour = useGuideProgress(key);
   const update = (change: (current: GuideProgress) => Partial<GuideProgress>) =>
@@ -115,11 +117,15 @@ export function GuideTour({
           {banner}
           {diff.error !== null ? (
             <p className="text-xs text-muted-foreground">
-              The diff could not be loaded, so excerpts are missing: {diff.error}
+              {gt("The diff could not be loaded, so excerpts are missing: {error}", {
+                error: diff.error,
+              })}
             </p>
           ) : null}
           {stop === null ? (
-            <p className="text-sm text-muted-foreground">This change has no files to tour.</p>
+            <p className="text-sm text-muted-foreground">
+              {gt("This change has no files to tour.")}
+            </p>
           ) : (
             <GuideStop
               key={position}

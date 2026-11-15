@@ -11,6 +11,7 @@ import { RedactedSensitiveText } from "../settings/RedactedSensitiveText";
 import { LimitWindows, ResetCredits } from "../usage/UsageLimits";
 import { ComposerBanner } from "./ComposerBanner";
 import type { ComposerBannerStackItem } from "./ComposerBannerStack";
+import { useGT } from "gt-react";
 
 function accountLabel(account: UsageLimitsReport["accounts"][number]): string {
   if (!account.instanceId) return account.label;
@@ -24,6 +25,7 @@ function accountLabel(account: UsageLimitsReport["accounts"][number]): string {
 }
 
 function AccountSummary({ account }: { readonly account: UsageLimitsReport["accounts"][number] }) {
+  const gt = useGT();
   const label = accountLabel(account);
   return (
     <>
@@ -31,9 +33,9 @@ function AccountSummary({ account }: { readonly account: UsageLimitsReport["acco
         <RedactedSensitiveText
           key={label}
           value={label}
-          ariaLabel="Toggle account label visibility"
-          revealTooltip="Click to reveal account"
-          hideTooltip="Click to hide account"
+          ariaLabel={gt("Toggle account label visibility")}
+          revealTooltip={gt("Click to reveal account")}
+          hideTooltip={gt("Click to hide account")}
           className="max-w-full truncate align-bottom font-sans text-xs leading-normal"
         />
       ) : (
@@ -45,6 +47,7 @@ function AccountSummary({ account }: { readonly account: UsageLimitsReport["acco
 }
 
 export function usageLimitsBannerItem(
+  gt: ReturnType<typeof useGT>,
   id: string,
   report: UsageLimitsReport,
   environmentId: EnvironmentId,
@@ -55,18 +58,45 @@ export function usageLimitsBannerItem(
   const summary = single ? (
     <AccountSummary account={single} />
   ) : (
-    `${report.accounts.length} accounts`
+    gt("{count} accounts", { count: report.accounts.length })
   );
   return {
     id,
     variant: "info",
     icon: <GaugeIcon />,
-    title: "Usage limits",
+    title: gt("Usage limits"),
     description: summary,
-    dismissLabel: "Dismiss usage limits",
+    dismissLabel: gt("Dismiss usage limits"),
     onDismiss,
     children: <UsageLimitsBannerBody report={report} environmentId={environmentId} />,
   };
+}
+
+function ModelFallbackText(
+  props:
+    | { readonly part: "title"; readonly model: string }
+    | {
+        readonly part: "description";
+        readonly provider: string;
+        readonly resetsAt: string | null;
+        readonly timestampFormat: TimestampFormat;
+      }
+    | { readonly part: "action"; readonly model: string },
+) {
+  const gt = useGT();
+  switch (props.part) {
+    case "title":
+      return gt("Using {model}", { model: props.model });
+    case "action":
+      return gt("Use {model}", { model: props.model });
+    case "description":
+      return props.resetsAt
+        ? gt("{provider} is out of usage · resets {time}", {
+            provider: props.provider,
+            time: formatUpcomingTimestamp(props.resetsAt, props.timestampFormat),
+          })
+        : gt("{provider} is out of usage", { provider: props.provider });
+  }
 }
 
 export function modelFallbackBannerItem({
@@ -77,6 +107,7 @@ export function modelFallbackBannerItem({
   timestampFormat,
   onUseDefault,
   onDismiss,
+  gt,
 }: {
   readonly fallbackModelName: string;
   readonly defaultProviderName: string;
@@ -85,19 +116,27 @@ export function modelFallbackBannerItem({
   readonly timestampFormat: TimestampFormat;
   readonly onUseDefault: () => void;
   readonly onDismiss: () => void;
+  readonly gt: ReturnType<typeof useGT>;
 }): ComposerBannerStackItem {
   return {
     id: "fallback-model",
     variant: "info",
     icon: <GaugeIcon />,
-    title: `Using ${fallbackModelName}`,
-    description: `${defaultProviderName} is out of usage${resetsAt ? ` · resets ${formatUpcomingTimestamp(resetsAt, timestampFormat)}` : ""}`,
+    title: <ModelFallbackText part="title" model={fallbackModelName} />,
+    description: (
+      <ModelFallbackText
+        part="description"
+        provider={defaultProviderName}
+        resetsAt={resetsAt}
+        timestampFormat={timestampFormat}
+      />
+    ),
     actions: (
       <Button size="xs" variant="ghost" onClick={onUseDefault}>
-        Use {defaultModelName}
+        <ModelFallbackText part="action" model={defaultModelName} />
       </Button>
     ),
-    dismissLabel: "Dismiss fallback model notice",
+    dismissLabel: gt("Dismiss fallback model notice"),
     onDismiss,
   };
 }
@@ -109,6 +148,7 @@ function UsageLimitsBannerBody({
   readonly report: UsageLimitsReport;
   readonly environmentId: EnvironmentId;
 }) {
+  const gt = useGT();
   const now = Date.parse(report.createdAt);
   return (
     <ComposerBanner.Scroll>
@@ -144,7 +184,7 @@ function UsageLimitsBannerBody({
                   className="self-start"
                   onClick={() => void ensureLocalApi().shell.openExternal(externalUsage.url)}
                 >
-                  Manage usage
+                  {gt("Manage usage")}
                 </Button>
               ) : null}
               {resetCreditInput && account.limits.resetCredits ? (

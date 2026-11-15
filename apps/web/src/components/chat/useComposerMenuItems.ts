@@ -55,6 +55,7 @@ import {
   searchSlashCommandItems,
   slashCommandItemsForPromptPosition,
 } from "./composerSlashCommandSearch";
+import { useGT } from "gt-react";
 
 const COMPOSER_PULL_REQUEST_LIST_LIMIT = 99;
 const COMPOSER_PULL_REQUEST_RESULT_LIMIT = 12;
@@ -106,6 +107,7 @@ export function useComposerMenuItems({
     readonly modelOptionsByInstance: ReadonlyMap<ProviderInstanceId, ReadonlyArray<ModelEsque>>;
   };
 }) {
+  const gt = useGT();
   // Thread mentions rank by recency as of when the composer mounted.
   const [now] = useState(() => Date.now());
   const composerTriggerKind = composerTrigger?.kind ?? null;
@@ -408,25 +410,25 @@ export function useComposerMenuItems({
         exactPullRequestLookup.isPending));
   const emptyState = (() => {
     if (composerTriggerKind === "skill") {
-      return "No skills found. Try / to browse provider commands.";
+      return gt("No skills found. Try / to browse provider commands.");
     }
     if (composerTriggerKind === "pull-request") {
       if (pullRequestProjectId === null || pullRequestRepository === null) {
-        return "Pull requests are not available for this project.";
+        return gt("Pull requests are not available for this project.");
       }
       if (
         pullRequestLookup.error !== null ||
         pullRequestLookup.data?.errors.some((error) => error.projectId === pullRequestProjectId)
       ) {
-        return "Pull requests could not be read for this project.";
+        return gt("Pull requests could not be read for this project.");
       }
       return composerTrigger?.query
-        ? `No pull request matches ${composerTrigger.query}.`
-        : "No pull requests found in this repository.";
+        ? gt("No pull request matches {query}.", { query: composerTrigger.query })
+        : gt("No pull requests found in this repository.");
     }
     return composerTriggerKind === "path"
-      ? "No matching files or folders."
-      : "No matching command.";
+      ? gt("No matching files or folders.")
+      : gt("No matching command.");
   })();
 
   return { items, isLoading, emptyState };

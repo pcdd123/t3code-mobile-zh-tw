@@ -2,6 +2,7 @@ import { expect, it, vi } from "vite-plus/test";
 
 vi.mock("react-native", () => ({ View: () => null }));
 vi.mock("expo", () => ({ requireNativeView: vi.fn() }));
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
 vi.mock("../../components/ui/EmptyState", () => ({ EmptyState: () => null }));
 
 import {

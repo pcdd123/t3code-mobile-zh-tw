@@ -1,6 +1,7 @@
 import { sanitizeNewRefName } from "@t3tools/shared/git";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import { resolveSendEnvMode } from "@t3tools/shared/projectSettings";
+import type { useGT } from "gt-react-native";
 import type { ComposerDraftWorkspaceSelection } from "../../state/use-composer-drafts";
 
 type WorkspaceMode = "local" | "worktree";
@@ -77,13 +78,21 @@ export function resolveNewTaskBranchLabel(input: {
   readonly startFromOrigin: boolean;
   readonly workspaceMode: WorkspaceMode;
   readonly pullRequestReference?: string;
+  /** Localizes the label; without it the label stays English. */
+  readonly gt?: ReturnType<typeof useGT>;
 }): string {
+  const gt = input.gt ?? englishLabel;
   if (input.workspaceMode === "worktree" && input.pullRequestReference) {
     const parsed = sourceControlClients.parseChangeRequestUrl(input.pullRequestReference);
-    if (parsed) return `From ${parsed.definition.changeRequest.shortLabel} #${parsed.link.number}`;
+    if (parsed) {
+      return gt("From {changeRequest} #{number}", {
+        changeRequest: parsed.definition.changeRequest.shortLabel,
+        number: parsed.link.number,
+      });
+    }
   }
   if (!input.branchName) {
-    return "Choose branch";
+    return gt("Choose branch");
   }
 
   if (input.workspaceMode === "local") {
@@ -91,7 +100,13 @@ export function resolveNewTaskBranchLabel(input: {
   }
 
   // Only the server can determine a local branch's configured remote.
-  return input.startFromOrigin ? `From ${input.branchName} (remote)` : `From ${input.branchName}`;
+  return input.startFromOrigin
+    ? gt("From {branch} (remote)", { branch: input.branchName })
+    : gt("From {branch}", { branch: input.branchName });
+}
+
+function englishLabel(message: string, values?: Record<string, string | number>): string {
+  return message.replace(/\{(\w+)\}/g, (_, key: string) => String(values?.[key] ?? ""));
 }
 
 export function shouldCheckoutNewTaskBranch(input: {

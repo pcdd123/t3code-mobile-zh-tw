@@ -17,6 +17,12 @@ const harness = vi.hoisted(() => ({
   presentationFinished: false,
 }));
 
+vi.mock("gt-react-native", () => {
+  // Stable like the real useGT, so effects that depend on it do not rerun every render.
+  const gt = (message: string, values?: Record<string, unknown>) =>
+    message.replace(/\{(\w+)\}/g, (_: string, key: string) => String(values?.[key] ?? ""));
+  return { useGT: () => gt };
+});
 vi.mock("../../state/assets", () => ({ refreshAssetUrl: harness.refreshAssetUrl }));
 vi.mock("../../lib/localAttachmentPreview", () => ({ loadLocalAttachmentPreview: vi.fn() }));
 vi.mock("../../lib/attachmentDownload", () => ({

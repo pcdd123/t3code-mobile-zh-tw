@@ -7,7 +7,9 @@ import {
 } from "@t3tools/client-runtime/state/runtime";
 import { AsyncResult } from "effect/reactivity";
 import * as Cause from "effect/Cause";
+import { useGT } from "gt-react";
 
+import { englishGt, type Translate } from "../components/Localized";
 import { stackedThreadToast, toastManager } from "../components/ui/toast";
 import type { SidebarProjectGroupMember } from "../sidebarProjectGrouping";
 import { useProjects, useServerConfigs } from "../state/entities";
@@ -34,6 +36,7 @@ type ProjectGroupMember = Pick<
  * reports the first failure as a toast. Every machine must be connected first.
  */
 export function useProjectGroupUpdate() {
+  const gt = useGT();
   const serverConfigs = useServerConfigs();
   const updateProject = useOrchestrationCommand(projectEnvironment.update, {
     reportFailure: false,
@@ -44,7 +47,7 @@ export function useProjectGroupUpdate() {
     input: ProjectGroupUpdate | ((member: TMember) => ProjectGroupUpdate),
     failureTitle: string,
   ): Promise<AtomCommandResult<void, unknown>> => {
-    const denied = checkProjectAccess(members, failureTitle);
+    const denied = checkProjectAccess(members, failureTitle, gt);
     if (denied) return denied;
     const unavailable = members.find((member) => {
       const environment = readEnvironment(member.environmentId);
@@ -53,12 +56,17 @@ export function useProjectGroupUpdate() {
     if (unavailable) {
       return failWith(
         failureTitle,
-        `Connect ${unavailable.environmentLabel ?? "the selected environment"} and try again.`,
+        unavailable.environmentLabel
+          ? gt("Connect {environment} and try again.", {
+              environment: unavailable.environmentLabel,
+            })
+          : gt("Connect the selected environment and try again."),
+        gt,
       );
     }
     for (const member of members) {
       // Access can be revoked between writes.
-      const revoked = checkProjectAccess([member], failureTitle);
+      const revoked = checkProjectAccess([member], failureTitle, gt);
       if (revoked) return revoked;
       const result = mapAtomCommandResult(
         await updateProject({
@@ -73,9 +81,15 @@ export function useProjectGroupUpdate() {
       if (result._tag === "Failure") {
         reportProjectFailure(
           members.length > 1
-            ? `${failureTitle} on ${member.environmentLabel ?? "the current environment"}`
+            ? member.environmentLabel
+              ? gt("{title} on {environment}", {
+                  title: failureTitle,
+                  environment: member.environmentLabel,
+                })
+              : gt("{title} on the current environment", { title: failureTitle })
             : failureTitle,
           result,
+          gt,
         );
         return result;
       }
@@ -96,6 +110,7 @@ export function useProjectGroupUpdate() {
 
 /** Pin state for a project group, shared by every list that can pin or unpin a project. */
 export function useProjectPin() {
+  const gt = useGT();
   const { updateProjectGroup, canOrganizeProjectGroup } = useProjectGroupUpdate();
   const environments = [...new Set(useProjects().map((project) => project.environmentId))].map(
     (environmentId) => ({ environmentId }),
@@ -115,7 +130,7 @@ export function useProjectPin() {
     void updateProjectGroup(
       group.memberProjects,
       { pinned },
-      pinned ? "Failed to pin project" : "Failed to unpin project",
+      pinned ? gt("Failed to pin project") : gt("Failed to unpin project"),
     );
   };
   return {
@@ -129,6 +144,7 @@ export function useProjectPin() {
 export function checkProjectAccess(
   members: ReadonlyArray<ProjectGroupMember>,
   failureTitle: string,
+  gt: Translate = englishGt,
 ): AtomCommandResult<void, unknown> | null {
   const denied = members.find(
     (member) => !readEnvironmentScope(member.environmentId, AuthOrchestrationOperateScope),
@@ -136,25 +152,34 @@ export function checkProjectAccess(
   return denied
     ? failWith(
         failureTitle,
-        `This connection cannot change projects in ${denied.environmentLabel ?? "this environment"}.`,
+        denied.environmentLabel
+          ? gt("This connection cannot change projects in {environment}.", {
+              environment: denied.environmentLabel,
+            })
+          : gt("This connection cannot change projects in this environment."),
+        gt,
       )
     : null;
 }
 
-export function reportProjectFailure(title: string, result: AtomCommandResult<unknown, unknown>) {
+export function reportProjectFailure(
+  title: string,
+  result: AtomCommandResult<unknown, unknown>,
+  gt: Translate = englishGt,
+) {
   if (result._tag !== "Failure" || isAtomCommandInterrupted(result)) return;
   const error = squashAtomCommandFailure(result);
   toastManager.add(
     stackedThreadToast({
       type: "error",
       title,
-      description: error instanceof Error ? error.message : "An error occurred.",
+      description: error instanceof Error ? error.message : gt("An error occurred."),
     }),
   );
 }
 
-function failWith(title: string, message: string): AtomCommandResult<void, unknown> {
+function failWith(title: string, message: string, gt: Translate): AtomCommandResult<void, unknown> {
   const result = AsyncResult.failure<void, Error>(Cause.fail(new Error(message)));
-  reportProjectFailure(title, result);
+  reportProjectFailure(title, result, gt);
   return result;
 }

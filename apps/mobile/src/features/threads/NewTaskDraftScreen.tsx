@@ -532,7 +532,7 @@ export function NewTaskDraftScreen(props: {
   const selectedEnvironmentLabel =
     flow.environments.find(
       (environment) => environment.environmentId === flow.selectedEnvironmentId,
-    )?.environmentLabel ?? "Environment";
+    )?.environmentLabel ?? gt("Environment");
   const availableCurrentBranchName =
     flow.availableBranches.find((branch) => branch.current)?.name ??
     flow.availableBranches.find((branch) => branch.isDefault)?.name ??
@@ -549,11 +549,18 @@ export function NewTaskDraftScreen(props: {
     startFromOrigin: flow.startFromOrigin,
     workspaceMode: flow.workspaceMode,
     pullRequestReference: flow.pullRequestReference,
+    gt,
   });
   const workspaceLabel = resolveNewTaskWorkspaceLabel({
     workspaceMode: flow.workspaceMode,
     worktreePath: flow.selectedWorktreePath,
   });
+  const localizedWorkspaceLabel =
+    workspaceLabel === "New worktree"
+      ? gt("New worktree")
+      : workspaceLabel === "Current worktree"
+        ? gt("Current worktree")
+        : gt("Current checkout");
   const showBranchLoading =
     environmentConnected && flow.branchesLoading && flow.availableBranches.length === 0;
 
@@ -743,17 +750,19 @@ export function NewTaskDraftScreen(props: {
   );
   const shareUnavailableNotice = isIncomingShareUnavailable ? (
     <Text textRole="footnote" className="text-center text-foreground-muted">
-      The shared content is no longer in the inbox. You can continue editing this task draft.
+      {gt(
+        "The shared content is no longer in the inbox. You can continue editing this task draft.",
+      )}
     </Text>
   ) : null;
   const hero = flow.isScratchDraft ? (
     <View className="items-center gap-2 px-6" testID="new-task-hero">
       <Text className="text-center text-2xl font-t3-medium tracking-tight text-foreground">
-        What should we work on?
+        {gt("What should we work on?")}
       </Text>
       <View className="flex-row flex-wrap items-center justify-center gap-x-1">
         <ComposerInlineControl
-          accessibilityHint="Opens the project picker"
+          accessibilityHint={gt("Opens the project picker")}
           accessibilityLabel={gt("No project")}
           chevronDirection="right"
           disabled={isComposerInteractionLocked}
@@ -769,12 +778,14 @@ export function NewTaskDraftScreen(props: {
     <View className="items-center gap-6 px-6" testID="new-task-hero">
       <View className="w-full items-center gap-1.5">
         <Text className="text-center text-2xl font-t3-medium tracking-tight text-foreground">
-          What should we build
+          {gt("What should we build")}
         </Text>
         <View className="max-w-full flex-row items-center justify-center">
-          <Text className="text-2xl font-t3-medium tracking-tight text-foreground">in </Text>
+          <Text className="text-2xl font-t3-medium tracking-tight text-foreground">
+            {gt("in")}{" "}
+          </Text>
           <Pressable
-            accessibilityHint="Opens the project picker"
+            accessibilityHint={gt("Opens the project picker")}
             accessibilityLabel={selectedProjectLabel ?? selectedProject.title}
             accessibilityRole="button"
             disabled={isComposerInteractionLocked}
@@ -834,14 +845,14 @@ export function NewTaskDraftScreen(props: {
     );
 
   const contextProjectLabel = flow.isScratchDraft
-    ? "No project"
+    ? gt("No project")
     : (selectedProjectLabel ?? selectedProject.title);
   const contextControls = (
     <View className="flex-row items-center gap-1 px-2">
       <View className="min-w-0 shrink">
         <ComposerInlineControl
-          accessibilityHint="Opens the project picker"
-          accessibilityLabel={`Project: ${contextProjectLabel}`}
+          accessibilityHint={gt("Opens the project picker")}
+          accessibilityLabel={gt("Project: {project}", { project: contextProjectLabel })}
           chevronDirection="right"
           disabled={isComposerInteractionLocked}
           icon="folder"
@@ -852,7 +863,15 @@ export function NewTaskDraftScreen(props: {
       </View>
       <View className="min-w-0 shrink">
         <ComposerInlineControl
-          accessibilityLabel={`Choose environment, ${selectedEnvironmentLabel}, ${connectionState === "connected" ? "Connected" : "Offline"}`}
+          accessibilityLabel={
+            connectionState === "connected"
+              ? gt("Choose environment, {environment}, Connected", {
+                  environment: selectedEnvironmentLabel,
+                })
+              : gt("Choose environment, {environment}, Offline", {
+                  environment: selectedEnvironmentLabel,
+                })
+          }
           chevronDirection="right"
           disabled={isComposerInteractionLocked}
           renderIcon={(size) => (
@@ -878,8 +897,12 @@ export function NewTaskDraftScreen(props: {
   const workspaceControls = (
     <View className="flex-row items-center gap-1 px-2">
       <ComposerInlineControl
-        accessibilityHint={`Switches to ${flow.workspaceMode === "local" ? "a new worktree" : "the current checkout"}`}
-        accessibilityLabel={workspaceLabel}
+        accessibilityHint={
+          flow.workspaceMode === "local"
+            ? gt("Switches to a new worktree")
+            : gt("Switches to the current checkout")
+        }
+        accessibilityLabel={localizedWorkspaceLabel}
         disabled={isComposerInteractionLocked || !flow.isGitRepo}
         renderIcon={(size) => (
           <NewTaskWorkspaceIcon
@@ -888,7 +911,7 @@ export function NewTaskDraftScreen(props: {
             size={size}
           />
         )}
-        label={workspaceLabel}
+        label={localizedWorkspaceLabel}
         maxWidth="100%"
         onPress={() => flow.setWorkspaceMode(flow.workspaceMode === "local" ? "worktree" : "local")}
         showChevron={false}
@@ -896,11 +919,15 @@ export function NewTaskDraftScreen(props: {
 
       <View className="min-w-0 shrink">
         <ComposerInlineControl
-          accessibilityLabel={`${flow.workspaceMode === "worktree" ? "Base branch" : "Branch"}: ${selectedBranchLabel}`}
+          accessibilityLabel={
+            flow.workspaceMode === "worktree"
+              ? gt("Base branch: {branch}", { branch: selectedBranchLabel })
+              : gt("Branch: {branch}", { branch: selectedBranchLabel })
+          }
           chevronDirection="right"
           disabled={isComposerInteractionLocked || !flow.isGitRepo}
           icon="arrow.triangle.branch"
-          label={showBranchLoading ? "Loading branches…" : selectedBranchLabel}
+          label={showBranchLoading ? gt("Loading branches…") : selectedBranchLabel}
           maxWidth="100%"
           onPress={() => openContextPicker("NewTaskBranch")}
         />
@@ -915,7 +942,7 @@ export function NewTaskDraftScreen(props: {
           <ProjectCloneBanner
             clone={projectClone}
             onCancel={() =>
-              void runCloneAction("Failed to cancel clone", () =>
+              void runCloneAction(gt("Failed to cancel clone"), () =>
                 cancelProjectClone({
                   environmentId: selectedProject.environmentId,
                   input: { projectId: selectedProject.id },
@@ -923,7 +950,7 @@ export function NewTaskDraftScreen(props: {
               )
             }
             onRetry={() =>
-              void runCloneAction("Failed to retry clone", () =>
+              void runCloneAction(gt("Failed to retry clone"), () =>
                 retryProjectClone({
                   environmentId: selectedProject.environmentId,
                   input: { projectId: selectedProject.id },
@@ -945,7 +972,9 @@ export function NewTaskDraftScreen(props: {
         <View className="flex-1 justify-end gap-3 p-4">
           {environmentControl}
           <Text className="text-foreground-muted">
-            Your draft is saved on this device. Connect to an environment to choose its first model.
+            {gt(
+              "Your draft is saved on this device. Connect to an environment to choose its first model.",
+            )}
           </Text>
           <ComposerEditor
             draftKey={flow.draftKey}

@@ -13,6 +13,7 @@ import {
   type ChangeRequestTerminology,
 } from "@t3tools/client-runtime/source-control-clients";
 import * as Schema from "effect/Schema";
+import type { useGT } from "gt-react";
 import {
   GitCommandError,
   PullRequestDetail,
@@ -50,12 +51,27 @@ import {
 
 import { inferReviewCommentFenceLanguage, type ReviewCommentContext } from "~/reviewCommentContext";
 
+type Translate = ReturnType<typeof useGT>;
+
 export const PULL_REQUEST_MERGE_METHOD_LABELS: Record<PullRequestMergeMethod, string> = {
   merge: "Merge",
   squash: "Squash and merge",
   rebase: "Rebase and merge",
   "fast-forward": "Fast-forward merge",
 };
+
+export function pullRequestMergeMethodLabel(method: PullRequestMergeMethod, gt: Translate): string {
+  switch (method) {
+    case "merge":
+      return gt("Merge");
+    case "squash":
+      return gt("Squash and merge");
+    case "rebase":
+      return gt("Rebase and merge");
+    case "fast-forward":
+      return gt("Fast-forward merge");
+  }
+}
 
 export function allowsSinglePullRequestMerge(input: {
   supportsStackActions: boolean;
@@ -248,18 +264,18 @@ export function threadPullRequestPanelTarget(thread: {
   return legacy ?? thread.branchPullRequest ?? null;
 }
 
-export function pullRequestHandoffLabels(inThisThread: boolean) {
+export function pullRequestHandoffLabels(inThisThread: boolean, gt: Translate) {
   // Beside a composer a remark's Fix shares its header with Add to chat.
   return inThisThread
     ? {
-        fixFinding: "Fix",
-        fixCheck: "Fix in this thread",
-        fixFindings: "Fix findings in this thread",
+        fixFinding: gt("Fix"),
+        fixCheck: gt("Fix in this thread"),
+        fixFindings: gt("Fix findings in this thread"),
       }
     : {
-        fixFinding: "Fix in a thread",
-        fixCheck: "Fix",
-        fixFindings: "Fix findings in a thread",
+        fixFinding: gt("Fix in a thread"),
+        fixCheck: gt("Fix"),
+        fixFindings: gt("Fix findings in a thread"),
       };
 }
 
@@ -1437,7 +1453,7 @@ export function readableFailure(failure: unknown, hint: string): string {
 
 const isGitCommandError = Schema.is(GitCommandError);
 
-export function checkoutFailureDescription(failure: unknown): string {
+export function checkoutFailureDescription(failure: unknown, gt: Translate): string {
   const description = isGitCommandError(failure)
     ? failure.reason === undefined
       ? failure.detail
@@ -1445,7 +1461,7 @@ export function checkoutFailureDescription(failure: unknown): string {
     : failure;
   return readableFailure(
     description,
-    "Check that the branch still exists and is not checked out elsewhere, then try again.",
+    gt("Check that the branch still exists and is not checked out elsewhere, then try again."),
   );
 }
 

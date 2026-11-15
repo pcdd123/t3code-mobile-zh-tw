@@ -1,4 +1,5 @@
 import type { EnvironmentId, EnvironmentMachineKind } from "@t3tools/contracts";
+import { useGT } from "gt-react";
 
 import type { SidebarProjectSnapshot } from "../sidebarProjectGrouping";
 import type { Project } from "../types";
@@ -105,12 +106,13 @@ function ProjectLocationDescription(props: {
   readonly workspaceRoot: string;
   readonly current?: boolean;
 }) {
+  const gt = useGT();
   const location = props.location ?? UNKNOWN_PROJECT_LOCATION;
   return (
     <span className="flex min-w-0 items-center gap-1">
       {props.current ? (
         <>
-          <span className="shrink-0">Current</span>
+          <span className="shrink-0">{gt("Current")}</span>
           <CommandPaletteMetaDot />
         </>
       ) : null}
@@ -122,7 +124,7 @@ function ProjectLocationDescription(props: {
             className={COMMAND_PALETTE_META_ICON_CLASS}
           />
         ) : null}
-        <span className="truncate">{location.label}</span>
+        <span className="truncate">{props.location?.label ?? gt("Remote")}</span>
       </span>
       <CommandPaletteMetaDot />
       <span className="min-w-0 flex-1 truncate">{props.workspaceRoot}</span>

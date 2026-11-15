@@ -6,6 +6,7 @@ import {
   type PullRequestSummary,
 } from "@t3tools/contracts";
 import { useAtomRefresh } from "@effect/atom-react";
+import { useGT } from "gt-react-native";
 import { useLayoutEffect, useMemo, useState } from "react";
 
 import { composerPullRequests } from "../../state/pull-requests";
@@ -13,6 +14,7 @@ import { useEnvironmentQuery } from "../../state/query";
 import { usePullToRefresh } from "../../state/use-pull-to-refresh";
 import {
   getCachedPullRequestDiffPages,
+  pullRequestDiffNotice,
   retainPullRequestDiffPage,
   type PullRequestDiffPage,
 } from "./pullRequestDiffPages";
@@ -116,10 +118,19 @@ export function usePullRequestDiff(
   }, [cursor, key, query.data, state.key, state.pages]);
   if (state.key !== key || state.pages !== pages) setState({ key, cursor, pages });
 
-  const parsed = useMemo(
-    () => getCachedPullRequestDiffPages(pages, key, terminology),
-    [key, pages, terminology],
-  );
+  const gt = useGT();
+  const parsed = useMemo(() => {
+    const combined = getCachedPullRequestDiffPages(pages, key, terminology);
+    return combined.kind === "files" && combined.notice === pullRequestDiffNotice(terminology)
+      ? {
+          ...combined,
+          notice: gt(
+            "Some file contents are unavailable. Open the {term} on its provider to see the full changes.",
+            { term: terminology.singular },
+          ),
+        }
+      : combined;
+  }, [key, pages, terminology, gt]);
   const patch = useMemo(() => pages.map((page) => page.result.patch).join("\n"), [pages]);
   const nextCursor = pages.at(-1)?.result.nextCursor ?? null;
   const canLoadMore =

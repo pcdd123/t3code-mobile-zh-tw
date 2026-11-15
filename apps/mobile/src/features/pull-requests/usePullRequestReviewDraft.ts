@@ -1,4 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
+import { useGT } from "gt-react-native";
 import { useEffect } from "react";
 import { AppState } from "react-native";
 import * as Atom from "effect/reactivity/Atom";
@@ -20,6 +21,9 @@ const state = Atom.make<{
   error: string | null;
 }>({ drafts: {}, ready: false, error: null }).pipe(Atom.keepAlive);
 const decodeDocument = Schema.decodeUnknownSync(ReviewDraftDocument);
+const RESTORE_FAILED_MESSAGE = "Could not restore review drafts. Reopen this screen to retry.";
+const SAVE_FAILED_MESSAGE =
+  "Drafts are kept in this session, but could not be saved on this device.";
 const queue = new SerializedAsyncQueue();
 let loading: Promise<void> | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
@@ -41,7 +45,7 @@ function load() {
     } catch {
       appAtomRegistry.set(state, {
         ...appAtomRegistry.get(state),
-        error: "Could not restore review drafts. Reopen this screen to retry.",
+        error: RESTORE_FAILED_MESSAGE,
       });
       loading = null;
     }
@@ -67,12 +71,13 @@ async function persist() {
     } catch {
       appAtomRegistry.set(state, {
         ...appAtomRegistry.get(state),
-        error: "Drafts are kept in this session, but could not be saved on this device.",
+        error: SAVE_FAILED_MESSAGE,
       });
     }
   });
 }
 export function usePullRequestReviewDraft(params: PullRequestParams) {
+  const gt = useGT();
   const snapshot = useAtomValue(state);
   const key = pullRequestReviewKey(params);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- loads review drafts from disk and persists them when AppState leaves active and on unmount
@@ -99,7 +104,12 @@ export function usePullRequestReviewDraft(params: PullRequestParams) {
   return {
     draft: snapshot.drafts[key] ?? EMPTY_REVIEW_DRAFT,
     ready: snapshot.ready,
-    error: snapshot.error,
+    error:
+      snapshot.error === RESTORE_FAILED_MESSAGE
+        ? gt("Could not restore review drafts. Reopen this screen to retry.")
+        : snapshot.error === SAVE_FAILED_MESSAGE
+          ? gt("Drafts are kept in this session, but could not be saved on this device.")
+          : snapshot.error,
     update,
     flush: persist,
   };

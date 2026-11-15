@@ -9,6 +9,11 @@ import {
   shouldShowProviderStatusBanner,
 } from "./ProviderStatusBanner";
 
+const gt = ((message: string, values?: Record<string, unknown>) =>
+  message.replace(/\{(\w+)\}/g, (_, key: string) => String(values?.[key] ?? ""))) as Parameters<
+  typeof getProviderStatusMessage
+>[0];
+
 const provider: ServerProvider = {
   instanceId: ProviderInstanceId.make("codex-work"),
   driver: ProviderDriverKind.make("codex"),
@@ -92,9 +97,9 @@ describe("compatibility banners", () => {
         compatibilityAdvisory: { ...broken.compatibilityAdvisory!, message: "Use 1.14.20." },
       }),
     ).toBe(true);
-    expect(getProviderStatusMessage(broken)).toBe(message);
+    expect(getProviderStatusMessage(gt, broken)).toBe(message);
     expect(
-      getProviderStatusMessage({
+      getProviderStatusMessage(gt, {
         ...broken,
         compatibilityAdvisory: {
           ...broken.compatibilityAdvisory!,
@@ -103,7 +108,7 @@ describe("compatibility banners", () => {
         },
       }),
     ).toBe(broken.message);
-    expect(getProviderStatusMessage({ ...broken, auth: { status: "unauthenticated" } })).toBe(
+    expect(getProviderStatusMessage(gt, { ...broken, auth: { status: "unauthenticated" } })).toBe(
       broken.message,
     );
   });
