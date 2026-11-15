@@ -42,6 +42,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Build unsigned installer
         shell: bash
+        env:
+          T3CODE_SKIP_PREPARED_SERVER_CACHE: ${{ matrix.platform == 'win' && 'true' || 'false' }}
         run: vp run dist:desktop:artifact --platform "${{ matrix.platform }}" --target "${{ matrix.target }}" --arch "${{ matrix.arch }}" --output-dir release --keep-stage
       - name: List Windows payload on failure
         if: failure() && matrix.platform == 'win'
