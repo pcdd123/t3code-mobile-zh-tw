@@ -469,5 +469,8 @@
   "a6872353115b1ff2": "Everyone using it for dictation will lose access.",
   "17659384214f32ec": "Remove key",
   "2538822db1093509": "Back to providers",
-  "7c19d25484218384": "Cloud providers"
+  "7c19d25484218384": "Cloud providers",
+  "a47789fd106e2ea9": "{percent}% error",
+  "b696ea0a2c85192c": "{seconds} s",
+  "fa833a662b9a555b": "/ 30 s"
 }

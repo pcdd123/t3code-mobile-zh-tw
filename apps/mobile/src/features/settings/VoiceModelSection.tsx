@@ -127,6 +127,7 @@ const languageNames =
 const languageLabel = (code: string) => languageNames?.of(code) ?? code.toUpperCase();
 
 function ModelStats(props: { readonly model: EnvironmentSpeechModel; readonly language: string }) {
+  const gt = useGT();
   const { model, language } = props;
   const data = model.benchmark;
   const code = !data
@@ -143,7 +144,7 @@ function ModelStats(props: { readonly model: EnvironmentSpeechModel; readonly la
             <>
               {languageLabel(code)}{" "}
               <Text className="font-t3-medium text-foreground">{score.grade}</Text> (
-              {score.errorPercent}% error)
+              {gt("{percent}% error", { percent: score.errorPercent })})
             </>,
           ],
         ] as const)
@@ -154,9 +155,9 @@ function ModelStats(props: { readonly model: EnvironmentSpeechModel; readonly la
             "speed",
             <>
               <Text className="font-t3-medium text-foreground">
-                {data.secondsPer30s.accelerated} s
+                {gt("{seconds} s", { seconds: data.secondsPer30s.accelerated })}
               </Text>{" "}
-              / 30 s
+              {gt("/ 30 s")}
             </>,
           ],
         ] as const)
