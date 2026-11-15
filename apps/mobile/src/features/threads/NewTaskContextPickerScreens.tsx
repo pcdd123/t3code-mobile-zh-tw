@@ -50,6 +50,7 @@ import {
   useConnectionDiagnosis,
 } from "../connection/ConnectionDiagnosisDetails";
 import { environmentStatusText } from "../connection/environmentStatusText";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 
 const BRANCH_SEARCH_DEBOUNCE_MS = 150;
 
@@ -67,9 +68,11 @@ function EnvironmentPickerRow(props: {
   const { diagnosis, state } = useConnectionDiagnosis(props.environmentId, presentation);
   const { onReconnectEnvironment } = useRemoteConnections();
   const connection = presentation?.connection;
-  const status =
+  const status = localizeExternalMessage(
     diagnosis?.headline ??
-    (connection ? environmentStatusText({ ...connection, error: null }) : gt("Offline"));
+      (connection ? environmentStatusText({ ...connection, error: null }) : gt("Offline")),
+    gt,
+  );
   return (
     <View className={cn("bg-grouped-card", !props.isLast && "border-b border-border-subtle")}>
       <View className="flex-row items-center">

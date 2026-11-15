@@ -8,6 +8,7 @@ import { useGT } from "gt-react-native";
 import { useCallback, useMemo } from "react";
 import { View } from "react-native";
 
+import { localizeExternalMessage } from "../../../i18n/externalMessages";
 import { SheetHeader } from "../../../components/ui/SheetHeader";
 import { FitSheet } from "../../../components/ui/FitSheet";
 import { SheetIntro } from "../../../components/ui/SheetIntro";
@@ -119,14 +120,16 @@ export function GitConfirmSheet(props: GitConfirmSheetProps) {
     >
       <SheetIntro
         eyebrow={gt("Confirm")}
-        title={copy?.title ?? gt("Run action on default branch?")}
-        description={copy?.description ?? gt("Choose how to continue.")}
+        title={copy ? localizeExternalMessage(copy.title, gt) : gt("Run action on default branch?")}
+        description={
+          copy ? localizeExternalMessage(copy.description, gt) : gt("Choose how to continue.")
+        }
       />
 
       <View className="gap-3">
         <SheetActionButton
           icon="arrow.right.circle"
-          label={copy?.continueLabel ?? gt("Continue")}
+          label={copy ? localizeExternalMessage(copy.continueLabel, gt) : gt("Continue")}
           disabled={!canWriteSourceControl}
           onPress={() => void continuePendingAction()}
         />

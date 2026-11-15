@@ -50,6 +50,7 @@ import { SettingsRow } from "./settingsLayout";
 import { AddCodexAccountDialog } from "./AddCodexAccountDialog";
 import { getOnboardingProviderState } from "../../onboarding/providerReadiness.logic";
 import { getProviderSummary } from "./providerStatus";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import {
   settleAuthorizationPage,
   settleHandoffAuthorizationPage,
@@ -402,7 +403,9 @@ function ManagedCodexSetup({
         if (!isAtomCommandInterrupted(result)) {
           const failure = squashAtomCommandFailure(result);
           setError(
-            failure instanceof Error ? failure.message : gt("Codex setup failed. Try again."),
+            failure instanceof Error
+              ? localizeExternalMessage(failure.message, gt)
+              : gt("Codex setup failed. Try again."),
           );
         }
       } else {
@@ -450,7 +453,8 @@ function ManagedCodexSetup({
   ) {
     setError(
       handoffQuery.data?.phase === "auth"
-        ? (handoffQuery.data.state.message ?? gt("ChatGPT sign-in could not finish. Try again."))
+        ? (localizeExternalMessage(handoffQuery.data.state.message, gt) ??
+            gt("ChatGPT sign-in could not finish. Try again."))
         : gt("ChatGPT sign-in on the primary environment was interrupted. Try again."),
     );
     setHandoff(null);
@@ -638,7 +642,8 @@ function ManagedCodexSetup({
               : installation?.installedVersion
                 ? gt("Managed by T3 Code · v{version}.", { version: installation.installedVersion })
                 : gt("Managed by T3 Code.")
-            : (installation?.message ?? gt("T3 Code downloads and manages Codex for you."));
+            : (localizeExternalMessage(installation?.message, gt) ??
+              gt("T3 Code downloads and manages Codex for you."));
   const accountDescription = finishingSignIn ? (
     gt("Finishing sign-in...")
   ) : installActive ? (
@@ -647,7 +652,7 @@ function ManagedCodexSetup({
     auth?.phase === "waiting" && requestedAccountEmail ? (
       gt("Continue as {email} on OpenAI.", { email: requestedAccountEmail })
     ) : (
-      (auth?.message ?? gt("Finish signing in in your browser."))
+      (localizeExternalMessage(auth?.message, gt) ?? gt("Finish signing in in your browser."))
     )
   ) : authenticated ? (
     provider?.auth.email?.trim() ? (
@@ -822,7 +827,9 @@ function ManagedCodexSetup({
   );
 
   const logoutWarning =
-    auth?.phase === "idle" && auth.message?.startsWith("Signed out locally.") ? auth.message : null;
+    auth?.phase === "idle" && auth.message?.startsWith("Signed out locally.")
+      ? localizeExternalMessage(auth.message, gt)
+      : null;
 
   if (presentation === "onboarding") {
     const setupError =
@@ -831,7 +838,7 @@ function ManagedCodexSetup({
       (authQuery.error || installQuery.error
         ? gt("Could not read setup status. Reconnect and try again.")
         : installation?.phase === "failed"
-          ? installation.message
+          ? localizeExternalMessage(installation.message, gt)
           : null);
     return (
       <>
@@ -1092,7 +1099,7 @@ function ManagedCodexSetup({
         <p role="alert" className="px-3 py-2 text-xs text-destructive sm:px-4">
           {error ??
             (installation?.phase === "failed"
-              ? installation.message
+              ? localizeExternalMessage(installation.message, gt)
               : gt("Could not read Codex setup status. Reconnect and try again."))}
         </p>
       ) : null}

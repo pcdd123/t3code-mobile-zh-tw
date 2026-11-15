@@ -7,6 +7,7 @@ import {
 import { worktreeSetupAgentStarted } from "@t3tools/client-runtime/worktree-setup";
 import { formatDuration } from "@t3tools/shared/orchestrationTiming";
 import { useGT } from "gt-react-native";
+import { localizeDuration, localizeExternalMessage } from "../../i18n/externalMessages";
 import { useState } from "react";
 import { Platform, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -53,7 +54,9 @@ export function WorktreeSetupCard(props: WorktreeSetupCardProps) {
     snapshot.phase === "failed" || snapshot.stages.some((stage) => stage.status === "failed");
   const label =
     handedOff && working
-      ? gt("Working for {duration}", { duration: elapsed(turnStartedAt, null, now) ?? "0s" })
+      ? gt("Working for {duration}", {
+          duration: localizeDuration(elapsed(turnStartedAt, null, now) ?? "0s", gt),
+        })
       : running
         ? handedOff
           ? gt("Setup continues…")
@@ -158,7 +161,9 @@ export function WorktreeWorkingHeader({ startedAt }: { startedAt: string }) {
     <View className="py-1">
       <View className="min-h-11 flex-row items-center border-b border-border px-1">
         <HeaderLabel
-          label={gt("Working for {duration}", { duration: elapsed(startedAt, null, now) ?? "0s" })}
+          label={gt("Working for {duration}", {
+            duration: localizeDuration(elapsed(startedAt, null, now) ?? "0s", gt),
+          })}
           active
         />
       </View>
@@ -291,8 +296,8 @@ function StageRow({
               : gt("warning");
   const label =
     stage.id === "setup-script"
-      ? (scriptName ?? worktreeSetupStageLabel(stage.id))
-      : worktreeSetupStageLabel(stage.id);
+      ? (scriptName ?? localizeExternalMessage(worktreeSetupStageLabel(stage.id), gt))
+      : localizeExternalMessage(worktreeSetupStageLabel(stage.id), gt);
   const detail =
     stage.status === "pending"
       ? null

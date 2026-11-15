@@ -117,6 +117,7 @@ import {
   type RefObject,
 } from "react";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import {
   Image,
   Platform,
@@ -1654,7 +1655,7 @@ function RunFoldButton({
           numberOfLines={1}
           className="shrink font-t3-medium text-sm tabular-nums text-foreground-muted"
         >
-          {entry.label}
+          {localizeExternalMessage(entry.label, gt)}
           {error ? ` · ${error}` : ""}
         </Text>
         <ThreadDisclosureChevron
@@ -1917,13 +1918,14 @@ function renderFeedEntry(
       item.type === "compaction" && item.status === "failed" ? item.summary?.trim() : undefined;
     return (
       <ThreadContextDivider
-        label={
+        label={localizeExternalMessage(
           failure
             ? `${label} · ${failure}`
             : active && labels
               ? labels.compacting
-              : compactionLabel(label, labels?.title)
-        }
+              : compactionLabel(label, labels?.title),
+          gt,
+        )}
         icon={
           item.status === "failed" ? "exclamationmark.circle" : "arrow.down.right.and.arrow.up.left"
         }
@@ -4015,7 +4017,7 @@ function ThreadFeedLoadEarlierControl(props: ThreadFeedHistoryControls) {
       ) : null}
       {props.error !== null ? (
         <Text className="text-center text-xs" style={{ color: mutedColor }}>
-          {props.error}
+          {localizeExternalMessage(props.error, gt)}
         </Text>
       ) : null}
     </View>

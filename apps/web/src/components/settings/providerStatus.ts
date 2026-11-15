@@ -5,6 +5,8 @@ import type {
 } from "@t3tools/contracts";
 import type { useGT } from "gt-react";
 
+import { localizeExternalMessage } from "~/i18n/externalMessages";
+
 type Translate = ReturnType<typeof useGT>;
 
 export const PROVIDER_STATUS_STYLES = {
@@ -58,55 +60,57 @@ export function getProviderSummary(provider: ServerProvider | undefined, gt: Tra
     return {
       headline: gt("Disabled"),
       detail:
-        provider.message ??
+        localizeExternalMessage(provider.message, gt) ??
         gt("This provider is installed but disabled for new sessions in T3 Code."),
     };
   }
   if (!provider.installed) {
     return {
       headline: gt("Not found"),
-      detail: provider.message ?? gt("CLI not detected on PATH."),
+      detail: localizeExternalMessage(provider.message, gt) ?? gt("CLI not detected on PATH."),
     };
   }
   if (provider.auth.status === "unauthenticated") {
-    const authLabel = provider.auth.label ?? provider.auth.type;
+    const authLabel = localizeExternalMessage(provider.auth.label, gt) ?? provider.auth.type;
     return {
       headline: authLabel
         ? gt("Not authenticated · {authLabel}", { authLabel })
         : gt("Not authenticated"),
-      detail: provider.message ?? null,
+      detail: localizeExternalMessage(provider.message, gt) ?? null,
     };
   }
   if (isAntigravitySignInUnchecked(provider)) {
     return {
       headline: gt("Installed · Sign-in not checked"),
-      detail: provider.message ?? null,
+      detail: localizeExternalMessage(provider.message, gt) ?? null,
     };
   }
   if (provider.status === "warning") {
     return {
       headline: gt("Needs attention"),
       detail:
-        provider.message ??
+        localizeExternalMessage(provider.message, gt) ??
         gt("The provider is installed, but the server could not fully verify it."),
     };
   }
   if (provider.status === "error") {
     return {
       headline: gt("Unavailable"),
-      detail: provider.message ?? gt("The provider failed its startup checks."),
+      detail:
+        localizeExternalMessage(provider.message, gt) ??
+        gt("The provider failed its startup checks."),
     };
   }
   if (provider.auth.status === "authenticated") {
-    const authLabel = provider.auth.label ?? provider.auth.type;
+    const authLabel = localizeExternalMessage(provider.auth.label, gt) ?? provider.auth.type;
     return {
       headline: authLabel ? gt("Authenticated · {authLabel}", { authLabel }) : gt("Authenticated"),
-      detail: provider.message ?? null,
+      detail: localizeExternalMessage(provider.message, gt) ?? null,
     };
   }
   return {
     headline: gt("Available"),
-    detail: provider.message ?? null,
+    detail: localizeExternalMessage(provider.message, gt) ?? null,
   };
 }
 
@@ -160,7 +164,7 @@ export function getProviderVersionAdvisoryPresentation(
     return {
       title: compatibilityTitle(compatibility.status, gt),
       detail:
-        compatibility.message ??
+        localizeExternalMessage(compatibility.message, gt) ??
         (recommendation
           ? gt("Use {recommendation} for full support.", { recommendation })
           : gt("Update for full support.")),
@@ -188,7 +192,7 @@ export function getProviderVersionAdvisoryPresentation(
   return {
     title: label,
     detail:
-      advisory.message ??
+      localizeExternalMessage(advisory.message, gt) ??
       (versionLabel
         ? gt("Update available: install {version}.", { version: versionLabel })
         : gt("Update available: install the latest provider version.")),

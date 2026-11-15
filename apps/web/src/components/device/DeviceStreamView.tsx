@@ -24,6 +24,7 @@ import {
   IDLE_DEVICE_STREAM_STATE,
 } from "./deviceStreamSession";
 import type { DeviceHardwareButton, DeviceScreenSize } from "@t3tools/client-runtime/device/stream";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { observeResize } from "~/lib/observeResize";
 
 const NO_SESSION_ATOM = Atom.make<DeviceStreamSession | null>(null).pipe(
@@ -486,7 +487,11 @@ export function DeviceStreamView(props: {
               description={props.deviceDescription ?? ""}
               stage="stream"
               message={
-                status === "error" ? (detail ?? gt("Stream failed.")) : gt("Connecting video…")
+                status === "error"
+                  ? detail
+                    ? localizeExternalMessage(detail, gt)
+                    : gt("Stream failed.")
+                  : gt("Connecting video…")
               }
               error={status === "error"}
             >

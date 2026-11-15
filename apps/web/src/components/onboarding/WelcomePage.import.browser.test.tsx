@@ -585,7 +585,7 @@ it("leaves projects already in T3 Code out of the default import, unless the box
   ]);
   {
     await using _screen = await mountWelcome();
-    await vi.waitFor(() => expect(pageText()).toContain("Import 1 project and their threads"));
+    await vi.waitFor(() => expect(pageText()).toContain("Import 1 project and its threads"));
   }
 
   // With every project already in T3 Code, checking the box still picks them.

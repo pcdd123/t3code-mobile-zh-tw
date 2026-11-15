@@ -85,13 +85,14 @@ function DocumentPreview(props: {
         gt("A compatible viewer must be installed. Check your connection and try again."),
       );
   });
+  const readFallbackName = useEffectEvent(() => gt("Document"));
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens the attachment in an external viewer and aborts the open on cleanup
   useEffect(() => {
     const controller = new AbortController();
     const input = {
       uri,
       attachment: {
-        name: name ?? gt("Document"),
+        name: name ?? readFallbackName(),
         mimeType:
           props.source.mimeType ??
           (props.source.kind === "pdf" ? "application/pdf" : "application/octet-stream"),
@@ -107,7 +108,7 @@ function DocumentPreview(props: {
         if (!controller.signal.aborted) onRequestClose();
       });
     return () => controller.abort();
-  }, [uri, name, props.source.mimeType, props.source.kind, gt]);
+  }, [uri, name, props.source.mimeType, props.source.kind]);
   return (
     <Modal transparent animationType="fade" onRequestClose={props.onRequestClose}>
       <View className="flex-1 items-center justify-center bg-backdrop p-6">

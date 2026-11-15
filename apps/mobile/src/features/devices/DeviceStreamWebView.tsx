@@ -1,4 +1,5 @@
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { Button } from "../../components/ui/Button";
 import deviceStreamScript from "@t3tools/mobile-device-stream";
 import {
@@ -201,7 +202,9 @@ function DeviceStreamDocumentView({
             accessibilityLiveRegion="polite"
             className="text-center text-sm text-foreground-muted"
           >
-            {status === "error" ? error : gt("Connecting to device...")}
+            {status === "error"
+              ? error && localizeExternalMessage(error, gt)
+              : gt("Connecting to device...")}
           </AppText>
           {status === "error" ? (
             <View className="items-center">

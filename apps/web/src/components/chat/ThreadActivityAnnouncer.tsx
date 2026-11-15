@@ -1,5 +1,5 @@
 import type { ScreenReaderAnnouncements } from "@t3tools/contracts";
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useEffectEvent, useRef } from "react";
 
 import { useLiveRegion } from "../../hooks/useLiveRegion";
 import type { TimelineEntry } from "../../session-logic";
@@ -82,6 +82,8 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
     quietUntil: number;
     waiting: { label: string; timer: ReturnType<typeof setTimeout> } | null;
   }>({ quietUntil: 0, waiting: null });
+  const localizeMessage = useEffectEvent((message: string) => localizeTurnMessage(gt, message));
+  const localizeActivity = useEffectEvent((activity: string) => localizeTurnActivity(gt, activity));
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- writes the turn's status, messages and steps to the aria-live region after commit
   useEffect(() => {
@@ -139,7 +141,7 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
     if (detail.messages.length > 0) {
       // NVDA reads two regions written in the same frame in either order, so a
       // status that lands with a message is read as its last sentence.
-      const messages = detail.messages.map((message) => localizeTurnMessage(gt, message));
+      const messages = detail.messages.map(localizeMessage);
       const text = asOneAnnouncement(
         turn.announcement === null ? messages : [...messages, turn.announcement],
       );
@@ -156,7 +158,7 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
     if (label === null) return;
     const speakStep = () => {
       step.waiting = null;
-      write(localizeTurnActivity(gt, label), ACTIVITY_GAP_MS);
+      write(localizeActivity(label), ACTIVITY_GAP_MS);
     };
     const wait = step.quietUntil - Date.now();
     if (wait <= 0) {
@@ -181,7 +183,6 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
     clear,
     announceDetail,
     clearDetail,
-    gt,
   ]);
 
   // No role="status": Orca 50 maps it to a status bar in Chromium and drops its updates.

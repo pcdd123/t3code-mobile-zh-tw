@@ -11,7 +11,7 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import { useGT } from "gt-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { selectActiveRightPanelSurface, useRightPanelStore } from "../../rightPanelStore";
 import { threadEnvironment } from "../../state/threads";
 import { useOrchestrationCommand } from "../../state/use-orchestration-command";
@@ -52,6 +52,10 @@ export function useThreadLinkedPullRequest(input: {
 
   const relinkKeysRef = useRef(new Map<string, string>());
   const relinkWriteRef = useRef(Promise.resolve());
+  const readFailureToastText = useEffectEvent(() => ({
+    title: gt("Unable to update the thread pull request"),
+    fallbackDescription: gt("An error occurred."),
+  }));
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- persists the detected PR to the server thread once per change and retargets the open right panel store
   useEffect(() => {
     if (serverThreadRef === null) return;
@@ -88,15 +92,16 @@ export function useThreadLinkedPullRequest(input: {
       relinkKeysRef.current.delete(threadKey);
       if (isAtomCommandInterrupted(result)) return;
       const error = squashAtomCommandFailure(result);
+      const text = readFailureToastText();
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: gt("Unable to update the thread pull request"),
-          description: error instanceof Error ? error.message : gt("An error occurred."),
+          title: text.title,
+          description: error instanceof Error ? error.message : text.fallbackDescription,
         }),
       );
     });
-  }, [gt, persisted, replacement, serverThreadRef, updateThreadMetadata]);
+  }, [persisted, replacement, serverThreadRef, updateThreadMetadata]);
 
   const linked = replacement ?? persisted;
   return {

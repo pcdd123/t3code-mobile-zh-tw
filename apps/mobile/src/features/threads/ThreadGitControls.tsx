@@ -18,6 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useGT } from "gt-react-native";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useEnvironmentScope } from "../../state/session";
 import { PullRequestGlyph } from "../pull-requests/pullRequestGlyphs";
 import {
@@ -73,58 +74,6 @@ function compactMenuStatus(gitStatus: VcsStatusResult | null, gt: Translate): st
   }
 
   return parts.join(" · ");
-}
-
-/** Localizes the English labels and hints `resolveQuickAction` returns. */
-function localizeQuickActionText(
-  text: string,
-  gitStatus: VcsStatusResult | null,
-  gt: Translate,
-): string {
-  switch (text) {
-    case "Commit":
-      return gt("Commit");
-    case "Commit & push":
-      return gt("Commit & push");
-    case "Push":
-      return gt("Push");
-    case "Pull":
-      return gt("Pull");
-    case "Sync branch":
-      return gt("Sync branch");
-    case "Git action in progress.":
-      return gt("Git action in progress.");
-    case "Git status is unavailable.":
-      return gt("Git status is unavailable.");
-    case "No local commits to push.":
-      return gt("No local commits to push.");
-    case "Branch has diverged from upstream. Rebase/merge first.":
-      return gt("Branch has diverged from upstream. Rebase/merge first.");
-    case "Branch is up to date. No action needed.":
-      return gt("Branch is up to date. No action needed.");
-  }
-  const { shortLabel, shortLabelWithArticle } = sourceControlClients.get(
-    gitStatus?.sourceControlProvider?.kind,
-  ).changeRequest;
-  if (text === `Commit, push & ${shortLabel}`) {
-    return gt("Commit, push & {changeRequest}", { changeRequest: shortLabel });
-  }
-  if (text === `View ${shortLabel}`)
-    return gt("View {changeRequest}", { changeRequest: shortLabel });
-  if (text === `Push & create ${shortLabel}`) {
-    return gt("Push & create {changeRequest}", { changeRequest: shortLabel });
-  }
-  if (text === `Create and checkout a branch before pushing or opening ${shortLabelWithArticle}.`) {
-    return gt("Create and checkout a branch before pushing or opening {changeRequest}.", {
-      changeRequest: shortLabelWithArticle,
-    });
-  }
-  if (text === `Add an "origin" remote before pushing or creating ${shortLabelWithArticle}.`) {
-    return gt('Add an "origin" remote before pushing or creating {changeRequest}.', {
-      changeRequest: shortLabelWithArticle,
-    });
-  }
-  return text;
 }
 
 type QuickActionIcon =
@@ -188,10 +137,8 @@ function useThreadGitControlModel(props: ThreadGitMenuProps) {
     const resolved = resolveQuickAction(gitStatus, busy, isDefaultRef, hasPrimaryRemote);
     const action = {
       ...resolved,
-      label: localizeQuickActionText(resolved.label, gitStatus, gt),
-      ...(resolved.hint === undefined
-        ? {}
-        : { hint: localizeQuickActionText(resolved.hint, gitStatus, gt) }),
+      label: localizeExternalMessage(resolved.label, gt),
+      ...(resolved.hint === undefined ? {} : { hint: localizeExternalMessage(resolved.hint, gt) }),
     };
     return !canWriteSourceControl && (action.kind === "run_pull" || action.kind === "run_action")
       ? {

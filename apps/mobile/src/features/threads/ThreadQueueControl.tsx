@@ -15,6 +15,7 @@ import { Atom } from "effect/reactivity";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -250,7 +251,9 @@ export function ThreadQueueSheet({ route }: StaticScreenProps<QueueTarget>) {
         </View>
       ) : null}
       {editBlockedReason !== null && queuedRuns.length > 0 ? (
-        <Text className="py-3 text-sm text-foreground-muted">{editBlockedReason}</Text>
+        <Text className="py-3 text-sm text-foreground-muted">
+          {localizeExternalMessage(editBlockedReason, gt)}
+        </Text>
       ) : null}
       {queuedRuns.length === 0 ? (
         <Text className="pt-6 text-center text-sm text-foreground-muted">
@@ -320,7 +323,9 @@ export function ThreadQueueSheet({ route }: StaticScreenProps<QueueTarget>) {
                     accessibilityHint={
                       controls.canEdit
                         ? gt("Opens this message in the composer for editing")
-                        : (editBlockedReason ?? undefined)
+                        : editBlockedReason === null
+                          ? undefined
+                          : localizeExternalMessage(editBlockedReason, gt)
                     }
                     disabled={!controls.canEdit}
                     onPress={() => void act(run.id, "edit")}

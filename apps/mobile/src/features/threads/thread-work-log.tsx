@@ -32,6 +32,7 @@ import {
   type ReactNode,
 } from "react";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import {
   Animated as NativeAnimated,
   type ColorValue,
@@ -911,10 +912,10 @@ const ThreadWorkLogRow = function ThreadWorkLogRow(
       ? resetTime
         ? gt("Usage limit reached. Retry after {time}.", { time: resetTime })
         : gt("Usage limit reached.")
-      : row.summary;
+      : localizeExternalMessage(row.summary, gt);
     return (
       <WorkLogPressable
-        accessibilityLabel={warning ? label : `${row.summary}: ${failureItem.failure.message}`}
+        accessibilityLabel={warning ? label : `${label}: ${failureItem.failure.message}`}
         accessibilityHint={gt("Long press to copy.")}
         onLongPress={() => props.onCopyRow(row.id, row.getCopyText())}
       >
@@ -1023,12 +1024,18 @@ const ThreadWorkLogRow = function ThreadWorkLogRow(
       </Text>
     );
   const toolPresentation = resolveWorkEntryToolPresentation(row.workEntry);
-  const previewText = row.groupStandIn?.label ?? workEntryRowLabel(row.workEntry);
+  const previewText = localizeExternalMessage(
+    row.groupStandIn?.label ?? workEntryRowLabel(row.workEntry),
+    gt,
+  );
   const answerPreview = row.workEntry.questionAnswer
     ? getQuestionAnswerPreview(row.workEntry.questionAnswer)
     : null;
   const accessiblePreview = [previewText, answerPreview].filter(Boolean).join(": ");
-  const displayText = row.groupStandIn?.label ?? workEntryRowLabel(row.workEntry, expanded);
+  const displayText = localizeExternalMessage(
+    row.groupStandIn?.label ?? workEntryRowLabel(row.workEntry, expanded),
+    gt,
+  );
   const isSystemNotice = row.projectedItem.item.type === "system_notice";
   const isUsageLimit =
     row.projectedItem.item.type === "error" &&
@@ -1342,9 +1349,10 @@ export function ThreadWorkGroupToggle(props: {
   readonly onToggle: () => void;
 }) {
   const gt = useGT();
+  const summary = localizeExternalMessage(props.summary, gt);
   const statusLabel = props.hasFailure
-    ? gt("{label}, tool call failed", { label: props.summary })
-    : props.summary;
+    ? gt("{label}, tool call failed", { label: summary })
+    : summary;
   const accessibilityLabel = props.thought ? `${props.thought} ${statusLabel}` : statusLabel;
   const icon =
     props.summaryToolIcon ??
@@ -1399,7 +1407,7 @@ export function ThreadWorkGroupToggle(props: {
                 environmentId={props.environmentId}
                 icon={icon}
                 iconSubtleColor={props.iconSubtleColor}
-                label={props.summary}
+                label={summary}
                 showIcon
                 themeAppearance={props.themeAppearance}
                 toolIcon={props.toolIcon}
@@ -1415,7 +1423,7 @@ export function ThreadWorkGroupToggle(props: {
                     themeAppearance={props.themeAppearance}
                   />
                 </WorkLogIconSlot>
-                <WorkLogLabel>{props.summary}</WorkLogLabel>
+                <WorkLogLabel>{summary}</WorkLogLabel>
               </>
             )}
             <ThreadDisclosureChevron
@@ -1440,7 +1448,10 @@ export function ThreadThinkingRow(props: {
   readonly providerStartingLabel?: string | undefined;
 }) {
   const gt = useGT();
-  const label = props.providerStartingLabel ?? props.label ?? gt("Thinking");
+  const label = localizeExternalMessage(
+    props.providerStartingLabel ?? props.label ?? gt("Thinking"),
+    gt,
+  );
   return (
     <View
       accessible

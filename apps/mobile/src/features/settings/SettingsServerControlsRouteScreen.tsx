@@ -14,6 +14,7 @@ import {
   type ProjectScopedServerSettingKey,
 } from "@t3tools/contracts";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useRef, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -381,7 +382,11 @@ function ServerSettingsDetail(props: { readonly page: SettingsPage }) {
                     <SettingsChoiceRow
                       key={choice.mode}
                       label={choice.label}
-                      description={choice.disabledReason ?? choice.description}
+                      description={
+                        choice.disabledReason === undefined
+                          ? choice.description
+                          : localizeExternalMessage(choice.disabledReason, gt)
+                      }
                       selected={uniform("defaultRuntimeMode") === choice.mode}
                       separated={index > 0}
                       disabled={

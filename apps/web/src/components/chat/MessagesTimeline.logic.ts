@@ -79,6 +79,9 @@ import {
 import { isWindowsAbsolutePath } from "@t3tools/shared/path";
 import type { useGT } from "gt-react";
 
+import { localizeExternalMessage } from "~/i18n/externalMessages";
+import { localizeToolActivityLabel } from "~/i18n/toolActivityLabels";
+
 export function timelineEntryRunId(entry: TimelineEntry): RunId | null {
   if (entry.kind === "message") {
     return entry.message.role === "assistant" ? (entry.message.runId ?? null) : null;
@@ -178,7 +181,7 @@ export function localizeTimelineLabel(gt: ReturnType<typeof useGT>, label: strin
   if (label.startsWith("Context compacted")) {
     return gt("Context compacted") + label.slice("Context compacted".length);
   }
-  return label;
+  return localizeToolActivityLabel(label, gt) ?? localizeExternalMessage(label, gt);
 }
 
 function singleToolCallLabel(entry: WorkLogEntry): string {

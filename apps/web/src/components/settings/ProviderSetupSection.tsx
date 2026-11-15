@@ -22,6 +22,7 @@ import { useAtomCommand } from "../../state/use-atom-command";
 import { Button } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { SettingsRow } from "./settingsLayout";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { ProviderAuthenticationSection } from "./ProviderAuthenticationSection";
 
 interface ProviderSetupSectionProps {
@@ -184,7 +185,11 @@ function ProviderSetupActions({
     if (result._tag === "Failure") {
       if (!isAtomCommandInterrupted(result)) {
         const failure = squashAtomCommandFailure(result);
-        setError(failure instanceof Error ? failure.message : gt("Provider setup failed."));
+        setError(
+          failure instanceof Error
+            ? localizeExternalMessage(failure.message, gt)
+            : gt("Provider setup failed."),
+        );
       }
       return false;
     }
@@ -255,7 +260,7 @@ function ProviderSetupActions({
             installation?.message &&
             installation.message !== installationStatusMessage ? (
               <p className="text-muted-foreground [overflow-wrap:anywhere]">
-                {installation.message}
+                {localizeExternalMessage(installation.message, gt)}
               </p>
             ) : null}
             <div className="grid min-h-7 grid-cols-[1.75rem_minmax(0,1fr)] gap-2">

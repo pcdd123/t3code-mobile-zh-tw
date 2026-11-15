@@ -20,6 +20,7 @@ import {
 import { AsyncResult } from "effect/reactivity";
 import * as Option from "effect/Option";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useState } from "react";
 import { Platform, Pressable, View } from "react-native";
 import Reanimated, { ReduceMotion, useAnimatedStyle, withTiming } from "react-native-reanimated";
@@ -162,20 +163,24 @@ export function EnvironmentRoutesSection({
               </Text>
               {AUTH_SCOPE_OPTIONS.map(({ scope, title }) => (
                 <Text key={scope} className="text-sm text-foreground">
-                  {title}: {sessionGrantsScope(session, scope) ? gt("Allowed") : gt("Not granted")}
+                  {localizeExternalMessage(title, gt)}:{" "}
+                  {sessionGrantsScope(session, scope) ? gt("Allowed") : gt("Not granted")}
                 </Text>
               ))}
             </>
           ) : (
             <Text className="text-sm text-foreground-muted">
-              {sessionPermissionsUnavailableMessage({
-                connected: activeRouteId !== null,
-                failed: sessionResult._tag === "Failure",
-                rejected:
-                  sessionResult._tag !== "Failure" &&
-                  !sessionResult.waiting &&
-                  session?.authenticated === false,
-              })}
+              {localizeExternalMessage(
+                sessionPermissionsUnavailableMessage({
+                  connected: activeRouteId !== null,
+                  failed: sessionResult._tag === "Failure",
+                  rejected:
+                    sessionResult._tag !== "Failure" &&
+                    !sessionResult.waiting &&
+                    session?.authenticated === false,
+                }),
+                gt,
+              )}
             </Text>
           )}
         </View>

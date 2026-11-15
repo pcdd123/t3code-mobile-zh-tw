@@ -1,4 +1,5 @@
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../i18n/externalMessages";
 import { useEvent } from "expo";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useIsFocused } from "@react-navigation/native";
@@ -159,7 +160,9 @@ function MediaVideoPlayerContent(props: MediaVideoPlayerProps) {
   // Keep an opened player mounted while signing or reconnecting temporarily has no usable URL.
   if (playbackUri === null && props.expanded && props.uri !== null) setPlaybackUri(props.uri);
   const unavailableText = props.unavailableDetail
-    ? gt("Video unavailable. {detail}", { detail: props.unavailableDetail })
+    ? gt("Video unavailable. {detail}", {
+        detail: localizeExternalMessage(props.unavailableDetail, gt),
+      })
     : gt("Video unavailable");
   const [videoSize, setVideoSize] = useState<{ width: number; height: number } | null>(null);
   const [bounds, setBounds] = useState<{ width: number; height: number } | null>(null);

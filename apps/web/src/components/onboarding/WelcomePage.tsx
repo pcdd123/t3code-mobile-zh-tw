@@ -44,6 +44,7 @@ import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from "rea
 import { TYPOGRAPHY_ADVANCED_STORAGE_KEY } from "../../appearanceFonts";
 import { MOBILE_APP_URL } from "../../branding";
 import { isElectron } from "../../env";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { usePersistEnvironmentProviderInstanceMutation } from "../../hooks/useSettings";
 import { useCloudLinkState } from "../../cloud/cloudLinkState";
@@ -1185,7 +1186,7 @@ function AgentRow({
   const name = agentName(provider);
   // Claude Code and Codex tiles show Install or Set up; other agents that are on say why not.
   const brokenMessage = isBrokenVersion(provider)
-    ? (provider.compatibilityAdvisory?.message ?? null)
+    ? localizeExternalMessage(provider.compatibilityAdvisory?.message, gt)
     : null;
   const detail =
     state === "install"
@@ -1195,9 +1196,9 @@ function AgentRow({
       : compact || state === "ready" || state === "checking"
         ? null
         : state === "attention"
-          ? (provider.unavailableReason ??
+          ? (localizeExternalMessage(provider.unavailableReason, gt) ??
             brokenMessage ??
-            provider.message ??
+            localizeExternalMessage(provider.message, gt) ??
             getProviderSummary(provider, gt).headline)
           : (brokenMessage ?? getProviderSummary(provider, gt).headline);
   return (

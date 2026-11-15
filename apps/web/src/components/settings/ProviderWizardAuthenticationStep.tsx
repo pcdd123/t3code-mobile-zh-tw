@@ -9,6 +9,7 @@ import { WizardFooter, WizardPanel } from "../ui/wizard";
 import { ProviderAuthenticationSection } from "./ProviderAuthenticationSection";
 import { SettingsGroup } from "./SettingsGroup";
 import { SettingsRow } from "./settingsLayout";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 
 export function ProviderWizardAuthenticationStep({
   environmentId,
@@ -63,7 +64,7 @@ export function ProviderWizardAuthenticationStep({
                 isDiscovering
                   ? gt("Discovering sign-in methods…")
                   : (query.error ??
-                    auth?.message ??
+                    localizeExternalMessage(auth?.message, gt) ??
                     gt("No in-app sign-in advertised. Follow the provider's docs to finish setup."))
               }
               control={

@@ -10,6 +10,7 @@ import { SymbolView } from "../../components/ui/AppSymbol";
 import { View } from "react-native";
 
 import { AppText as Text } from "../../components/ui/AppText";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 
 type Translate = ReturnType<typeof useGT>;
 
@@ -55,11 +56,12 @@ function noticeDetail(
   awaitingApproval: boolean,
   gt: Translate,
 ): string {
-  if (error && awaitingApproval) return error;
+  if (error && awaitingApproval) return localizeExternalMessage(error, gt);
   if (error) {
+    const reason = localizeExternalMessage(error, gt);
     return phase === "reconnecting"
-      ? gt("The app will keep retrying automatically. {error}", { error })
-      : error;
+      ? gt("The app will keep retrying automatically. {error}", { error: reason })
+      : reason;
   }
   const resource = resourceLabel(resourceName, gt);
 

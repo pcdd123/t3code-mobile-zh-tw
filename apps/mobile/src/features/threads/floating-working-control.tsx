@@ -29,6 +29,7 @@ import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { AppText as Text } from "../../components/ui/AppText";
 import { SymbolView } from "../../components/ui/AppSymbol";
 import { ControlPill } from "../../components/ui/ControlPill";
+import { localizeDuration } from "../../i18n/externalMessages";
 import { NATIVE_LIQUID_GLASS_SUPPORTED } from "../../native/native-glass";
 import { BrowserPreviewButton } from "../browser/browser-preview-button";
 import { DevicePreviewButton } from "../devices/device-preview-button";
@@ -676,7 +677,10 @@ function WorkingTimer(props: {
       style={{ fontVariant: ["tabular-nums"], fontWeight: "500" }}
     >
       {gt("Working {duration}", {
-        duration: formatWorkingDuration(props.startedAt, toServerClock(props.environmentId, nowMs)),
+        duration: localizeDuration(
+          formatWorkingDuration(props.startedAt, toServerClock(props.environmentId, nowMs)),
+          gt,
+        ),
       })}
     </SystemText>
   );

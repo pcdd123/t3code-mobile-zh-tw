@@ -4,6 +4,7 @@ import {
 } from "@t3tools/client-runtime/state/thread-execution";
 import { isOrchestrationV2WorkActive, type EnvironmentId, type ThreadId } from "@t3tools/contracts";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useState } from "react";
 import { View } from "react-native";
 
@@ -26,7 +27,10 @@ export function ProviderSubagentBar(props: {
   const [inspecting, setInspecting] = useState(false);
   const live = props.status !== null && isOrchestrationV2WorkActive(props.status.status);
   const nowMs = useVisibleSecondClock(live);
-  const statusLabel = formatProviderSubagentStatus(props.status, nowMs);
+  const statusLabel = localizeExternalMessage(
+    formatProviderSubagentStatus(props.status, nowMs),
+    gt,
+  );
   const modelDescription =
     props.effortLabel === null ? props.modelLabel : `${props.modelLabel}, ${props.effortLabel}`;
 

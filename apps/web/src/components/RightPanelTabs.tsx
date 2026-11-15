@@ -65,6 +65,7 @@ import { isElectron } from "~/env";
 import type { DesktopPreviewOverlay } from "~/previewStateStore";
 import type { RightPanelSurface } from "~/rightPanelStore";
 import { cn } from "~/lib/utils";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { resolveShortcutCommand, type ShortcutMatchContext } from "~/keybindings";
 import { readLocalApi } from "~/localApi";
 import { useStableCallback } from "~/hooks/useStableCallback";
@@ -607,9 +608,10 @@ function surfaceTitle(
         Math.max(surface.relativePath.lastIndexOf("/"), surface.relativePath.lastIndexOf("\\")) + 1,
       );
     case "terminal":
-      return (
+      return localizeExternalMessage(
         terminalLabelsById.get(surface.activeTerminalId) ??
-        getTerminalLabel(surface.activeTerminalId)
+          getTerminalLabel(surface.activeTerminalId),
+        gt,
       );
     case "pull-request":
       return `#${surface.number}`;

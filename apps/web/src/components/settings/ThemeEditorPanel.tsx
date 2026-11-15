@@ -8,7 +8,13 @@ import {
   ChevronUpIcon,
 } from "lucide-react";
 import { msg, useGT, useMessages } from "gt-react";
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import {
   applyThemeColorPreview,
   THEME_COLOR_ROLES,
@@ -624,6 +630,11 @@ export function ThemeEditorPanel({
     };
   }, [isInspecting, open, selectedHighlightRolesKey, selectedRole]);
 
+  const readInspectionLabel = useEffectEvent((role: ThemeColorRole) => {
+    const family = getThemeEditorColorFamily(role);
+    return family ? m(family.label) : getThemeRoleLabel(role, gt);
+  });
+
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- document pointer, click and key listeners that drive the inspect-mode hover overlay
   useEffect(() => {
     if (!open || !isInspecting) {
@@ -649,11 +660,7 @@ export function ThemeEditorPanel({
     };
     const showInspection = (inspection: ThemeElementInspection) => {
       hoverInspection = inspection;
-      const family = getThemeEditorColorFamily(inspection.role);
-      showThemeInspectorHover(
-        inspection,
-        family ? m(family.label) : getThemeRoleLabel(inspection.role, gt),
-      );
+      showThemeInspectorHover(inspection, readInspectionLabel(inspection.role));
     };
     const handlePointerOver = (event: PointerEvent) => {
       const target = event.target;
@@ -718,11 +725,7 @@ export function ThemeEditorPanel({
       hoverFrame = requestAnimationFrame(() => {
         hoverFrame = null;
         if (hoverInspection) {
-          const family = getThemeEditorColorFamily(hoverInspection.role);
-          showThemeInspectorHover(
-            hoverInspection,
-            family ? m(family.label) : getThemeRoleLabel(hoverInspection.role, gt),
-          );
+          showThemeInspectorHover(hoverInspection, readInspectionLabel(hoverInspection.role));
         }
       });
     };
@@ -747,7 +750,7 @@ export function ThemeEditorPanel({
       if (hoverFrame !== null) cancelAnimationFrame(hoverFrame);
       clearThemeInspectorHover();
     };
-  }, [clearInspectorSelection, gt, isInspecting, m, open, selectThemeRole]);
+  }, [clearInspectorSelection, isInspecting, open, selectThemeRole]);
 
   const handleAdvancedChange = (checked: boolean) => {
     setIsAdvanced(checked);

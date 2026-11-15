@@ -2,6 +2,7 @@ import { useSidebarWorkspaceTabs } from "../layout/workspace/useSystemWorkspaceT
 import { Button } from "../../components/ui/Button";
 import "../../i18n/intl-polyfills";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import * as Dialog from "../../components/ui/Dialog";
 import type { ComposerTextPaste } from "../../native/T3ComposerEditor.types";
 import { useDeviceType } from "../../native/native-layout-metrics";
@@ -430,6 +431,9 @@ function ComposerSurface(props: {
 /** Space below the composer pill, inside the bottom inset it is given. */
 export const THREAD_COMPOSER_BOTTOM_GUTTER = 6;
 
+// Read when the usage-limits sheet opens, not during render.
+const readNow = () => Date.now();
+
 export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps) {
   const gt = useGT();
   const project = useProject(scopeProjectRef(props.environmentId, props.selectedThread.projectId));
@@ -563,7 +567,7 @@ export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps
       currentModelSelection.instanceId,
       props.serverConfig?.providers ?? [],
       props.serverConfig?.usageLimitSources ?? [],
-      Date.now(),
+      readNow(),
     );
     onShowUsageLimits(report);
     if (!report) {
@@ -932,7 +936,7 @@ export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps
                 : "px-3 py-2 text-xs text-foreground"
             }
           >
-            {selectedProviderStatus.compatibilityAdvisory.message}
+            {localizeExternalMessage(selectedProviderStatus.compatibilityAdvisory.message, gt)}
           </Text>
         ) : null}
         {modelUnavailable ? (

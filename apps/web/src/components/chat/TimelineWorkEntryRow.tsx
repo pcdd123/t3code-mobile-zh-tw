@@ -82,9 +82,15 @@ export function useThreadReadTarget(entry: TimelineWorkEntry, environmentId: Env
   return threadId && title ? { threadId, title } : null;
 }
 
-export function threadReadLabel(label: string, target: ReturnType<typeof useThreadReadTarget>) {
-  const prefix = target && threadReadLabelPrefix(label);
-  return prefix ? { ...target, prefix, text: `${prefix} “${target.title}”` } : null;
+export function threadReadLabel(
+  gt: ReturnType<typeof useGT>,
+  label: string,
+  target: ReturnType<typeof useThreadReadTarget>,
+) {
+  const englishPrefix = target && threadReadLabelPrefix(label);
+  if (!englishPrefix) return null;
+  const prefix = localizeTimelineLabel(gt, englishPrefix);
+  return { ...target, prefix, text: `${prefix} “${target.title}”` };
 }
 
 export function ThreadReadLabel({
@@ -262,7 +268,7 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
       ? resetTime
         ? gt("Usage limit reached. Retry after {time}.", { time: resetTime })
         : gt("Usage limit reached.")
-      : workEntry.label;
+      : localizeTimelineLabel(gt, workEntry.label);
     const retryRunId =
       failureItem.runId !== null &&
       retryableWorkspacePreparationRunIds.has(failureItem.runId) &&
@@ -425,7 +431,7 @@ function WorkEntryLogRow(props: WorkEntryRowProps) {
       : workLogEntryIsToolLike(workEntry)
         ? "text-secondary-label"
         : "text-foreground/80";
-  const threadLabel = isReasoning ? null : threadReadLabel(previewText, threadTarget);
+  const threadLabel = isReasoning ? null : threadReadLabel(gt, previewText, threadTarget);
   const accessiblePreview = [
     threadLabel?.text ?? localizeTimelineLabel(gt, previewText),
     answerPreview,

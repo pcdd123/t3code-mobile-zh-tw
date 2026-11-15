@@ -4,6 +4,7 @@ import { memo, useLayoutEffect, useRef, useState } from "react";
 import { StarIcon } from "lucide-react";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { cn } from "~/lib/utils";
 import {
   isProviderInstancePickerReady,
@@ -30,7 +31,7 @@ function describeUnavailableInstance(
       : entry.status === "warning"
         ? gt("Limited")
         : gt("Not ready");
-  const msg = entry.snapshot.message?.trim();
+  const msg = localizeExternalMessage(entry.snapshot.message?.trim(), gt);
   return msg
     ? gt("{label}: {kind}. {message}", { label, kind, message: msg })
     : gt("{label}: {kind}.", { label, kind });

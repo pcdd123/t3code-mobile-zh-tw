@@ -12,6 +12,7 @@ import {
   type AtomCommandResult,
 } from "@t3tools/client-runtime/state/runtime";
 
+import { localizeExternalMessage } from "../i18n/externalMessages";
 import { englishGt, type Translate } from "./Localized";
 export type ProviderUpdateCandidate = ServerProvider & {
   readonly versionAdvisory: NonNullable<ServerProvider["versionAdvisory"]> & {
@@ -252,10 +253,13 @@ export function getProviderUpdateRunOutcome(
   const updateState = provider?.updateState;
   const restartNotice = provider ? getProviderRestartNotice(provider) : null;
   return updateState?.status === "succeeded"
-    ? { status: "updated", message: restartNotice ? `${label}: ${restartNotice}` : null }
+    ? {
+        status: "updated",
+        message: restartNotice ? `${label}: ${localizeExternalMessage(restartNotice, gt)}` : null,
+      }
     : {
         status: "failed",
-        line: `${label}: ${updateState?.message ?? gt("Provider update did not finish.")}`,
+        line: `${label}: ${localizeExternalMessage(updateState?.message, gt) ?? gt("Provider update did not finish.")}`,
       };
 }
 
@@ -498,7 +502,7 @@ function getFailedProviderUpdateDescription(
   if (providers.length === 1) {
     const provider = providers[0]!;
     if (provider.updateState?.message) {
-      return provider.updateState.message;
+      return localizeExternalMessage(provider.updateState.message, gt);
     }
   }
   return gt("{providers} failed to update. Check provider settings for details.", {

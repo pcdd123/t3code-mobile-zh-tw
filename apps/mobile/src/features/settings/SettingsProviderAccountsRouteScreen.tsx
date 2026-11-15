@@ -1,5 +1,6 @@
 import "../../i18n/intl-polyfills";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import * as Dialog from "../../components/ui/Dialog";
 import {
   isAtomCommandInterrupted,
@@ -255,7 +256,9 @@ function ProviderAccount({
     (provider.auth.type === "gemini-api-key" || provider.auth.type === "agent-platform");
   const status =
     active || state?.phase === "failed" || state?.phase === "cancelled"
-      ? state.message
+      ? state.message === null
+        ? null
+        : localizeExternalMessage(state.message, gt)
       : !provider.enabled
         ? gt("Turned off")
         : signedIn
@@ -499,7 +502,7 @@ function ProviderAccount({
           ) : null}
           {error || auth.error ? (
             <Text accessibilityRole="alert" className="text-danger-foreground">
-              {error ?? auth.error}
+              {localizeExternalMessage(error ?? auth.error ?? "", gt)}
             </Text>
           ) : null}
         </View>

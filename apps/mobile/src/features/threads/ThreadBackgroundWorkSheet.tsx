@@ -16,6 +16,7 @@ import { SymbolView } from "../../components/ui/AppSymbol";
 import { AppText as Text } from "../../components/ui/AppText";
 import { ScreenContent } from "../../components/ui/ScreenContent";
 import { environmentThreadShells } from "../../state/threads";
+import { localizeBackgroundWorkItemLabel } from "../../i18n/externalMessages";
 
 function kindLabel(kind: PendingBackgroundWorkItem["kind"], gt: ReturnType<typeof useGT>): string {
   switch (kind) {
@@ -81,6 +82,7 @@ function BackgroundWorkRow(props: {
 }) {
   const gt = useGT();
   const { item } = props;
+  const label = localizeBackgroundWorkItemLabel(item, gt);
   const childThreadId = item.childThreadId;
   const row = (
     <View className="flex-row items-center gap-3 border-b border-border py-3.5">
@@ -93,7 +95,7 @@ function BackgroundWorkRow(props: {
         type="monochrome"
       />
       <View className="min-w-0 flex-1">
-        <Text className="font-t3-medium text-sm text-foreground">{item.label}</Text>
+        <Text className="font-t3-medium text-sm text-foreground">{label}</Text>
         <Text className="text-xs text-foreground-muted">{kindLabel(item.kind, gt)}</Text>
       </View>
       {childThreadId === undefined ? null : (
@@ -106,7 +108,7 @@ function BackgroundWorkRow(props: {
   ) : (
     <Pressable
       accessibilityRole="link"
-      accessibilityLabel={gt("Open subagent {name}", { name: item.label })}
+      accessibilityLabel={gt("Open subagent {name}", { name: label })}
 
       onPress={() => props.onOpen(childThreadId)}
       className="active:opacity-70"

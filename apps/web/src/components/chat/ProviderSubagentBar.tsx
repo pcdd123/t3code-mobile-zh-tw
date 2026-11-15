@@ -7,6 +7,7 @@ import { ArrowUpLeftIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { tickTextContent } from "~/lib/tickTextContent";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import type { ProviderInstanceEntry } from "../../providerInstances";
 import { Button } from "../ui/button";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";
@@ -26,9 +27,9 @@ export function ProviderSubagentBar(props: {
   const live = status !== null && isOrchestrationV2WorkActive(status.status);
   const modelDescription =
     props.effortLabel === null ? props.modelLabel : `${props.modelLabel}, ${props.effortLabel}`;
-  const announcement = formatProviderSubagentStatus(
-    status === null ? null : { ...status, startedAt: null },
-    0,
+  const announcement = localizeExternalMessage(
+    formatProviderSubagentStatus(status === null ? null : { ...status, startedAt: null }, 0),
+    gt,
   );
 
   // Sized by the composer, not the viewport: a docked side panel narrows the
@@ -57,7 +58,10 @@ export function ProviderSubagentBar(props: {
           )}
         </span>
         <span
-          ref={tickTextContent((nowMs) => formatProviderSubagentStatus(status, nowMs), live)}
+          ref={tickTextContent(
+            (nowMs) => localizeExternalMessage(formatProviderSubagentStatus(status, nowMs), gt),
+            live,
+          )}
           aria-hidden
           className="min-w-0 max-w-full truncate text-muted-foreground tabular-nums @max-[560px]/composer-surface:text-xs"
         />

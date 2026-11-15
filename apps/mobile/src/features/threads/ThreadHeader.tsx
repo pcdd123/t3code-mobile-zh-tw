@@ -46,7 +46,7 @@ export function ThreadHeader(props: {
 
   return (
     <AppBar
-      title={props.title}
+      title={props.title === "New thread" ? gt("New thread") : props.title}
       subtitle={props.subtitle}
       onBackToList={goBack}
       onCompose={props.draft ? undefined : startNewTask}

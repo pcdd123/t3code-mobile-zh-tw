@@ -11,6 +11,7 @@ import {
 import { taskListMarkerOffset } from "@t3tools/shared/markdownTaskList";
 import { isHostPath, resolveWorkspaceFilePath } from "@t3tools/shared/path";
 import { usePullRequestLinking } from "~/hooks/usePullRequestLinking";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import {
   AuthFilesystemReadScope,
   AuthOrchestrationOperateScope,
@@ -318,7 +319,9 @@ function CodexArtifactTemplateCard(props: {
           <div className="truncate text-sm font-medium text-foreground">
             {props.template.displayName}
           </div>
-          <div className="text-xs text-muted-foreground">{presentationLabel}</div>
+          <div className="text-xs text-muted-foreground">
+            {localizeExternalMessage(presentationLabel, gt)}
+          </div>
         </div>
       </div>
       {props.onUse ? (

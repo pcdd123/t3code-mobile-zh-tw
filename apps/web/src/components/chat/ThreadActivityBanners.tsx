@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { Fragment } from "react";
 import { tickTextContent } from "~/lib/tickTextContent";
+import { localizeDuration, localizeExternalMessage } from "~/i18n/externalMessages";
 import { BackgroundWorkDetails } from "./BackgroundWorkDetails";
 import { Button, InlineButton } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
@@ -105,8 +106,10 @@ export function goalNowItem(input: {
     title: (
       <Popover>
         <PopoverTrigger openOnHover render={<InlineButton />}>
-          {presentation.title}
-          {presentation.usage === null ? null : ` · ${presentation.usage}`}
+          {localizeExternalMessage(presentation.title, gt)}
+          {presentation.usage === null
+            ? null
+            : ` · ${localizeExternalMessage(presentation.usage, gt)}`}
         </PopoverTrigger>
         <PopoverPopup side="top" width="md" padding="compact" aria-label={gt("Goal objective")}>
           <p className="whitespace-pre-wrap wrap-anywhere text-sm">{presentation.objective}</p>
@@ -165,7 +168,7 @@ export function runStopNowItem(input: {
       <>
         <span
           ref={tickTextContent(
-            (nowMs) => formatDuration(Math.max(1_000, nowMs - requestedAtMs)),
+            (nowMs) => localizeDuration(formatDuration(Math.max(1_000, nowMs - requestedAtMs)), gt),
             true,
           )}
           className="tabular-nums"
@@ -237,7 +240,7 @@ export function backgroundWorkNowItem(input: {
           {presentation.waiting ? gt("Waiting") : gt("Running")} · {only.label}
         </>
       ) : (
-        presentation.title
+        localizeExternalMessage(presentation.title, gt)
       ),
     description: only ? (
       only.activity
@@ -258,7 +261,7 @@ export function backgroundWorkNowItem(input: {
         {startedAtMs === null ? null : (
           <span
             ref={tickTextContent(
-              (nowMs) => formatDuration(Math.max(1_000, nowMs - startedAtMs)),
+              (nowMs) => localizeDuration(formatDuration(Math.max(1_000, nowMs - startedAtMs)), gt),
               true,
             )}
             className="tabular-nums"

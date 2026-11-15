@@ -11,6 +11,9 @@ import { projectEnvironment } from "~/state/projects";
 
 export function useDirectoryEntries(environmentId: EnvironmentId, cwd: string) {
   const gt = useGT();
+  // `gt` changes identity when translations load; a string keeps the read callbacks, and so the
+  // mount effect below, stable.
+  const unableToLoadFolder = gt("Unable to load folder.");
   const [directories, setDirectories] = useState(new Map<string, readonly ProjectEntry[]>());
   const [errors, setErrors] = useState(new Map<string, string>());
   const [pending, setPending] = useState(1);
@@ -96,7 +99,7 @@ export function useDirectoryEntries(environmentId: EnvironmentId, cwd: string) {
           setErrors((previous) =>
             new Map(previous).set(
               directoryPath,
-              cause instanceof Error ? cause.message : gt("Unable to load folder."),
+              cause instanceof Error ? cause.message : unableToLoadFolder,
             ),
           );
         }

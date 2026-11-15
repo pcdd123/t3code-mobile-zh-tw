@@ -19,6 +19,7 @@ import { SymbolView, type AppSymbolName } from "../../components/ui/AppSymbol";
 import { useAndroidControlSizing } from "../../components/ui/useAndroidControlSizing";
 import { cn } from "../../lib/cn";
 import { localizeVoiceStatusLabel, type VoiceComposerPresentation } from "./voiceInputPresentation";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { VOICE_WAVEFORM_SAMPLE_COUNT } from "./voiceInputMetering";
 
 const DICTATION_TIMING = {
@@ -329,7 +330,7 @@ export function ComposerDictationError(props: {
   return (
     <View className="min-w-0 flex-row items-center gap-2 px-4 py-3">
       <Text accessibilityRole="alert" className="min-w-0 flex-1 text-sm text-danger-foreground">
-        {props.error}
+        {localizeExternalMessage(props.error, gt)}
       </Text>
       <Pressable
         accessibilityLabel={gt("Dismiss voice input error")}

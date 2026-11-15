@@ -28,6 +28,7 @@ import {
 import { readCachedCloudLinkState, useCloudLinkState } from "./cloudLinkState";
 import { resolveRelayClerkTokenOptions } from "./publicConfig";
 import { isManagedTunnelActive } from "./t3ConnectState";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 
 export interface CloudLinkDesiredState {
   readonly managedTunnel: boolean;
@@ -83,7 +84,7 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
       stackedThreadToast({
         type: "error",
         title: gt("Could not update T3 Connect"),
-        description: reason ?? relayFailureReason(cause) ?? message,
+        description: localizeExternalMessage(reason ?? relayFailureReason(cause) ?? message, gt),
         ...(traceId
           ? {
               actionProps: {

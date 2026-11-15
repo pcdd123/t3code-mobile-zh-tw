@@ -8,6 +8,7 @@ import {
   orchestrationProtocolCompatibilityError,
 } from "@t3tools/client-runtime/connection";
 import { relayOfflineReasonMessage } from "@t3tools/client-runtime/relay";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import {
   isAtomCommandInterrupted,
   settlePromise,
@@ -342,10 +343,12 @@ export function CloudEnvironmentConnectRows({
         : null;
     const relayStatus = status === undefined ? null : Option.getOrNull(status);
     const descriptor = relayStatus?.descriptor;
-    const offlineReason =
+    const offlineReasonMessage =
       availability === "offline" && relayStatus !== null
         ? relayOfflineReasonMessage(relayStatus)
         : null;
+    const offlineReason =
+      offlineReasonMessage === null ? null : localizeExternalMessage(offlineReasonMessage, gt);
     const machineKind = resolveEnvironmentMachineKind(
       savedEnvironment?.serverConfig ??
         (descriptor === undefined ? null : { environment: descriptor }),

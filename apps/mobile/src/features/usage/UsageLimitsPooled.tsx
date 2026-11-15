@@ -1,4 +1,5 @@
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useAtomValue } from "@effect/atom-react";
 import { useNavigation, type StaticScreenProps } from "@react-navigation/native";
 import { EnvironmentId } from "@t3tools/contracts";
@@ -221,9 +222,12 @@ function PoolWindowCard({
       {nextRefill ? (
         <Text className="text-xs tabular-nums text-foreground-muted">
           ↻ +{nextRefill.restoresPercent}%{" "}
-          {formatResetsIn(nextRefill.member.window, now)
-            ?.replace("resets in ", "in ")
-            .replace("resets now", "now")}
+          {localizeExternalMessage(
+            formatResetsIn(nextRefill.member.window, now)
+              ?.replace("resets in ", "in ")
+              .replace("resets now", "now") ?? "",
+            gt,
+          )}
         </Text>
       ) : null}
     </>
@@ -309,7 +313,7 @@ function PoolWindowCard({
                           tintColorClassName="accent-foreground-muted"
                         />
                         <Text className="text-xs tabular-nums text-foreground-muted">
-                          {resetsIn}
+                          {localizeExternalMessage(resetsIn, gt)}
                         </Text>
                       </>
                     ) : null}
@@ -359,7 +363,7 @@ function PoolWindowCard({
                 account: accountName(account, gt),
                 percent: remainingPercent(window),
               }),
-              resetsIn,
+              resetsIn ? localizeExternalMessage(resetsIn, gt) : null,
               credits ? gt("{credits} reset credits banked", { credits }) : null,
             ]
               .filter(Boolean)
@@ -396,7 +400,7 @@ function PoolWindowCard({
                     tintColorClassName="accent-foreground-muted"
                   />
                   <Text className="text-xs tabular-nums text-foreground-muted">
-                    {resetsIn.replace("resets in ", "")}
+                    {localizeExternalMessage(resetsIn.replace("resets in ", ""), gt)}
                   </Text>
                 </>
               ) : null}

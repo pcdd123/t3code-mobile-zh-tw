@@ -6,6 +6,7 @@ import {
 } from "@t3tools/contracts";
 import { View } from "react-native";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { cn } from "../../lib/cn";
@@ -29,7 +30,7 @@ export function ProjectCloneBanner(props: {
             {gt("Cloning {name}", { name })}
           </Text>
           <Text className="text-xs text-foreground-muted" numberOfLines={1}>
-            {projectCloneProgressSummary(clone)}
+            {localizeExternalMessage(projectCloneProgressSummary(clone), gt)}
           </Text>
         </View>
         <BannerAction label={gt("Cancel")} onPress={props.onCancel} />

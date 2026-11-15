@@ -183,6 +183,8 @@ export function BranchToolbarBranchSelector({
     readThreadShell(threadRef) ??
     serverThread ?? { runtime: null, worktreePath: activeWorktreePath };
 
+  // A string, not `gt`, whose identity changes alone would re-run the default-branch effect below.
+  const worktreeSwitchBlockedTitle = gt("Stop the current turn to switch worktrees.");
   const setThreadBranch = (
     branch: string | null,
     worktreePath: string | null,
@@ -207,7 +209,7 @@ export function BranchToolbarBranchSelector({
       toastManager.add(
         stackedThreadToast({
           type: "warning",
-          title: gt("Stop the current turn to switch worktrees."),
+          title: worktreeSwitchBlockedTitle,
         }),
       );
       return false;

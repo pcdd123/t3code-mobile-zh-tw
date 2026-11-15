@@ -4,7 +4,7 @@ import {
   type EnvironmentId,
   type ResolvedKeybindingsConfig,
 } from "@t3tools/contracts";
-import { useEffect } from "react";
+import { useEffect, useEffectEvent } from "react";
 
 import { usePreferredEditor } from "../../editorPreferences";
 import { editorLabelForPlatform } from "../../editorLabels";
@@ -62,6 +62,9 @@ export function useOpenFavoriteEditorShortcut({
   const [preferredEditor] = usePreferredEditor(
     remote.mode === "local-exec" ? availableEditors : remoteCapableEditors,
   );
+  const announceOpened = useEffectEvent((editor: string) =>
+    announce(gt("Opened in {editor}", { editor })),
+  );
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- subscribes a window keydown listener for the open-in-editor shortcut while enabled
   useEffect(() => {
@@ -85,7 +88,7 @@ export function useOpenFavoriteEditorShortcut({
         });
         if (url === undefined) return;
         void openRemoteEditorUrl(url).then((opened) => {
-          if (opened) announce(gt("Opened in {editor}", { editor: label }));
+          if (opened) announceOpened(label);
         });
         return;
       }
@@ -96,7 +99,7 @@ export function useOpenFavoriteEditorShortcut({
           editor: preferredEditor,
         },
       }).then((result) => {
-        if (result._tag === "Success") announce(gt("Opened in {editor}", { editor: label }));
+        if (result._tag === "Success") announceOpened(label);
       });
     };
     window.addEventListener("keydown", handler);
@@ -104,7 +107,6 @@ export function useOpenFavoriteEditorShortcut({
   }, [
     enabled,
     environmentId,
-    gt,
     keybindings,
     openInCwd,
     openInEditorMutation,

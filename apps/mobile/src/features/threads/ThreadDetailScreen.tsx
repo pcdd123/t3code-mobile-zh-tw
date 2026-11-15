@@ -1,6 +1,10 @@
 import { ChildThreadApprovals } from "./ChildThreadApprovals";
 import "../../i18n/intl-polyfills";
 import { useGT, useLocale } from "gt-react-native";
+import {
+  localizeBackgroundWorkItemLabel,
+  localizeExternalMessage,
+} from "../../i18n/externalMessages";
 import { useOpenThreadInspector } from "./thread-inspector-navigation";
 import { useSidebarWorkspaceTabs } from "../layout/workspace/useSystemWorkspaceTabBar";
 import { useWorkspaceTabs } from "../layout/workspace/WorkspaceTabsContext";
@@ -836,7 +840,7 @@ function ThreadDetailBody(
     if (childInput && contentPresentationKind === "ready") {
       return {
         kind: "child-input",
-        label: childThreadInputsTitle(childThreadInputs),
+        label: localizeExternalMessage(childThreadInputsTitle(childThreadInputs), gt),
         accessibilityLabel: childInput.hasPendingApprovals
           ? gt("Open approval from {title}", { title: childInput.title })
           : gt("Open question from {title}", { title: childInput.title }),
@@ -859,9 +863,9 @@ function ThreadDetailBody(
     if (pendingBackgroundWork !== null && contentPresentationKind === "ready") {
       return {
         kind: "background",
-        label: pendingBackgroundWork.title,
-        accessibilityLabel: `${pendingBackgroundWork.title}: ${pendingBackgroundWork.items
-          .map((item) => item.label)
+        label: localizeExternalMessage(pendingBackgroundWork.title, gt),
+        accessibilityLabel: `${localizeExternalMessage(pendingBackgroundWork.title, gt)}: ${pendingBackgroundWork.items
+          .map((item) => localizeBackgroundWorkItemLabel(item, gt))
           .join(", ")}`,
         waiting: pendingBackgroundWork.waiting,
         onPress: () => {
@@ -917,8 +921,8 @@ function ThreadDetailBody(
       const goal = presentProviderGoal(props.selectedThread.goal, false);
       return {
         kind: "goal",
-        label: goal.title,
-        accessibilityLabel: `${goal.title}: ${goal.objective}`,
+        label: localizeExternalMessage(goal.title, gt),
+        accessibilityLabel: `${localizeExternalMessage(goal.title, gt)}: ${goal.objective}`,
       };
     }
     if (extensionStatus !== null && contentPresentationKind === "ready") {

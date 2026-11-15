@@ -40,6 +40,7 @@ import {
 } from "@t3tools/client-runtime/scheduled-task-webhook";
 import { scheduleTimeZoneLabel } from "@t3tools/client-runtime/scheduled-task-time-zone";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useRef, useState, type ReactNode } from "react";
 import { useFocusEffect, useNavigation, usePreventRemove } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -842,7 +843,7 @@ function TaskForm({
     }
     const parsedFilters = parseWebhookFilterDrafts(draft.schedule.filters);
     if (draft.schedule.mode === "webhook" && "error" in parsedFilters) {
-      Dialog.alert(gt("Invalid filter"), parsedFilters.error);
+      Dialog.alert(gt("Invalid filter"), localizeExternalMessage(parsedFilters.error, gt));
       return;
     }
     if (draft.schedule.mode === "webhook" && schedule === null) {
@@ -1520,7 +1521,9 @@ function WebhookScheduleDetails({
             </Text>
           </Pressable>
           {resolved.note !== null ? (
-            <Text className="text-sm text-foreground-muted">{resolved.note}</Text>
+            <Text className="text-sm text-foreground-muted">
+              {localizeExternalMessage(resolved.note, gt)}
+            </Text>
           ) : null}
           <Button
             label={rotating ? gt("Rotating…") : gt("Rotate URL")}

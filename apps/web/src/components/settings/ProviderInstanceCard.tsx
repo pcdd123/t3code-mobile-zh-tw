@@ -39,6 +39,7 @@ import {
   toCustomModelSetting,
 } from "@t3tools/shared/model";
 import { cn } from "../../lib/utils";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { useCopyToClipboard } from "../../hooks/useCopyToClipboard";
 import { useStableCallback } from "../../hooks/useStableCallback";
 import { normalizeProviderAccentColor } from "../../providerInstances";
@@ -799,7 +800,7 @@ export function ProviderInstanceCard({
   const isAuthenticated = enabled && liveProvider?.auth.status === "authenticated";
   const authLabel =
     enabled && liveProvider?.auth.status === "authenticated"
-      ? (liveProvider.auth.label ?? liveProvider.auth.type ?? null)
+      ? (localizeExternalMessage(liveProvider.auth.label, gt) ?? liveProvider.auth.type ?? null)
       : null;
   const versionLabel = getProviderVersionLabel(liveProvider?.version);
   const versionAdvisory = getProviderVersionAdvisoryPresentation(
@@ -812,15 +813,17 @@ export function ProviderInstanceCard({
   const updateState = liveProvider?.updateState;
   const updateProgress = isUpdating
     ? ((updateState?.status === "queued" || updateState?.status === "running"
-        ? updateState.message
+        ? localizeExternalMessage(updateState.message, gt)
         : null) ?? gt("Starting update"))
     : null;
   const updateProblem =
     !isUpdating && (updateState?.status === "failed" || updateState?.status === "unchanged")
-      ? updateState.message
+      ? localizeExternalMessage(updateState.message, gt)
       : null;
   const restartNotice =
-    enabled && !isUpdating && liveProvider ? getProviderRestartNotice(liveProvider) : null;
+    enabled && !isUpdating && liveProvider
+      ? localizeExternalMessage(getProviderRestartNotice(liveProvider), gt)
+      : null;
   const hasCompatibilityWarning =
     compatibility !== undefined &&
     compatibility.status !== "supported" &&

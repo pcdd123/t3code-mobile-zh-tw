@@ -1614,6 +1614,9 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
         : () => void router.navigate({ to: "/" });
   };
 
+  // Strings, not `gt`, whose identity changes alone would re-run the registration effect below.
+  const settleFailedTitle = gt("Failed to settle thread");
+  const settleFailedFallback = gt("An error occurred.");
   const attemptSettle = (
     threadRef: ScopedThreadRef,
     opts: { coSettlingKeys?: ReadonlySet<string> } = {},
@@ -1631,8 +1634,8 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
           toastManager.add(
             stackedThreadToast({
               type: "error",
-              title: gt("Failed to settle thread"),
-              description: error instanceof Error ? error.message : gt("An error occurred."),
+              title: settleFailedTitle,
+              description: error instanceof Error ? error.message : settleFailedFallback,
             }),
           );
         }

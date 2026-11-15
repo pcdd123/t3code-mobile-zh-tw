@@ -1,6 +1,7 @@
 import * as Dialog from "../../components/ui/Dialog";
 import "../../i18n/intl-polyfills";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { useNavigation, type StaticScreenProps } from "@react-navigation/native";
 import {
@@ -255,12 +256,15 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
             ) : !allowed ? (
               <Text className="px-2 text-sm text-foreground-muted">
                 {AsyncResult.isFailure(sessionResult) || session === null || !session.authenticated
-                  ? sessionPermissionsUnavailableMessage({
-                      connected,
-                      failed: AsyncResult.isFailure(sessionResult),
-                      rejected:
-                        !AsyncResult.isFailure(sessionResult) && session?.authenticated === false,
-                    })
+                  ? localizeExternalMessage(
+                      sessionPermissionsUnavailableMessage({
+                        connected,
+                        failed: AsyncResult.isFailure(sessionResult),
+                        rejected:
+                          !AsyncResult.isFailure(sessionResult) && session?.authenticated === false,
+                      }),
+                      gt,
+                    )
                   : gt("This connection does not have permission to manage the environment.")}
               </Text>
             ) : null}
@@ -409,18 +413,22 @@ function EnvironmentDetail({ environmentId }: { readonly environmentId: Environm
                                   : "text-sm text-foreground-muted"
                               }
                             >
-                              {provider.updateState.message ??
-                                providerUpdateStatusLabel(provider.updateState.status, gt)}
+                              {provider.updateState.message
+                                ? localizeExternalMessage(provider.updateState.message, gt)
+                                : providerUpdateStatusLabel(provider.updateState.status, gt)}
                             </Text>
                           ) : null}
                           {provider.compatibilityAdvisory?.message ? (
                             <Text selectable className="text-sm text-foreground-muted">
-                              {provider.compatibilityAdvisory.message}
+                              {localizeExternalMessage(provider.compatibilityAdvisory.message, gt)}
                             </Text>
                           ) : null}
                           {provider.unavailableReason || provider.message ? (
                             <Text selectable className="text-sm text-foreground-muted">
-                              {provider.unavailableReason ?? provider.message}
+                              {localizeExternalMessage(
+                                provider.unavailableReason ?? provider.message ?? "",
+                                gt,
+                              )}
                             </Text>
                           ) : null}
                           {provider.versionAdvisory?.status === "behind_latest" &&

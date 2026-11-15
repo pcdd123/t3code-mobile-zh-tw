@@ -1,4 +1,5 @@
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { Button } from "../../components/ui/Button";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { ConnectionTraceId } from "./ConnectionTraceId";
@@ -157,7 +158,9 @@ function CloudEnvironmentRowsContent(
           <Text className="text-base font-t3-bold text-foreground">
             {gt("Could not load T3 Connect environments")}
           </Text>
-          <Text className="text-sm text-foreground-muted">{controller.relayDiscovery.error}</Text>
+          <Text className="text-sm text-foreground-muted">
+            {localizeExternalMessage(controller.relayDiscovery.error, gt)}
+          </Text>
           {controller.relayDiscovery.errorTraceId ? (
             <CopyTraceIdButton traceId={controller.relayDiscovery.errorTraceId} />
           ) : null}
@@ -288,21 +291,6 @@ function CloudEnvironmentRowShell(props: {
   const isRetrying =
     props.connectionState === "connecting" || props.connectionState === "reconnecting";
   const shouldPulse = isRetrying;
-  const statusLabels: Record<string, string> = {
-    Off: gt("Off"),
-    Available: gt("Available"),
-    Offline: gt("Offline"),
-    "Connecting...": gt("Connecting..."),
-    "Reconnecting...": gt("Reconnecting..."),
-    Connected: gt("Connected"),
-    "Client not supported": gt("Client not supported"),
-    "Connection failed": gt("Connection failed"),
-    "Waiting for approval on the host": gt("Waiting for approval on the host"),
-    "Available · Relay online": gt("Available · Relay online"),
-    "Available · Checking relay status...": gt("Available · Checking relay status..."),
-    "Available · Relay status unknown": gt("Available · Relay status unknown"),
-    "Relay is offline.": gt("Relay is offline."),
-  };
   const rawStatusText =
     props.statusText ??
     environmentStatusText({
@@ -311,7 +299,7 @@ function CloudEnvironmentRowShell(props: {
       traceId: props.connectionErrorTraceId,
       ...(props.awaitingApproval ? { awaitingApproval: true as const } : {}),
     });
-  const statusText = statusLabels[rawStatusText] ?? rawStatusText;
+  const statusText = localizeExternalMessage(rawStatusText, gt);
   const statusClassName =
     props.connectionError && props.connectionState !== "unsupported" && !props.awaitingApproval
       ? "text-danger-foreground"

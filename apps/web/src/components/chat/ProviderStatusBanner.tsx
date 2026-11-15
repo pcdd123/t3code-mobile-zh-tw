@@ -8,6 +8,7 @@ import { memo, useRef, useState, useSyncExternalStore } from "react";
 import { InfoIcon, XIcon } from "lucide-react";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "../ui/alert";
 import { Button, InlineButton } from "../ui/button";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { formatProviderDriverKindLabel } from "../../providerModels";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { serverEnvironment } from "../../state/server";
@@ -108,9 +109,9 @@ export function getProviderStatusMessage(
     status.compatibilityAdvisory?.status === "broken" &&
     status.compatibilityAdvisory.message
   ) {
-    return status.compatibilityAdvisory.message;
+    return localizeExternalMessage(status.compatibilityAdvisory.message, gt);
   }
-  if (status.message) return status.message;
+  if (status.message) return localizeExternalMessage(status.message, gt);
   const providerName = status.displayName?.trim() || formatProviderDriverKindLabel(status.driver);
   if (!status.installed && hasProviderSetup(status)) {
     return gt("Open provider setup to install {provider} on this environment.", {
@@ -183,7 +184,8 @@ export const ProviderStatusBanner = memo(function ProviderStatusBanner({
             version: status.version ?? "",
           })
       : gt("{provider} provider status", { provider: providerName });
-  const message = incompatible?.message ?? getProviderStatusMessage(gt, status);
+  const message =
+    localizeExternalMessage(incompatible?.message, gt) ?? getProviderStatusMessage(gt, status);
   const isWarning =
     incompatible?.status !== "broken" && (status.status === "warning" || incompatible !== null);
 

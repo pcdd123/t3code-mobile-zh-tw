@@ -11,6 +11,7 @@ import { resolveWorkGroupScrollAnchor } from "@t3tools/client-runtime/work-log/s
 import { useAssetUrls } from "~/assets/assetUrls";
 import { observeResize } from "~/lib/observeResize";
 import { tickTextContent } from "~/lib/tickTextContent";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { observeVisibleAnimation } from "../../lib/visibleAnimation";
 import { memo, use, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { LegendList, type LegendListRef } from "@legendapp/list/react";
@@ -448,7 +449,9 @@ export function ThinkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind:
   const activity = (
     <LiveActivityRow
       label={
-        providerStartingLabel ??
+        (providerStartingLabel === null
+          ? undefined
+          : localizeExternalMessage(providerStartingLabel, gt)) ??
         (row.label === undefined ? undefined : localizeTimelineLabel(gt, row.label)) ??
         liveAnswerPreview ??
         gt("Thinking")
@@ -586,7 +589,7 @@ export function LiveWorkEntryTimelineRow({
   const ctx = use(TimelineRowCtx);
   const threadTarget = useThreadReadTarget(row.entry, ctx.activeThreadEnvironmentId);
   const rawLabel = liveWorkEntryLabel(row.entry, ctx.workspaceRoot, row.active);
-  const threadLabel = threadReadLabel(rawLabel, threadTarget);
+  const threadLabel = threadReadLabel(gt, rawLabel, threadTarget);
   const label = localizeLiveWorkEntryLabel(gt, rawLabel);
 
   const item = row.entry.projectedItem?.item;
@@ -684,10 +687,11 @@ export function WorkGroupToggleTimelineRow({
 }: {
   row: Extract<TimelineRow, { kind: "work-toggle" }>;
 }) {
+  const gt = useGT();
   const ctx = use(TimelineRowCtx);
   return (
     <WorkGroupHeader
-      label={row.summary}
+      label={localizeTimelineLabel(gt, row.summary)}
       iconName={row.toolSurface ?? toolGroupSummaryIconName(row.summaryKind)}
       toolIcon={row.toolIcon}
       failed={row.hasFailure}

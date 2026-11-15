@@ -1,4 +1,5 @@
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { Button } from "../../components/ui/Button";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import * as Dialog from "../../components/ui/Dialog";
@@ -150,7 +151,7 @@ export function PreviewStreamWebView(
               error ? "text-center text-sm text-foreground-muted" : "text-sm text-foreground-muted"
             }
           >
-            {error || gt("Connecting to browser...")}
+            {error ? localizeExternalMessage(error, gt) : gt("Connecting to browser...")}
           </AppText>
           {error && (
             <View className="items-center">
@@ -331,7 +332,7 @@ function PreviewStreamDocumentView({
       {!compact ? (
         <View className="flex-row items-center justify-between gap-2 border-b border-secondary-border px-3 py-2">
           <AppText className="text-xs text-foreground-muted">
-            {previewStreamControlLabel(control)}
+            {localizeExternalMessage(previewStreamControlLabel(control), gt)}
           </AppText>
           {control?.canOperate ? (
             <Button
@@ -502,7 +503,9 @@ function PreviewStreamDocumentView({
               accessibilityLiveRegion="polite"
               className="text-center text-sm text-foreground-muted"
             >
-              {status === "error" ? error : gt("Connecting to browser...")}
+              {status === "error"
+                ? error && localizeExternalMessage(error, gt)
+                : gt("Connecting to browser...")}
             </AppText>
           )}
           {status === "error" && hostSetup && !compact ? (

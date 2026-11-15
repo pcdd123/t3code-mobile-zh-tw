@@ -54,6 +54,7 @@ function NativeFilePreview(props: FilePreviewViewerProps) {
         gt("The file could not be loaded. Please try again."),
       );
   });
+  const readFallbackName = useEffectEvent(() => gt("Preview"));
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- presents the native file preview and dismisses it on cleanup
   useEffect(() => {
@@ -65,7 +66,7 @@ function NativeFilePreview(props: FilePreviewViewerProps) {
       delivered.current = images.map((image) => image.uri);
       presentation = NativeControls.presentFiles(
         images.map((image) => image.uri ?? null),
-        images.map((image) => image.name ?? gt("Preview")),
+        images.map((image) => image.name ?? readFallbackName()),
         selectedIndex,
         images.map((image) => image.sourceIdentifier ?? ""),
         identifier,
@@ -74,7 +75,7 @@ function NativeFilePreview(props: FilePreviewViewerProps) {
       const { uri, name, sourceIdentifier } = presented;
       presentation = NativeControls.presentFile(
         uri,
-        name ?? gt("Preview"),
+        name ?? readFallbackName(),
         sourceIdentifier ?? "",
         identifier,
       );
@@ -91,7 +92,7 @@ function NativeFilePreview(props: FilePreviewViewerProps) {
       canceled = true;
       void NativeControls.dismissFile(identifier).catch(() => undefined);
     };
-  }, [presented, identifier, gt]);
+  }, [presented, identifier]);
 
   const images = props.source.kind === "image" ? props.source.images : undefined;
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- hands image URLs that resolve after opening to the native viewer

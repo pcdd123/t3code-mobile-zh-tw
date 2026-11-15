@@ -20,8 +20,27 @@ import { cn } from "../../lib/cn";
 import { copyTextWithHaptic } from "../../lib/copyTextWithHaptic";
 import "../../i18n/intl-polyfills";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage, type Translate } from "../../i18n/externalMessages";
 
 const HOP_MARK = { ok: "✓", failed: "✕", unchecked: "–" } as const;
+
+/** The package labels a hop "This device", "T3 Connect", "<host> tunnel" or "T3 Code on <host>". */
+function hopLabel(hop: ConnectionDiagnosis["hops"][number], gt: Translate) {
+  switch (hop.hop) {
+    case "device":
+      return gt("This device");
+    case "relay":
+      return hop.label;
+    case "tunnel":
+      return hop.label.endsWith(" tunnel")
+        ? gt("{host} tunnel", { host: hop.label.slice(0, -" tunnel".length) })
+        : hop.label;
+    case "server":
+      return hop.label.startsWith("T3 Code on ")
+        ? gt("T3 Code on {host}", { host: hop.label.slice("T3 Code on ".length) })
+        : hop.label;
+  }
+}
 
 /** Same model as the web Settings row; null while connected, off, or not failed. */
 export function useConnectionDiagnosis(
@@ -65,7 +84,7 @@ export function ConnectionDiagnosisDetails(props: {
               hop.result === "failed" ? "text-danger-foreground" : "text-foreground-muted",
             )}
           >
-            {`${HOP_MARK[hop.result]}  ${hop.label}${
+            {`${HOP_MARK[hop.result]}  ${hopLabel(hop, gt)}${
               hop.result === "failed"
                 ? ` · ${gt("Failed")}`
                 : hop.result === "unchecked"
@@ -79,12 +98,14 @@ export function ConnectionDiagnosisDetails(props: {
         <Text className="text-sm font-t3-bold text-foreground">{gt("What to try")}</Text>
         {diagnosis.steps.map((step, index) => (
           <Text key={step} className="text-sm text-foreground-muted">
-            {`${index + 1}. ${step}`}
+            {`${index + 1}. ${localizeExternalMessage(step, gt)}`}
           </Text>
         ))}
       </View>
       <Text selectable className="font-mono text-xs text-foreground-muted">
-        {diagnosis.facts.map(([label, value]) => `${label}: ${value}`).join("\n")}
+        {diagnosis.facts
+          .map(([label, value]) => `${localizeExternalMessage(label, gt)}: ${value}`)
+          .join("\n")}
       </Text>
       <Button
         label={gt("Copy diagnostics")}

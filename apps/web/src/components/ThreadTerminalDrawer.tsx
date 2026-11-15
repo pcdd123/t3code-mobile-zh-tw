@@ -33,6 +33,7 @@ import {
   type ThreadId,
 } from "@t3tools/contracts";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import * as Schema from "effect/Schema";
 import { AsyncResult } from "effect/reactivity";
 import {
@@ -595,6 +596,15 @@ function TerminalSessionViewport({
   });
   const canAddSelectionToChat = useEffectEvent(() => onAddTerminalContext !== undefined);
   const readTerminalLabel = useEffectEvent(() => terminalLabel);
+  const readContextMenuItems = useEffectEvent(
+    (options: Parameters<typeof terminalContextMenuItems>[1]) =>
+      terminalContextMenuItems(gt, options),
+  );
+  const readLinkErrorMessages = useEffectEvent(() => ({
+    unableToOpenLink: gt("Unable to open link"),
+    errorOccurred: gt("An error occurred."),
+    unableToOpenPath: gt("Unable to open path"),
+  }));
   const terminalFontFamily = useClientSettings((settings) =>
     resolveTerminalFontPreference({
       advanced: advancedTypography,
@@ -890,7 +900,7 @@ function TerminalSessionViewport({
         let clicked: TerminalContextMenuAction | null;
         try {
           clicked = await localApi.contextMenu.show(
-            terminalContextMenuItems(gt, {
+            readContextMenuItems({
               hasSelection: selectionAction !== null,
               canAddToChat: canAddSelectionToChat(),
               readOnly: !hasTerminalWriteAccess(),
@@ -1005,7 +1015,7 @@ function TerminalSessionViewport({
             void localApi.shell.openExternal(text).catch((error: unknown) => {
               writeSystemMessage(
                 latestTerminal,
-                error instanceof Error ? error.message : gt("Unable to open link"),
+                error instanceof Error ? error.message : readLinkErrorMessages().unableToOpenLink,
               );
             });
           };
@@ -1015,11 +1025,12 @@ function TerminalSessionViewport({
           }
           void openLinkInPreview(text, event.metaKey || event.ctrlKey, fallbackToBrowser).catch(
             (error: unknown) => {
+              const messages = readLinkErrorMessages();
               toastManager.add(
                 stackedThreadToast({
                   type: "error",
-                  title: gt("Unable to open link"),
-                  description: error instanceof Error ? error.message : gt("An error occurred."),
+                  title: messages.unableToOpenLink,
+                  description: error instanceof Error ? error.message : messages.errorOccurred,
                 }),
               );
             },
@@ -1035,7 +1046,7 @@ function TerminalSessionViewport({
           const error = squashAtomCommandFailure(result);
           writeSystemMessage(
             latestTerminal,
-            error instanceof Error ? error.message : gt("Unable to open path"),
+            error instanceof Error ? error.message : readLinkErrorMessages().unableToOpenPath,
           );
         })();
       }
@@ -1104,7 +1115,7 @@ function TerminalSessionViewport({
         mount.focus({ preventScroll: true });
       }
     };
-  }, [cwd, environmentId, gt, terminalId]);
+  }, [cwd, environmentId, terminalId]);
 
   const attachContainer = (mount: HTMLDivElement) => {
     containerRef.current = mount;
@@ -1550,7 +1561,13 @@ export default function ThreadTerminalDrawer({
   const terminalLabelById = (() => {
     const next = new Map<string, string>();
     for (const terminalId of normalizedTerminalIds) {
-      next.set(terminalId, terminalLabelsById?.get(terminalId) ?? getTerminalLabel(terminalId));
+      next.set(
+        terminalId,
+        localizeExternalMessage(
+          terminalLabelsById?.get(terminalId) ?? getTerminalLabel(terminalId),
+          gt,
+        ),
+      );
     }
     return next;
   })();

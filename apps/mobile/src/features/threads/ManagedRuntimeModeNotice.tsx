@@ -6,6 +6,7 @@ import {
 } from "@t3tools/contracts";
 import { View } from "react-native";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 
 import { AppText } from "../../components/ui/AppText";
 import { Button } from "../../components/ui/Button";
@@ -43,7 +44,9 @@ export function ManagedRuntimeModeNotice(props: {
   return (
     <View className="gap-2 px-4 pb-3">
       <AppText textRole="footnote" className="text-foreground-muted">
-        {gt("{reason} Switch this thread's mode to continue.", { reason: denial })}
+        {gt("{reason} Switch this thread's mode to continue.", {
+          reason: localizeExternalMessage(denial, gt),
+        })}
       </AppText>
       {target === undefined || targetLabel === undefined ? null : (
         <Button

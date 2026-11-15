@@ -13,7 +13,7 @@ import {
   type ProjectCloneSnapshot,
   type ProjectId,
 } from "@t3tools/contracts";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 
 import { useNewThreadHandler } from "../hooks/useHandleNewThread";
 import { useRemoveClonedProject } from "../hooks/useRemoveClonedProject";
@@ -52,7 +52,7 @@ function renderKey(clone: ProjectCloneSnapshot): string {
 async function runCloneAction(
   title: string,
   action: () => Promise<AtomCommandResult<unknown, unknown>>,
-  gt: ReturnType<typeof useGT>,
+  fallbackDescription: string,
 ) {
   const result = await action();
   if (result._tag === "Failure" && !isAtomCommandInterrupted(result)) {
@@ -61,7 +61,7 @@ async function runCloneAction(
       stackedThreadToast({
         type: "error",
         title,
-        description: error instanceof Error ? error.message : gt("An error occurred."),
+        description: error instanceof Error ? error.message : fallbackDescription,
       }),
     );
   }
@@ -91,6 +91,21 @@ function EnvironmentCloneToasts({ environmentId }: { environmentId: EnvironmentI
     void handleNewThread(scopeProjectRef(environmentId, projectId));
   };
 
+  const readToastText = useEffectEvent((repository: string) => ({
+    cloning: gt("Cloning {repository}", { repository }),
+    cancel: gt("Cancel"),
+    failedToCancel: gt("Failed to cancel clone"),
+    cloned: gt("Cloned {repository}", { repository }),
+    openProject: gt("Open project"),
+    cancelled: gt("Cancelled cloning {repository}", { repository }),
+    failed: gt("Failed to clone {repository}", { repository }),
+    cloneFailed: gt("The clone failed."),
+    retry: gt("Retry"),
+    failedToRetry: gt("Failed to retry clone"),
+    removeProject: gt("Remove project"),
+    errorOccurred: gt("An error occurred."),
+  }));
+
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens, updates and closes imperative toastManager toasts to match the current project clones
   useEffect(() => {
     const seen = new Set<ProjectId>();
@@ -112,6 +127,7 @@ function EnvironmentCloneToasts({ environmentId }: { environmentId: EnvironmentI
         continue;
       }
       if (tracked?.renderedKey === key) continue;
+      const text = readToastText(name);
       if (
         isProjectCloneToastSilenced(ref) &&
         (clone.phase === "running" || clone.phase === "done")
@@ -123,16 +139,16 @@ function EnvironmentCloneToasts({ environmentId }: { environmentId: EnvironmentI
       if (clone.phase === "running") {
         const options = stackedThreadToast({
           type: "loading",
-          title: gt("Cloning {repository}", { repository: name }),
+          title: text.cloning,
           description: projectCloneProgressSummary(clone),
           timeout: 0,
           actionProps: {
-            children: gt("Cancel"),
+            children: text.cancel,
             onClick: () => {
               void runCloneAction(
-                gt("Failed to cancel clone"),
+                text.failedToCancel,
                 () => cancelClone({ environmentId, input: { projectId: clone.projectId } }),
-                gt,
+                text.errorOccurred,
               );
             },
           },
@@ -151,11 +167,11 @@ function EnvironmentCloneToasts({ environmentId }: { environmentId: EnvironmentI
       if (clone.phase === "done") {
         const options = stackedThreadToast({
           type: "success",
-          title: gt("Cloned {repository}", { repository: name }),
+          title: text.cloned,
           description: clone.destinationPath,
           timeout: 8_000,
           actionProps: {
-            children: gt("Open project"),
+            children: text.openProject,
             onClick: () => {
               closeToast();
               openProject(clone.projectId);
@@ -176,25 +192,23 @@ function EnvironmentCloneToasts({ environmentId }: { environmentId: EnvironmentI
       const cancelled = clone.phase === "cancelled";
       const options = stackedThreadToast({
         type: cancelled ? "info" : "error",
-        title: cancelled
-          ? gt("Cancelled cloning {repository}", { repository: name })
-          : gt("Failed to clone {repository}", { repository: name }),
-        description: cancelled ? clone.destinationPath : (clone.error ?? gt("The clone failed.")),
+        title: cancelled ? text.cancelled : text.failed,
+        description: cancelled ? clone.destinationPath : (clone.error ?? text.cloneFailed),
         timeout: 0,
         actionProps: {
-          children: gt("Retry"),
+          children: text.retry,
           onClick: () => {
             void runCloneAction(
-              gt("Failed to retry clone"),
+              text.failedToRetry,
               () => retryClone({ environmentId, input: { projectId: clone.projectId } }),
-              gt,
+              text.errorOccurred,
             );
           },
         },
         data: {
           ...(cancelled ? { hideCopyButton: true } : {}),
           secondaryActionProps: {
-            children: gt("Remove project"),
+            children: text.removeProject,
             onClick: () => {
               void removeClonedProject({ environmentId, projectId: clone.projectId });
             },
@@ -219,7 +233,6 @@ function EnvironmentCloneToasts({ environmentId }: { environmentId: EnvironmentI
     cancelClone,
     clones,
     environmentId,
-    gt,
     isViewingProjectDraft,
     openProject,
     removeClonedProject,

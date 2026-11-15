@@ -30,6 +30,7 @@ import {
   ClerkUserProfileRow,
 } from "./ClerkUserProfilePage";
 import { useT3ChatLink } from "./useT3ChatLink";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 
 const linkedAtFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 
@@ -237,7 +238,7 @@ export function T3ConnectUserProfilePage() {
       stackedThreadToast({
         type: "error",
         title: gt("Could not deregister server"),
-        description: relayFailureReason(cause) ?? message,
+        description: localizeExternalMessage(relayFailureReason(cause) ?? message, gt),
         ...(traceId
           ? {
               actionProps: {

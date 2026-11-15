@@ -35,6 +35,7 @@ import { ensureLocalApi } from "../../localApi";
 import { usePrimarySettings } from "../../hooks/useSettings";
 import { cn } from "../../lib/utils";
 import { formatUpcomingTimestamp } from "../../timestampFormat";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { ProviderInstanceIcon } from "../chat/ProviderInstanceIcon";
 import { providerClients } from "../settings/providerDriverMeta";
 import { RedactedSensitiveText } from "../settings/RedactedSensitiveText";
@@ -188,7 +189,9 @@ function SegmentPopover({
         {window.resetsAt ? (
           <Row label={gt("Resets")}>
             {formatUpcomingTimestamp(window.resetsAt, timestampFormat, now)}
-            {resetsIn ? ` · ${resetsIn.replace("resets in ", "in ")}` : ""}
+            {resetsIn
+              ? ` · ${localizeExternalMessage(resetsIn.replace("resets in ", "in "), gt)}`
+              : ""}
           </Row>
         ) : null}
         {timeLeft !== null ? (
@@ -204,7 +207,7 @@ function SegmentPopover({
         <div className="flex flex-col gap-1.5 border-t border-border/60 pt-2.5 text-muted-foreground">
           {choices.map((choice) => (
             <span key={choice.key} className="flex items-center gap-3">
-              <span className="tabular-nums">{choice.summary}</span>
+              <span className="tabular-nums">{localizeExternalMessage(choice.summary, gt)}</span>
               {choice.availableCount > 0 ? (
                 <Button
                   size="xs"
@@ -213,7 +216,7 @@ function SegmentPopover({
                   className="ms-auto"
                   onClick={() => onRedeem(choice)}
                 >
-                  {redeem.busy ? gt("Using…") : choice.actionLabel}
+                  {redeem.busy ? gt("Using…") : localizeExternalMessage(choice.actionLabel, gt)}
                 </Button>
               ) : null}
             </span>
@@ -366,7 +369,7 @@ function SegmentTriggers({
         (account.email ? accountInitials(account.email) : String(account.driver)),
       remaining,
     }),
-    resetsIn,
+    localizeExternalMessage(resetsIn, gt),
     timeLeft === null ? null : gt("{timeLeft}% of the window left", { timeLeft }),
     credits ? resetCreditsBankedLabel(credits, gt) : null,
   ]
@@ -436,7 +439,7 @@ function SegmentTriggers({
           ) : null}
           {resetsIn || credits ? (
             <span className="ms-auto flex min-w-0 items-center gap-1.5 overflow-hidden rounded-sm bg-background/85 px-1.5 py-0.5 text-2xs whitespace-nowrap text-foreground tabular-nums">
-              {resetsIn?.replace("resets in ", "↻ ") ?? ""}
+              {resetsIn ? localizeExternalMessage(resetsIn.replace("resets in ", "↻ "), gt) : ""}
               {credits ? (
                 <>
                   {resetsIn ? (
@@ -502,7 +505,7 @@ function LegendRow({
       <AccountName account={account} className="min-w-0 truncate font-medium text-foreground" />
       <span className="shrink-0 font-semibold text-foreground tabular-nums">{remaining}%</span>
       <span className="ms-auto flex shrink-0 items-center gap-1.5 text-2xs text-muted-foreground tabular-nums">
-        {resetsIn?.replace("resets in ", "↻ ") ?? ""}
+        {resetsIn ? localizeExternalMessage(resetsIn.replace("resets in ", "↻ "), gt) : ""}
         {credits ? (
           <>
             {resetsIn ? <span aria-hidden>·</span> : null}
@@ -589,7 +592,9 @@ function PoolWindowCard({
     <div className="grid items-center gap-x-6 gap-y-3 rounded-lg border border-border/60 p-4 md:grid-cols-[11rem_minmax(0,1fr)]">
       <div className="flex flex-col gap-1">
         {label !== null ? (
-          <span className="text-sm font-medium text-foreground">{label ?? pool.label}</span>
+          <span className="text-sm font-medium text-foreground">
+            {label ?? localizeExternalMessage(pool.label, gt)}
+          </span>
         ) : null}
         <span className="flex items-baseline gap-2">
           <span className="text-3xl font-semibold text-foreground tabular-nums">

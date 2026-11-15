@@ -43,6 +43,7 @@ import { Button } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { UsageLimitsPooled } from "./UsageLimitsPooled";
 import { PROVIDER_PRESENTATION } from "./usageProviders";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 
 const PACE_ICON: Record<LimitPace, typeof GaugeIcon> = {
   ahead: TrendingUpIcon,
@@ -138,15 +139,18 @@ function WindowBar({
   const remaining = remainingPercent(window);
   const timeLeft = paceRemainingPercent(window, now);
   const [barRef, paceMark] = usePaceMark(timeLeft);
-  const resetsIn = formatResetsIn(window, now);
+  const resetsIn = localizeExternalMessage(formatResetsIn(window, now), gt);
   const resetsAt = window.resetsAt
     ? formatUpcomingTimestamp(window.resetsAt, timestampFormat, now)
     : null;
   const summaryBase =
     timeLeft === null
-      ? gt("{label}: {remaining}% left", { label: window.label, remaining })
+      ? gt("{label}: {remaining}% left", {
+          label: localizeExternalMessage(window.label, gt),
+          remaining,
+        })
       : gt("{label}: {remaining}% left, {timeLeft}% of the window left", {
-          label: window.label,
+          label: localizeExternalMessage(window.label, gt),
           remaining,
           timeLeft,
         });
@@ -232,11 +236,13 @@ export function LimitWindows({
     >
       {windows.map((window) => {
         const pace = paceOf(window, now);
-        const resetsIn = formatResetsIn(window, now);
+        const resetsIn = localizeExternalMessage(formatResetsIn(window, now), gt);
         return (
           <Fragment key={window.id}>
             <span className="flex min-w-0 items-center gap-2 text-xs">
-              <span className="truncate text-muted-foreground">{window.label}</span>
+              <span className="truncate text-muted-foreground">
+                {localizeExternalMessage(window.label, gt)}
+              </span>
               <span className="ms-auto shrink-0 font-medium text-foreground tabular-nums">
                 {gt("{remaining}% left", { remaining: remainingPercent(window) })}
               </span>
@@ -327,7 +333,9 @@ export function ResetCreditDialog({
       <AlertDialogPopup>
         <AlertDialogHeader>
           <AlertDialogTitle>{gt("Use a reset credit?")}</AlertDialogTitle>
-          <AlertDialogDescription>{choice?.confirmDescription}</AlertDialogDescription>
+          <AlertDialogDescription>
+            {choice ? localizeExternalMessage(choice.confirmDescription, gt) : null}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose render={<Button variant="outline" />}>{gt("Cancel")}</AlertDialogClose>
@@ -359,7 +367,7 @@ export function ResetCredits({
     <div className="flex flex-col gap-1 text-xs text-muted-foreground">
       {resetCreditChoices(credits, input, now).map((choice) => (
         <div key={choice.key} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="tabular-nums">{choice.summary}</span>
+          <span className="tabular-nums">{localizeExternalMessage(choice.summary, gt)}</span>
           {choice.availableCount > 0 ? (
             <Button
               size="xs"
@@ -367,7 +375,7 @@ export function ResetCredits({
               disabled={busy || !canManageProviders}
               onClick={() => confirm(choice)}
             >
-              {busy ? gt("Using…") : choice.actionLabel}
+              {busy ? gt("Using…") : localizeExternalMessage(choice.actionLabel, gt)}
             </Button>
           ) : null}
         </div>

@@ -1,4 +1,5 @@
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { ChatGptUsageSummary } from "./ChatGptUsageSummary";
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
@@ -323,10 +324,15 @@ function UsageScreen(props: {
                   <>
                     {sourceMessages.map((message) => (
                       <Text key={message} className="text-sm text-foreground-muted">
-                        {message}
+                        {localizeExternalMessage(message, gt)}
                       </Text>
                     ))}
-                    <UsageUpdating dimmed={progress.dimmed} label={progress.label}>
+                    <UsageUpdating
+                      dimmed={progress.dimmed}
+                      label={
+                        progress.label === null ? null : localizeExternalMessage(progress.label, gt)
+                      }
+                    >
                       {wide ? (
                         <View className="flex-row gap-6">
                           <View className="w-72 gap-6">
@@ -853,12 +859,15 @@ function usageEnvironmentStatus(
     environment.summary &&
     !isCompatibleUsageContractVersion(environment.summary.contractVersion, USAGE_CONTRACT_VERSION)
   ) {
-    return formatUsageContractMismatch(environment.label, {
-      direction:
-        environment.summary.contractVersion < USAGE_CONTRACT_VERSION
-          ? "serverBehind"
-          : "clientBehind",
-    });
+    return localizeExternalMessage(
+      formatUsageContractMismatch(environment.label, {
+        direction:
+          environment.summary.contractVersion < USAGE_CONTRACT_VERSION
+            ? "serverBehind"
+            : "clientBehind",
+      }),
+      gt,
+    );
   }
   if (environment.error)
     return environment.summary
@@ -872,6 +881,6 @@ function usageEnvironmentStatus(
   if (progress.phase === "loading") return gt("Loading usage…");
   if (progress.phase === "stale") return gt("Updating usage…");
   if (progress.phase === "partway")
-    return updatingProvidersLabel(progress.providers, providerLabel);
+    return localizeExternalMessage(updatingProvidersLabel(progress.providers, providerLabel), gt);
   return gt("Usage up to date");
 }

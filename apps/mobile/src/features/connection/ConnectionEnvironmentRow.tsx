@@ -26,6 +26,7 @@ import { ConnectionStatusDot } from "./ConnectionStatusDot";
 import { environmentStatusText } from "./environmentStatusText";
 import "../../i18n/intl-polyfills";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 
 function connectionStatusLabel(environment: ConnectedEnvironmentSummary): string | null {
   if (!environment.isEnabled && environment.connectionState !== "unsupported") {
@@ -68,19 +69,7 @@ export function ConnectionEnvironmentRow(props: {
   );
   const enabled = props.environment.isEnabled && !unsupported;
   const rawStatusLabel = connectionStatusLabel(props.environment);
-  const statusLabels: Record<string, string> = {
-    Off: gt("Off"),
-    Available: gt("Available"),
-    Offline: gt("Offline"),
-    "Connecting...": gt("Connecting..."),
-    "Reconnecting...": gt("Reconnecting..."),
-    Connected: gt("Connected"),
-    "Client not supported": gt("Client not supported"),
-    "Connection failed": gt("Connection failed"),
-    "Waiting for approval on the host": gt("Waiting for approval on the host"),
-  };
-  const statusLabel =
-    rawStatusLabel === null ? null : (statusLabels[rawStatusLabel] ?? rawStatusLabel);
+  const statusLabel = rawStatusLabel === null ? null : localizeExternalMessage(rawStatusLabel, gt);
   const statusTraceId = enabled ? props.environment.connectionErrorTraceId : null;
   const hasConnectionFailure = enabled && props.environment.connectionError !== null;
   const freeze = enabled
@@ -146,7 +135,9 @@ export function ConnectionEnvironmentRow(props: {
           ) : null}
           {diagnosis ? (
             <>
-              <Text className="text-xs text-danger-foreground">{diagnosis.headline}</Text>
+              <Text className="text-xs text-danger-foreground">
+                {localizeExternalMessage(diagnosis.headline, gt)}
+              </Text>
               {connectionState.attempt > 0 ? (
                 <Text className="text-xs text-foreground-muted">
                   {gt("Retrying · attempt {attempt}", { attempt: connectionState.attempt })}
@@ -177,7 +168,7 @@ export function ConnectionEnvironmentRow(props: {
               className="text-xs text-warning-foreground"
               numberOfLines={props.expanded ? undefined : 1}
             >
-              {`${freeze.title}. ${freeze.description}`}
+              {`${localizeExternalMessage(freeze.title, gt)}. ${localizeExternalMessage(freeze.description, gt)}`}
             </Text>
           ) : null}
         </Pressable>

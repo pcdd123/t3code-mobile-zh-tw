@@ -15,6 +15,7 @@ import {
   type StaticScreenProps,
 } from "@react-navigation/native";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage, type Translate } from "../../../i18n/externalMessages";
 import { use, useEffect, useState } from "react";
 import { RefreshControl } from "../../../components/ui/RefreshControl";
 import { NativeScrollView } from "../../../native/NativeScrollViewMarker";
@@ -61,60 +62,8 @@ export function GitOverviewSheet(props: GitOverviewSheetProps) {
   return <GitOverviewSheetContent {...props} />;
 }
 
-type Translate = ReturnType<typeof useGT>;
-
-/** Localizes the English disabled reasons `getGitActionDisabledReason` returns. */
-function localizeGitDisabledReason(
-  reason: string | null,
-  changeRequest: { readonly shortLabel: string; readonly shortLabelWithArticle: string },
-  gt: Translate,
-): string | null {
-  if (reason === null) return null;
-  const { shortLabel, shortLabelWithArticle } = changeRequest;
-  switch (reason) {
-    case "Git action in progress.":
-      return gt("Git action in progress.");
-    case "Git status is unavailable.":
-      return gt("Git status is unavailable.");
-    case "Worktree is clean. Make changes before committing.":
-      return gt("Worktree is clean. Make changes before committing.");
-    case "Commit is currently unavailable.":
-      return gt("Commit is currently unavailable.");
-    case "Detached HEAD: checkout a branch before pushing.":
-      return gt("Detached HEAD: checkout a branch before pushing.");
-    case "Commit or stash local changes before pushing.":
-      return gt("Commit or stash local changes before pushing.");
-    case "Branch is behind upstream. Pull/rebase before pushing.":
-      return gt("Branch is behind upstream. Pull/rebase before pushing.");
-    case 'Add an "origin" remote before pushing.':
-      return gt('Add an "origin" remote before pushing.');
-    case "No local commits to push.":
-      return gt("No local commits to push.");
-    case "Push is currently unavailable.":
-      return gt("Push is currently unavailable.");
-  }
-  const values = { changeRequest: shortLabelWithArticle };
-  if (reason === `View ${shortLabel} is currently unavailable.`) {
-    return gt("View {changeRequest} is currently unavailable.", { changeRequest: shortLabel });
-  }
-  if (reason === `Create ${shortLabel} is currently unavailable.`) {
-    return gt("Create {changeRequest} is currently unavailable.", { changeRequest: shortLabel });
-  }
-  if (reason === `Detached HEAD: checkout a branch before creating ${shortLabelWithArticle}.`) {
-    return gt("Detached HEAD: checkout a branch before creating {changeRequest}.", values);
-  }
-  if (reason === `Add an "origin" remote before creating ${shortLabelWithArticle}.`) {
-    return gt('Add an "origin" remote before creating {changeRequest}.', values);
-  }
-  if (reason === `No local commits to include in ${shortLabelWithArticle}.`) {
-    return gt("No local commits to include in {changeRequest}.", values);
-  }
-  if (
-    reason === `Branch is behind upstream. Pull/rebase before creating ${shortLabelWithArticle}.`
-  ) {
-    return gt("Branch is behind upstream. Pull/rebase before creating {changeRequest}.", values);
-  }
-  return reason;
+function localizeDisabledReason(reason: string | null, gt: Translate): string | null {
+  return reason === null ? null : localizeExternalMessage(reason, gt);
 }
 
 function GitOverviewSheetContent(props: GitOverviewSheetProps) {
@@ -187,14 +136,13 @@ function GitOverviewSheetContent(props: GitOverviewSheetProps) {
     disabledReason:
       !canWriteSourceControl && item.kind !== "open_pr"
         ? gt("This connection cannot change source control.")
-        : localizeGitDisabledReason(
+        : localizeDisabledReason(
             getGitActionDisabledReason({
               item,
               gitStatus: gitStatus.data,
               isBusy: busy,
               hasOriginRemote: hasPrimaryRemote,
             }),
-            changeRequest,
             gt,
           ),
   }));

@@ -47,6 +47,7 @@ import {
 } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { READABLE_WIDTH_STYLE, ROW_MIN_HEIGHT } from "../../components/ui/listMetrics";
 import { RefreshControl } from "../../components/ui/RefreshControl";
 import Animated, {
@@ -1115,7 +1116,10 @@ function ThreadSettingsChoiceContent(props: {
           rows: session.runtimeModeChoices.map((choice) => ({
             id: choice.mode,
             label: runtimeModeLabel(choice.mode, gt),
-            description: choice.disabledReason ?? runtimeModeDescription(choice.mode, gt),
+            description:
+              choice.disabledReason === undefined
+                ? runtimeModeDescription(choice.mode, gt)
+                : localizeExternalMessage(choice.disabledReason, gt),
             disabled: choice.disabledReason !== undefined,
             selected: choice.mode === session.runtimeMode,
             onPress: () => {

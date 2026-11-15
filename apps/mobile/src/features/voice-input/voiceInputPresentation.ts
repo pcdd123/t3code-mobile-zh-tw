@@ -1,6 +1,8 @@
 import type { VoiceInputState } from "@t3tools/client-runtime/voice-input";
 import type { useGT } from "gt-react-native";
 
+import { localizeExternalMessage } from "../../i18n/externalMessages";
+
 export type VoiceComposerPresentation = {
   readonly leadingAction: "cancel" | null;
   readonly trailingAction: "mic" | "confirm";
@@ -10,13 +12,14 @@ export type VoiceComposerPresentation = {
   readonly confirmationEnabled: boolean;
 };
 
-/** Translates the English status labels below; error labels pass through unchanged. */
+/** Translates the English status labels below and the voice controller's errors. */
 export function localizeVoiceStatusLabel(
   presentation: VoiceComposerPresentation,
   gt: ReturnType<typeof useGT>,
 ): string | null {
   const label = presentation.statusLabel;
-  if (label === null || presentation.statusKind === "error") return label;
+  if (label === null) return label;
+  if (presentation.statusKind === "error") return localizeExternalMessage(label, gt);
   if (label === "Preparing") return gt("Preparing");
   if (label === "Transcribing") return gt("Transcribing");
   if (label.startsWith("Recording ")) {

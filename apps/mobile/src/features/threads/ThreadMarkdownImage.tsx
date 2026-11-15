@@ -6,6 +6,7 @@ import * as Schema from "effect/Schema";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { Image } from "expo-image";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { createContext, useContext, useId, useState } from "react";
 import { fetch } from "expo/fetch";
 import { parse, SvgAst, type JsxAST } from "react-native-svg";
@@ -159,7 +160,9 @@ export function ThreadMarkdownImageView(props: {
             {failed ? (
               <Text className="px-3 text-center text-xs text-foreground-muted">
                 {props.unavailableDetail
-                  ? gt("Image unavailable. {detail}", { detail: props.unavailableDetail })
+                  ? gt("Image unavailable. {detail}", {
+                      detail: localizeExternalMessage(props.unavailableDetail, gt),
+                    })
                   : gt("Image unavailable")}
               </Text>
             ) : (

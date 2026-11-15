@@ -194,13 +194,18 @@ function useZipArchive(input: {
   const { uri, isLocal, sizeBytes } = input;
   // The parent mints a new refresh callback on every render; it must not reload the archive.
   const refresh = useEffectEvent(input.refresh);
+  const readLoadFailures = useEffectEvent(() => zipFailures(gt));
+  const openLoadedArchive = useEffectEvent((bytes: ArrayBuffer) => openArchive(bytes, gt));
+  const readTimeLeft = useEffectEvent((progress: Parameters<typeof zipDownloadTimeLeft>[0]) =>
+    zipDownloadTimeLeft(progress, gt),
+  );
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Load archive bytes and cancel the stream on cleanup.
   useEffect(() => {
     if (!uri) return;
     const abort = new AbortController();
     controller.current = abort;
     const startedAt = Date.now();
-    const loadFailures = zipFailures(gt);
+    const loadFailures = readLoadFailures();
     // oxlint-disable-next-line react/set-state-in-effect -- A new archive load resets its progress.
     setState({ status: "loading", receivedBytes: 0, timeLeft: null });
     void (async () => {
@@ -210,7 +215,7 @@ function useZipArchive(input: {
         const file = new File(uri);
         if ((file.size ?? 0) > ARCHIVE_MAX_BYTES)
           throw new ZipFailureError({ failure: loadFailures.tooLarge });
-        return openArchive(await file.arrayBuffer(), gt);
+        return openLoadedArchive(await file.arrayBuffer());
       }
       const url = (await refresh()) ?? uri;
       const response = await fetch(url, { signal: abort.signal });
@@ -222,19 +227,16 @@ function useZipArchive(input: {
           setState({
             status: "loading",
             receivedBytes,
-            timeLeft: zipDownloadTimeLeft(
-              {
-                receivedBytes,
-                totalBytes: sizeBytes,
-                elapsedMs: Date.now() - startedAt,
-              },
-              gt,
-            ),
+            timeLeft: readTimeLeft({
+              receivedBytes,
+              totalBytes: sizeBytes,
+              elapsedMs: Date.now() - startedAt,
+            }),
           }),
         loadFailures.tooLarge,
       );
       abort.signal.throwIfAborted();
-      return openArchive(bytes, gt);
+      return openLoadedArchive(bytes);
     })()
       .then((archive) => {
         if (!abort.signal.aborted) setState({ status: "ready", archive });
@@ -248,7 +250,7 @@ function useZipArchive(input: {
       });
     return () => abort.abort();
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- Retry must reload the archive.
-  }, [uri, isLocal, sizeBytes, revision, gt]);
+  }, [uri, isLocal, sizeBytes, revision]);
   return {
     state,
     retry: () => setRevision((value) => value + 1),
@@ -663,6 +665,10 @@ function ZipEntryView(props: {
   const [busy, setBusy] = useState<"save" | "attach" | null>(null);
   const action = useRef<AbortController | null>(null);
   const pendingViewerError = useRef<string | null>(null);
+  const readReadFailure = useEffectEvent((cause: unknown) => ({
+    title: gt("Couldn't read this file"),
+    message: errorMessage(cause, gt("Could not read this file.")),
+  }));
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Cancel a pending save or attach when the entry closes.
   useEffect(() => () => action.current?.abort(), []);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Write the selected entry to a cached file and release it on cleanup.
@@ -687,19 +693,14 @@ function ZipEntryView(props: {
         if (!controller.signal.aborted) setContent(value);
       })
       .catch((cause: unknown) => {
-        if (!controller.signal.aborted)
-          setContent({
-            status: "failed",
-            title: gt("Couldn't read this file"),
-            message: errorMessage(cause, gt("Could not read this file.")),
-          });
+        if (!controller.signal.aborted) setContent({ status: "failed", ...readReadFailure(cause) });
       });
     return () => {
       controller.abort();
       release?.();
     };
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- Retry must reread the entry.
-  }, [entry, isText, mimeType, tooBig, revision, gt]);
+  }, [entry, isText, mimeType, tooBig, revision]);
 
   const run = (kind: "save" | "attach", task: (signal: AbortSignal) => Promise<unknown>) => {
     if (busy) return;

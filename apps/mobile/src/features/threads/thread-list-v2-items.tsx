@@ -1281,7 +1281,7 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
               : undefined
           }
         >
-          {thread.title}
+          {thread.title === "New thread" ? gt("New thread") : thread.title}
         </Text>
         <View className="flex-row items-center gap-1.5" style={{ minHeight: titleLineHeight }}>
           {props.hasQueuedMessages ? <QueuedMessageIcon selected={selected} /> : null}
@@ -1591,7 +1591,7 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
               )}
               numberOfLines={1}
             >
-              {thread.title}
+              {thread.title === "New thread" ? gt("New thread") : thread.title}
             </Text>
             {providerNameLabel ? (
               <Text
@@ -1660,7 +1660,7 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
         secondaryAction={secondaryAction}
         resetKey={`${thread.environmentId}:${thread.id}:${variant}:${snoozedRow}:${thread.settledAt}:${thread.unsettledAt}:${thread.snoozedUntil}:${thread.pinnedAt}`}
         simultaneousWith={props.simultaneousSwipeGesture}
-        threadTitle={thread.title}
+        threadTitle={thread.title === "New thread" ? gt("New thread") : thread.title}
       >
         {(close) => (
           <Menu

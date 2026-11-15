@@ -1,4 +1,5 @@
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { SheetCloseButton } from "../../components/ui/SheetHeader";
 import { Button } from "../../components/ui/Button";
 import * as Dialog from "../../components/ui/Dialog";
@@ -297,7 +298,7 @@ export function DevicePreviewScreen({
           {state.error ? (
             <>
               <AppText selectable className="text-center text-sm text-foreground-muted">
-                {state.error}
+                {localizeExternalMessage(state.error, gt)}
               </AppText>
               <View className="items-center">
                 <Button label={gt("Retry")} tone="secondary" onPress={state.refresh} />

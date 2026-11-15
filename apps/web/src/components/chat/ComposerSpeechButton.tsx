@@ -4,6 +4,7 @@ import { useEffect, useState, type PointerEvent, type ReactElement } from "react
 
 import { VoiceInputErrorPill } from "./VoiceInputErrorPill";
 import { VoiceInputPill, VoiceWaveform } from "./VoiceInputPill";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { cn } from "~/lib/utils";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
@@ -24,7 +25,10 @@ export function resolveSpeechPresentation(
     case "idle":
       return { status: null, active: false };
     case "error":
-      return { status: state.error ?? gt("Voice input failed"), active: false };
+      return {
+        status: state.error ? localizeExternalMessage(state.error, gt) : gt("Voice input failed"),
+        active: false,
+      };
     case "preparing":
       return {
         status: progress

@@ -46,9 +46,11 @@ export function prompt(request: TextInputDialogRequest): void {
 
 export function Host() {
   const gt = useGT();
+  const cancel = gt("Cancel");
+  const ok = gt("OK");
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- hands the current language's labels to native alerts opened outside React
   useEffect(() => {
-    defaultLabels = { cancel: gt("Cancel"), ok: gt("OK") };
-  }, [gt]);
+    defaultLabels = { cancel, ok };
+  }, [cancel, ok]);
   return null;
 }

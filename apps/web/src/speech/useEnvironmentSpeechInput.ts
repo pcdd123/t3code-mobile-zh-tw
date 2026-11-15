@@ -208,10 +208,26 @@ export function useEnvironmentSpeechInput(input: HookInput) {
     submit: (text: string) => void;
     text?: string;
   } | null>(null);
-  const latestRef = useRef({ input, clientSettings, cleanupPrepared, projectWords });
+  const cleanupFailedToast = {
+    title: gt("Transcript cleanup failed"),
+    description: gt("The original transcript was added."),
+  };
+  const latestRef = useRef({
+    input,
+    clientSettings,
+    cleanupPrepared,
+    projectWords,
+    cleanupFailedToast,
+  });
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- publishes committed props and settings to the asynchronous recording controller
   useEffect(() => {
-    latestRef.current = { input, clientSettings, cleanupPrepared, projectWords };
+    latestRef.current = {
+      input,
+      clientSettings,
+      cleanupPrepared,
+      projectWords,
+      cleanupFailedToast,
+    };
   });
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- owns the recording controller bound to the consented destination; it is disposed with the consent
   useEffect(() => {
@@ -321,12 +337,10 @@ export function useEnvironmentSpeechInput(input: HookInput) {
       releaseRecording: async () => platform.cancelRecording(),
       deleteRecording: platform.deleteRecording,
       postProcess,
-      onPostProcessingError: () =>
-        toastManager.add({
-          type: "warning",
-          title: gt("Transcript cleanup failed"),
-          description: gt("The original transcript was added."),
-        }),
+      onPostProcessingError: () => {
+        // Read from the ref: `gt` changes identity when translations load, which must not dispose a recording.
+        toastManager.add({ type: "warning", ...latestRef.current.cleanupFailedToast });
+      },
       readDraft,
       commitDraft: (text, selection) => {
         if (latestRef.current.input.disabled) return;
@@ -349,7 +363,7 @@ export function useEnvironmentSpeechInput(input: HookInput) {
       controller.dispose();
       if (controllerRef.current === controller) controllerRef.current = null;
     };
-  }, [prepared, grantId, cloudProvider, cloudModel, gt]);
+  }, [prepared, grantId, cloudProvider, cloudModel]);
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- probes the chosen environment's speech status once its connection is available
   useEffect(() => {

@@ -16,6 +16,7 @@ import {
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
 import { useNavigation } from "@react-navigation/native";
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import { useRef, useState } from "react";
 import { Platform, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -251,7 +252,7 @@ function ProjectOverviewContent(props: {
     });
     Dialog.confirm({
       title: plan.targetKind === "checkout" ? gt("Remove checkout") : gt("Remove project"),
-      message: plan.confirmationMessage,
+      message: localizeExternalMessage(plan.confirmationMessage, gt),
       confirmText: plan.targetKind === "checkout" ? gt("Remove checkout") : gt("Remove project"),
       destructive: true,
       onCancel: finishRemoval,

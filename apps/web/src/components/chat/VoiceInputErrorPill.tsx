@@ -4,6 +4,7 @@ import { CircleAlertIcon, XIcon } from "lucide-react";
 
 import { Button } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { VoiceInputPill } from "./VoiceInputPill";
 import { useGT } from "gt-react";
 
@@ -48,50 +49,6 @@ function voiceErrorLabel(gt: ReturnType<typeof useGT>, error: string | null): st
   }
 }
 
-/** The controller reports English messages; this shows them translated. */
-function voiceErrorMessage(gt: ReturnType<typeof useGT>, error: string): string {
-  switch (error) {
-    case MICROPHONE_PERMISSION_ERROR:
-      return gt(
-        "Microphone access is required for voice input. Allow access in your browser or system settings and try again.",
-      );
-    case "Microphone access is required for voice input.":
-      return gt("Microphone access is required for voice input.");
-    case "This draft is no longer available.":
-      return gt("This draft is no longer available.");
-    case "Another voice recording is already active.":
-      return gt("Another voice recording is already active.");
-    case "Voice transcription is not available.":
-      return gt("Voice transcription is not available.");
-    case "Voice transcription is still finishing. Try again shortly.":
-      return gt("Voice transcription is still finishing. Try again shortly.");
-    case "Voice transcription is not available for this language.":
-      return gt("Voice transcription is not available for this language.");
-    case "Could not prepare voice transcription.":
-      return gt("Could not prepare voice transcription.");
-    case "Could not start voice recording.":
-      return gt("Could not start voice recording.");
-    case "Voice recording was interrupted.":
-      return gt("Voice recording was interrupted.");
-    case "Could not finish voice recording.":
-      return gt("Could not finish voice recording.");
-    case "Could not transcribe this recording.":
-      return gt("Could not transcribe this recording.");
-    case "Voice transcription on this environment failed.":
-      return gt("Voice transcription on this environment failed.");
-    case "The draft changed while voice input was running. The transcript was not added.":
-      return gt("The draft changed while voice input was running. The transcript was not added.");
-    case "No speech was detected.":
-      return gt("No speech was detected.");
-    case "Microphone processing failed.":
-      return gt("Microphone processing failed.");
-    case "The microphone disconnected.":
-      return gt("The microphone disconnected.");
-    default:
-      return error;
-  }
-}
-
 const RETRYABLE_TRANSCRIPTIONS = new Set([
   "Could not transcribe this recording.",
   "Voice transcription on this environment failed.",
@@ -108,7 +65,7 @@ export function VoiceInputErrorPill(props: {
 }) {
   const gt = useGT();
   const navigate = useNavigate();
-  const message = props.error ? voiceErrorMessage(gt, props.error) : gt("Voice input failed");
+  const message = props.error ? localizeExternalMessage(props.error, gt) : gt("Voice input failed");
   const openSettings = props.errorAction === "settings";
   const compact = props.size === "compact";
   const action = openSettings

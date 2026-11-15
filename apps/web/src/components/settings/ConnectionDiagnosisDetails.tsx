@@ -2,6 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import {
   AVAILABLE_CONNECTION_STATE,
   type ConnectionDiagnosis,
+  type ConnectionDiagnosisHop,
   connectionDiagnosisText,
   connectionRoutes,
   hasRelayRoute,
@@ -13,6 +14,7 @@ import { AsyncResult } from "effect/reactivity";
 import { ChevronRightIcon } from "lucide-react";
 
 import { APP_VERSION } from "~/branding";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { environmentCatalog } from "~/connection/catalog";
 import { type EnvironmentPresentation, useRelayEnvironmentDiscovery } from "~/state/environments";
 import { useCopyToClipboard } from "../../hooks/useCopyToClipboard";
@@ -58,10 +60,25 @@ export function ConnectionDiagnosisHeadline({
 }: {
   readonly environment: EnvironmentPresentation;
 }) {
-  return useConnectionDiagnosis(environment).diagnosis?.headline ?? null;
+  const gt = useGT();
+  const headline = useConnectionDiagnosis(environment).diagnosis?.headline;
+  return headline === undefined ? null : localizeExternalMessage(headline, gt);
 }
 
 const HOP_MARK = { ok: "✓", failed: "✕", unchecked: "–" } as const;
+function hopLabel(hop: ConnectionDiagnosisHop, host: string, gt: ReturnType<typeof useGT>): string {
+  switch (hop.hop) {
+    case "device":
+      return gt("This device");
+    case "relay":
+      return hop.label;
+    case "tunnel":
+      return gt("{host} tunnel", { host });
+    case "server":
+      return gt("T3 Code on {host}", { host });
+  }
+}
+
 function hopNote(result: keyof typeof HOP_MARK, gt: ReturnType<typeof useGT>): string {
   switch (result) {
     case "ok":
@@ -102,7 +119,7 @@ export function ConnectionDiagnosisSummary({
   const gt = useGT();
   return (
     <div className="text-xs">
-      <p className="text-destructive">{diagnosis.headline}</p>
+      <p className="text-destructive">{localizeExternalMessage(diagnosis.headline, gt)}</p>
       <p className="flex flex-wrap items-center gap-1 text-muted-foreground">
         {retryAt !== null ? <RetryCountdown retryAt={retryAt} /> : null}
         {retryAt !== null && attempt > 0 ? <span aria-hidden>·</span> : null}
@@ -166,7 +183,9 @@ export function ConnectionDiagnosisPanel({
             <span aria-hidden className="w-3 text-center">
               {HOP_MARK[hop.result]}
             </span>
-            <span className={cn(hop.result === "ok" && "text-foreground")}>{hop.label}</span>
+            <span className={cn(hop.result === "ok" && "text-foreground")}>
+              {hopLabel(hop, hostLabel, gt)}
+            </span>
             <span>{hopNote(hop.result, gt)}</span>
           </li>
         ))}
@@ -175,7 +194,7 @@ export function ConnectionDiagnosisPanel({
         <p className="font-medium text-foreground">{gt("What to try")}</p>
         <ol className="list-decimal pl-4 text-muted-foreground">
           {diagnosis.steps.map((step) => (
-            <li key={step}>{step}</li>
+            <li key={step}>{localizeExternalMessage(step, gt)}</li>
           ))}
         </ol>
         {diagnosis.moreInfoUrl ? (
@@ -192,8 +211,10 @@ export function ConnectionDiagnosisPanel({
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 font-mono text-muted-foreground">
         {diagnosis.facts.map(([label, value]) => (
           <div key={label} className="contents">
-            <dt>{label}</dt>
-            <dd className="break-all text-foreground">{value}</dd>
+            <dt>{localizeExternalMessage(label, gt)}</dt>
+            <dd className="break-all text-foreground">
+              {label === "Route" ? localizeExternalMessage(value, gt) : value}
+            </dd>
           </div>
         ))}
       </dl>

@@ -2,7 +2,7 @@ import { useGT } from "gt-react";
 import type { ScopedThreadRef } from "@t3tools/contracts";
 import { parseThreadLinkPrompt, withoutPromptLinkParams } from "@t3tools/shared/promptLinks";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useEffectEvent } from "react";
 
 import { isThreadRoutePathname } from "../../threadRoutes";
 import { stackedThreadToast, toastManager } from "../ui/toast";
@@ -21,6 +21,7 @@ export function ThreadLinkPrompt({ threadRef }: { readonly threadRef: ScopedThre
     }),
     structuralSharing: true,
   });
+  const readFailedTitle = useEffectEvent(() => gt("Could not open the linked prompt"));
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- places a ?prompt link into the composer once per location and strips it from the URL via the router
   useEffect(() => {
@@ -34,7 +35,7 @@ export function ThreadLinkPrompt({ threadRef }: { readonly threadRef: ScopedThre
         toastManager.add(
           stackedThreadToast({
             type: "error",
-            title: gt("Could not open the linked prompt"),
+            title: readFailedTitle(),
             description: parsed.error,
           }),
         );
@@ -46,7 +47,7 @@ export function ThreadLinkPrompt({ threadRef }: { readonly threadRef: ScopedThre
       href: `${location.pathname}${withoutPromptLinkParams(location.search)}`,
       replace: true,
     });
-  }, [gt, location, navigate, threadRef]);
+  }, [location, navigate, threadRef]);
 
   return null;
 }

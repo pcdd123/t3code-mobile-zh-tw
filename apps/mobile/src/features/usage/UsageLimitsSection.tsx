@@ -1,4 +1,5 @@
 import { useGT } from "gt-react-native";
+import { localizeExternalMessage } from "../../i18n/externalMessages";
 import * as Dialog from "../../components/ui/Dialog";
 import { RegistryContext, useAtomMount, useAtomValue } from "@effect/atom-react";
 import { normalizeProviderAccentColor } from "@t3tools/client-runtime/state/provider-instance-display";
@@ -137,7 +138,9 @@ function WindowRow(props: {
           <Text className="text-xs text-foreground-tertiary">
             {pace ? paceLabel(pace, gt) : ""}
           </Text>
-          <Text className="text-xs tabular-nums text-foreground-tertiary">{resetsIn ?? ""}</Text>
+          <Text className="text-xs tabular-nums text-foreground-tertiary">
+            {resetsIn === null ? "" : localizeExternalMessage(resetsIn, gt)}
+          </Text>
         </View>
       ) : null}
     </View>
@@ -211,7 +214,7 @@ export function AccountLimits(props: {
         {props.trailing}
       </View>
       {notice ? (
-        <Text className="text-sm text-foreground-muted">{notice}</Text>
+        <Text className="text-sm text-foreground-muted">{localizeExternalMessage(notice, gt)}</Text>
       ) : (
         <View className="gap-3">
           {limits.windows.map((window) => (
@@ -276,17 +279,23 @@ export function ResetCredits(props: {
 
   const confirm = (choice: ResetCreditChoice) => {
     if (!readEnvironmentScope(environmentId, AuthProvidersManageScope)) return;
-    Dialog.alert(gt("Use a reset credit?"), choice.confirmDescription, [
-      { text: gt("Cancel"), style: "cancel" },
-      { text: gt("Use credit"), onPress: () => void redeem(choice) },
-    ]);
+    Dialog.alert(
+      gt("Use a reset credit?"),
+      localizeExternalMessage(choice.confirmDescription, gt),
+      [
+        { text: gt("Cancel"), style: "cancel" },
+        { text: gt("Use credit"), onPress: () => void redeem(choice) },
+      ],
+    );
   };
 
   return (
     <View className="gap-1">
       {resetCreditChoices(credits, input, now).map((choice) => (
         <View key={choice.key} className="flex-row flex-wrap items-center gap-x-3 gap-y-1">
-          <Text className="text-xs tabular-nums text-foreground-tertiary">{choice.summary}</Text>
+          <Text className="text-xs tabular-nums text-foreground-tertiary">
+            {localizeExternalMessage(choice.summary, gt)}
+          </Text>
           {choice.availableCount > 0 ? (
             <Pressable
               accessibilityRole="button"
@@ -306,7 +315,7 @@ export function ResetCredits(props: {
                     : "text-sm font-t3-medium text-foreground"
                 }
               >
-                {busy ? gt("Using…") : choice.actionLabel}
+                {busy ? gt("Using…") : localizeExternalMessage(choice.actionLabel, gt)}
               </Text>
             </Pressable>
           ) : null}

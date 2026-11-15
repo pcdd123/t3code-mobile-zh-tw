@@ -25,6 +25,7 @@ import { Input } from "../ui/input";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "../ui/select";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { SettingsRow } from "./settingsLayout";
+import { localizeExternalMessage } from "~/i18n/externalMessages";
 import { RedactedSensitiveText } from "./RedactedSensitiveText";
 
 const ProviderAuthTerminal = lazy(() => import("./ProviderAuthTerminal"));
@@ -81,7 +82,8 @@ export function ProviderAuthenticationSection({
     (provider.auth.type === "gemini-api-key" || provider.auth.type === "agent-platform");
   const accountDescription = active
     ? auth?.phase === "starting"
-      ? (auth.message ?? (usesCredentials ? gt("Connecting…") : gt("Starting sign-in…")))
+      ? (localizeExternalMessage(auth.message, gt) ??
+        (usesCredentials ? gt("Connecting…") : gt("Starting sign-in…")))
       : auth?.phase === "verifying"
         ? usesCredentials
           ? gt("Checking credentials and loading models…")
@@ -100,7 +102,7 @@ export function ProviderAuthenticationSection({
           : usesCredentials
             ? gt("Connect on {environment} to load models.", { environment: environmentLabel })
             : gt("Sign in on {environment}.", { environment: environmentLabel });
-  const statusMessage = auth?.phase === "failed" ? auth.message : null;
+  const statusMessage = auth?.phase === "failed" ? localizeExternalMessage(auth.message, gt) : null;
   const disabled = readOnly || pending || query.error !== null || isDiscovering;
   const draftId = `${auth?.flowId ?? ""}:${interaction?.id ?? ""}`;
   const values = draft.id === draftId ? draft.values : {};
@@ -121,7 +123,9 @@ export function ProviderAuthenticationSection({
       else if (!isAtomCommandInterrupted(result)) {
         const failure = squashAtomCommandFailure(result);
         setError(
-          failure instanceof Error ? failure.message : gt("Provider sign-in failed. Try again."),
+          failure instanceof Error
+            ? localizeExternalMessage(failure.message, gt)
+            : gt("Provider sign-in failed. Try again."),
         );
       }
     } catch {
@@ -207,15 +211,17 @@ export function ProviderAuthenticationSection({
             >
               <SelectTrigger size="sm" aria-label={gt("Sign-in method")} className="w-44">
                 <SelectValue>
-                  {auth?.methods?.find((method) => method.id === methodId)?.name ??
-                    gt("Provider default")}
+                  {localizeExternalMessage(
+                    auth?.methods?.find((method) => method.id === methodId)?.name,
+                    gt,
+                  ) ?? gt("Provider default")}
                 </SelectValue>
               </SelectTrigger>
               <SelectPopup>
                 <SelectItem value="">{gt("Provider default")}</SelectItem>
                 {auth?.methods?.map((method) => (
                   <SelectItem key={method.id} value={method.id}>
-                    {method.name}
+                    {localizeExternalMessage(method.name, gt)}
                   </SelectItem>
                 ))}
               </SelectPopup>

@@ -116,7 +116,13 @@ function ResolvedFilePreview(
   const [uris, setUris] = useState<readonly (string | null | undefined)[]>(() =>
     items.map((item) => ("uri" in item ? item.uri : undefined)),
   );
-  const onResolutionError = useEffectEvent((error: PreviewResolutionError) => {
+  const resolveItemUri = useEffectEvent((item: FilePreviewItem, signal: AbortSignal) =>
+    resolvePreviewUri(item, signal, gt),
+  );
+  const onResolutionError = useEffectEvent((cause: unknown) => {
+    const error = isPreviewResolutionError(cause)
+      ? cause
+      : new PreviewResolutionError({ cause, fallbackMessage: gt("Try again.") });
     if (props.onOpenError) props.onOpenError(error.cause);
     else Dialog.alert(gt("Could not open preview"), error.fallbackMessage);
     props.onRequestClose();
@@ -130,7 +136,7 @@ function ResolvedFilePreview(
       setUris((current) => current.map((value, at) => (at === index ? uri : value)));
     items.forEach((item, index) => {
       if ("uri" in item) return;
-      void resolvePreviewUri(item, controller.signal, gt).then(
+      void resolveItemUri(item, controller.signal).then(
         (resolved) => {
           if (controller.signal.aborted) return resolved?.dispose?.();
           if (resolved?.dispose) leases.push(resolved.dispose);
@@ -140,11 +146,7 @@ function ResolvedFilePreview(
           if (controller.signal.aborted) return;
           if (progressiveGallery && index !== selectedIndex) return settle(index, null);
           controller.abort();
-          onResolutionError(
-            isPreviewResolutionError(error)
-              ? error
-              : new PreviewResolutionError({ cause: error, fallbackMessage: gt("Try again.") }),
-          );
+          onResolutionError(error);
         },
       );
     });
@@ -152,7 +154,7 @@ function ResolvedFilePreview(
       controller.abort();
       for (const dispose of leases) dispose();
     };
-  }, [items, selectedIndex, progressiveGallery, gt]);
+  }, [items, selectedIndex, progressiveGallery]);
   const selected = { ...items[selectedIndex]!, name: filePreviewName(items[selectedIndex]!) };
   if (selected.kind === "image") {
     // A viewer that resets image gestures when its sources change waits for every image.
