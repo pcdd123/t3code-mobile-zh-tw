@@ -472,5 +472,19 @@
   "7c19d25484218384": "Cloud providers",
   "a47789fd106e2ea9": "{percent}% error",
   "b696ea0a2c85192c": "{seconds} s",
-  "fa833a662b9a555b": "/ 30 s"
+  "fa833a662b9a555b": "/ 30 s",
+  "7212b0e2653b17f3": "Date and time",
+  "7982b3041b9ae1d0": "Duration",
+  "e456a25c2ed6b9e2": "Minutes",
+  "ce659422b9a8dcf5": "Hours",
+  "73c71e0dd21b305f": "Days",
+  "717fea9cf9312919": "Choose a date and time in the future.",
+  "9485a52216cfc0d5": "Enter a positive duration.",
+  "5c79ed0a6551c289": "Snooze mode",
+  "d733142d9607d7ff": "Snooze until",
+  "6c1de230705e0528": "Duration amount",
+  "eb4ae844f33fffd0": "Duration unit",
+  "c19a0ed0ac547356": "Custom snooze",
+  "5f8693d00859a838": "Cancel custom snooze",
+  "ef27c4211844aef9": "Snooze"
 }

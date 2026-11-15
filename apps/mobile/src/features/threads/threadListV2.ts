@@ -86,9 +86,13 @@ export function resolveThreadListV2SnoozePresets(input: {
   readonly secondary: "snooze" | null;
   readonly now: string;
   readonly presets: ReadonlyArray<SnoozePresetSetting> | undefined;
+  readonly locale?: string;
 }): ReadonlyArray<SnoozePreset> {
   return input.secondary === "snooze"
-    ? resolveSnoozePresets(new Date(input.now), presetOptions(input.presets))
+    ? resolveSnoozePresets(new Date(input.now), {
+        ...presetOptions(input.presets),
+        locale: input.locale,
+      })
     : [];
 }
 

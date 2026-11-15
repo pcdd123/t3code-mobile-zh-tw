@@ -217,6 +217,7 @@ export interface SnoozePreset {
 export interface SnoozePresetOptions {
   readonly presets?: ReadonlyArray<SnoozePresetSetting>;
   readonly formatTime?: (date: Date) => string;
+  readonly locale?: string;
 }
 
 function snoozeTimeOfDayLabel(date: Date): string {
@@ -268,6 +269,33 @@ function snoozePresetLabel(setting: SnoozePresetSetting, daysAhead: number): str
   return daysAhead === 7 ? `Next ${capitalize(setting.day)}` : capitalize(setting.day);
 }
 
+const ZH_TW_WEEKDAYS = {
+  monday: "星期一",
+  tuesday: "星期二",
+  wednesday: "星期三",
+  thursday: "星期四",
+  friday: "星期五",
+  saturday: "星期六",
+  sunday: "星期日",
+} as const;
+
+function traditionalSnoozeLabel(setting: SnoozePresetSetting, daysAhead: number): string {
+  if (setting.kind === "after") {
+    const minutes = setting.minutes;
+    if (minutes % (24 * 60) === 0) return `${minutes / (24 * 60)} 天後`;
+    if (minutes % 60 === 0) return `${minutes / 60} 小時後`;
+    return `${minutes} 分鐘後`;
+  }
+  if (daysAhead === 0) {
+    const hour = Number(setting.time.slice(0, 2));
+    return hour < 12 ? "今天上午" : hour < 17 ? "今天下午" : "今天晚上";
+  }
+  if (daysAhead === 1) return "明天";
+  if (setting.day === "monday") return "下週";
+  if (setting.day === "today" || setting.day === "tomorrow") return "明天";
+  return `${daysAhead === 7 ? "下週" : ""}${ZH_TW_WEEKDAYS[setting.day]}`;
+}
+
 export function snoozePresetId(setting: SnoozePresetSetting): string {
   return setting.kind === "after"
     ? `after:${setting.minutes}`
@@ -277,7 +305,8 @@ export function snoozePresetId(setting: SnoozePresetSetting): string {
 export function resolveSnoozePreset(
   setting: SnoozePresetSetting,
   now: Date,
-  formatTime: (date: Date) => string = snoozeTimeOfDayLabel,
+  formatTime?: (date: Date) => string,
+  locale?: string,
 ): SnoozePreset | null {
   let wake: Date;
   let daysAhead = 0;
@@ -290,17 +319,22 @@ export function resolveSnoozePreset(
     // A today option whose time has passed is left out until tomorrow.
     if (wake.getTime() <= now.getTime()) return null;
   }
-  const label = snoozePresetLabel(setting, daysAhead);
+  const englishLabel = snoozePresetLabel(setting, daysAhead);
+  const label = locale === "zh-TW" ? traditionalSnoozeLabel(setting, daysAhead) : englishLabel;
   // Durations and "Next week" don't name the wake day, so a wake on another day shows it.
-  const labelNamesDay = setting.kind === "at" && label !== "Next week";
-  const time = formatTime(wake);
+  const labelNamesDay = setting.kind === "at" && englishLabel !== "Next week";
+  const time = formatTime
+    ? formatTime(wake)
+    : locale === "zh-TW"
+      ? wake.toLocaleTimeString("zh-TW", { hour: "numeric", minute: "2-digit" })
+      : snoozeTimeOfDayLabel(wake);
   return {
     id: snoozePresetId(setting),
     label,
     whenLabel:
       labelNamesDay || wake.toDateString() === now.toDateString()
         ? time
-        : `${wake.toLocaleDateString(undefined, { weekday: "short" })} ${time}`,
+        : `${wake.toLocaleDateString(locale === "zh-TW" ? "zh-TW" : undefined, { weekday: "short" })} ${time}`,
     snoozedUntil: wake.toISOString(),
   };
 }
@@ -316,7 +350,9 @@ export function resolveSnoozePresets(
   const seen = new Set<number>();
   return (
     (options.presets ?? DEFAULT_SNOOZE_PRESETS)
-      .flatMap((setting) => resolveSnoozePreset(setting, now, options.formatTime) ?? [])
+      .flatMap(
+        (setting) => resolveSnoozePreset(setting, now, options.formatTime, options.locale) ?? [],
+      )
       // flatMap returned a new array; Hermes has no `toSorted`.
       .sort((a, b) => wakeMinute(a) - wakeMinute(b))
       .filter((preset) => {

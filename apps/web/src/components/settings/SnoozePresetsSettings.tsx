@@ -1,4 +1,4 @@
-import { useGT } from "gt-react";
+import { useGT, useLocale } from "gt-react";
 import { useState } from "react";
 import {
   DEFAULT_SNOOZE_PRESETS,
@@ -213,6 +213,7 @@ function SnoozePresetList(props: {
   onSettle: () => void;
 }) {
   const gt = useGT();
+  const locale = useLocale();
   const nowMinute = useNowMinute();
   const now = new Date(`${nowMinute}Z`);
   const formatTime = (date: Date) =>
@@ -220,7 +221,7 @@ function SnoozePresetList(props: {
   const seenIds = new Set<string>();
   const seenWakes = new Set<string>();
   const previews = props.presets.map((preset) => {
-    const resolved = resolveSnoozePreset(preset, now, formatTime);
+    const resolved = resolveSnoozePreset(preset, now, formatTime, locale);
     if (resolved === null) return { tone: "muted", text: gt("Passed for today") } as const;
     if (seenIds.has(resolved.id)) {
       return { tone: "muted", text: gt("Duplicate of an option above") } as const;
@@ -233,7 +234,7 @@ function SnoozePresetList(props: {
     return { tone: "menu", label: resolved.label, when: resolved.whenLabel } as const;
   });
 
-  const menuPresets = resolveSnoozePresets(now, { presets: props.presets, formatTime });
+  const menuPresets = resolveSnoozePresets(now, { presets: props.presets, formatTime, locale });
   const repeatedLabels = new Set(
     menuPresets
       .map((preset) => preset.label)

@@ -390,5 +390,21 @@
   "3179349e81c5aa31": "Decrease",
   "227fe0a476980477": "Amount",
   "9a4f982a83ded050": "Increase",
-  "324c5f5cae5f4326": "Unit"
+  "324c5f5cae5f4326": "Unit",
+  "913fc23f62321556": "Choose a valid date and time in the future.",
+  "9485a52216cfc0d5": "Enter a positive duration.",
+  "c19a0ed0ac547356": "Custom snooze",
+  "4f50663b717bd2fe": "Choose when snoozed threads return to your inbox.",
+  "9bc551235d78e133": "Schedule type",
+  "7212b0e2653b17f3": "Date and time",
+  "7982b3041b9ae1d0": "Duration",
+  "12a46f713d714e93": "Date",
+  "27db420faa0b0fbd": "Choose snooze date",
+  "9b92cbb4797ab829": "Snooze for",
+  "8683012de438dc07": "Decrease duration",
+  "a27cc5a582f66fa2": "Increase duration",
+  "e456a25c2ed6b9e2": "Minutes",
+  "ce659422b9a8dcf5": "Hours",
+  "73c71e0dd21b305f": "Days",
+  "576b5c9e345cb757": "Edit snooze options"
 }

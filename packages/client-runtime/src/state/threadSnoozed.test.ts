@@ -402,6 +402,33 @@ describe("threadWokeAt", () => {
 });
 
 describe("resolveSnoozePresets", () => {
+  it("localizes labels without changing snooze targets", () => {
+    const now = localDate(2026, 9, 4, 10);
+    const presets: ReadonlyArray<SnoozePresetSetting> = [
+      { kind: "after", minutes: 90 },
+      { kind: "at", day: "tomorrow", time: "21:00" },
+      { kind: "at", day: "monday", time: "18:00" },
+      { kind: "at", day: "friday", time: "17:00" },
+    ];
+    const english = resolveSnoozePresets(now, { presets, locale: "en" });
+    const chinese = resolveSnoozePresets(now, { presets, locale: "zh-TW" });
+    expect(chinese.map((preset) => preset.label)).toEqual([
+      "90 分鐘後",
+      "明天",
+      "下週",
+      "下週星期五",
+    ]);
+    expect(chinese.map(({ id, snoozedUntil }) => ({ id, snoozedUntil }))).toEqual(
+      english.map(({ id, snoozedUntil }) => ({ id, snoozedUntil })),
+    );
+    expect(english.map((preset) => preset.label)).toEqual([
+      "In 90 minutes",
+      "Tomorrow",
+      "Next week",
+      "Next Friday",
+    ]);
+  });
+
   const formatTime = (date: Date) =>
     `${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
   const menu = (now: Date, presets?: ReadonlyArray<SnoozePresetSetting>) =>

@@ -1,3 +1,5 @@
+import "../../i18n/intl-polyfills";
+import { useLocale } from "gt-react-native";
 import * as Dialog from "../../components/ui/Dialog";
 import type { ThreadRowProviderInstance } from "./thread-provider-instance";
 import {
@@ -866,10 +868,12 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
     snoozable: canSnooze(thread, { now: snoozeGateNow }),
     snoozed: snoozedRow,
   });
+  const locale = useLocale();
   const snoozePresets = resolveThreadListV2SnoozePresets({
     secondary: swipeActions.secondary,
     now: props.snoozePresetMinute || snoozeGateNow,
     presets: props.snoozePresets,
+    locale,
   });
   const snoozePresetActions = useMemo<MenuAction[]>(
     () => [
