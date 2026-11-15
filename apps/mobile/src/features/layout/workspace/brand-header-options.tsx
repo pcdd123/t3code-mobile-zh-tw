@@ -2,6 +2,7 @@ import type { NativeStackNavigationOptions } from "@react-navigation/native-stac
 import { Platform } from "react-native";
 
 import { brandTitleOffset, CompactBrandTitle } from "../../../components/CompactBrandTitle";
+import { getTranslator } from "../../../i18n/currentTranslator";
 import { WorkspaceConnectionTitle } from "../../home/WorkspaceConnectionTitle";
 
 function renderCompactBrandTitle() {
@@ -10,7 +11,7 @@ function renderCompactBrandTitle() {
 
 export function getCompactBrandHeaderOptions(
   fallbackTitleStyle?: NativeStackNavigationOptions["headerTitleStyle"],
-  title = "Threads",
+  title = getTranslator()("Threads"),
 ): NativeStackNavigationOptions {
   return {
     headerTitle: renderCompactBrandTitle,

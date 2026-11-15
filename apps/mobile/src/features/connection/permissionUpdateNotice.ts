@@ -3,6 +3,7 @@ import { sessionHasLegacyPermissions } from "@t3tools/contracts";
 import { Atom } from "effect/reactivity";
 import * as SecureStore from "expo-secure-store";
 
+import { getTranslator } from "../../i18n/currentTranslator";
 import { whenProtectedDataAvailable } from "../../lib/protectedData";
 import { appAtomRegistry } from "../../state/atom-registry";
 import { projectEnvironmentPresentation } from "../../state/environments";
@@ -64,10 +65,13 @@ export function installPermissionUpdateNotice(): () => void {
       void SecureStore.setItemAsync(storageKey, JSON.stringify([...known])).catch(() => {});
       presentNext();
     };
+    const gt = getTranslator();
     Dialog.alert(
-      `Permissions have changed for ${environment.label}`,
-      "This connection still uses the old permissions, so some actions may no longer be available. Pair again using a new link with the permissions you need.",
-      [{ text: "Got it", onPress: dismiss }],
+      gt("Permissions have changed for {environment}", { environment: environment.label }),
+      gt(
+        "This connection still uses the old permissions, so some actions may no longer be available. Pair again using a new link with the permissions you need.",
+      ),
+      [{ text: gt("Got it"), onPress: dismiss }],
       { cancelable: false },
     );
   };

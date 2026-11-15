@@ -11,17 +11,14 @@ import {
 } from "@expo/ui/swift-ui/modifiers";
 import { createWidget, type WidgetEnvironment } from "expo-widgets";
 
-import type {
-  AgentActivityPhase,
-  AgentActivityProps,
-  AgentActivityRowProps,
-} from "./AgentActivity";
+import type { AgentActivityPhase, AgentActivityRowProps } from "./AgentActivity";
+import type { AgentActivityWidgetProps } from "./agentActivityWidgetTimeline";
 
 // Home-screen and Lock Screen counterpart of the AgentActivity Live Activity.
 // It shares the Live Activity's name, but expo-widgets stores widget and Live
 // Activity layouts under different keys, so each needs its own registration.
 export function AgentActivityWidget(
-  publishedProps: Partial<AgentActivityProps> | undefined,
+  publishedProps: Partial<AgentActivityWidgetProps> | undefined,
   environment: WidgetEnvironment,
 ) {
   "widget";
@@ -77,21 +74,35 @@ export function AgentActivityWidget(
   const workingCount = rows.filter(
     (row) => row.phase === "running" || row.phase === "starting",
   ).length;
+  // The app translates these; an embedded layout with no props yet falls back to English.
+  const labels = props.labels;
+  const attentionLabel =
+    attentionCount === 1
+      ? small
+        ? (labels?.needsYouOne ?? "1 needs you")
+        : (labels?.needsAttentionOne ?? "1 needs attention")
+      : (small
+          ? (labels?.needsYouMany ?? "{count} need you")
+          : (labels?.needsAttentionMany ?? "{count} need attention")
+        ).replace("{count}", String(attentionCount));
   const summary =
     attentionCount > 0
-      ? `${attentionCount} need${attentionCount === 1 ? "s" : ""} ${small ? "you" : "attention"}`
+      ? attentionLabel
       : workingCount > 0
-        ? `${props.activeCount ?? workingCount} active`
+        ? (labels?.active ?? "{count} active").replace(
+            "{count}",
+            String(props.activeCount ?? workingCount),
+          )
         : rows.some((row) => row.phase === "stale")
-          ? "Out of date"
+          ? (labels?.outOfDate ?? "Out of date")
           : rows.some((row) => row.phase === "failed")
-            ? "Failed"
+            ? (labels?.failed ?? "Failed")
             : rows.length > 0
-              ? "Done"
+              ? (labels?.done ?? "Done")
               : "";
   const summaryTint = rows[0] ? phaseTint(rows[0].phase) : secondaryForeground;
   const emptyMessage = loaded
-    ? (props.subtitle ?? "No active agents")
+    ? (props.subtitle ?? labels?.noActiveAgents ?? "No active agents")
     : "Open T3 Code to load agent activity";
 
   // Widget taps open the containing app, and every build accepts the prod
@@ -196,4 +207,7 @@ export function AgentActivityWidget(
   );
 }
 
-export default createWidget<Partial<AgentActivityProps>>("AgentActivity", AgentActivityWidget);
+export default createWidget<Partial<AgentActivityWidgetProps>>(
+  "AgentActivity",
+  AgentActivityWidget,
+);

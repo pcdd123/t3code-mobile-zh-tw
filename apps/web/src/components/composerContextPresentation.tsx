@@ -12,6 +12,7 @@ import { videoMimeType } from "@t3tools/shared/video";
 import { MessageCircleIcon, MousePointerClickIcon } from "lucide-react";
 import { createContext, type ReactElement, type ReactNode, use } from "react";
 import { ComposerContextActionsContext } from "./composerContextActions";
+import type { Translate } from "./Localized";
 
 import type { ComposerFileAttachment, ComposerImageAttachment } from "~/composerDraftStore";
 import { composerFileNeedsReattach } from "~/composerDraftStore";
@@ -133,21 +134,24 @@ export function composerContextRecordsFromDraft(input: {
   return records;
 }
 
+// The registry renders from plain callbacks, so the kind label translates here.
 function ContextChip(props: {
   icon: ReactElement;
   label: string;
-  kindLabel: string;
+  kindLabel: (gt: Translate) => string;
   details: ReactNode;
   detailsMode: ContextPresentationCapability["details"];
   kind: ContextChipKind;
 }) {
+  const gt = useGT();
+  const kindLabel = props.kindLabel(gt);
   if (props.detailsMode === "popover") {
     return (
       <ContextChipPopover
         kind={props.kind}
         icon={props.icon}
         label={props.label}
-        accessibleLabel={props.kindLabel + ", " + props.label}
+        accessibleLabel={kindLabel + ", " + props.label}
       >
         {props.details}
       </ContextChipPopover>
@@ -158,9 +162,7 @@ function ContextChip(props: {
       kind={props.kind}
       icon={props.icon}
       label={props.label}
-      aria-label={
-        props.detailsMode === "tooltip" ? `${props.kindLabel}, ${props.label}` : undefined
-      }
+      aria-label={props.detailsMode === "tooltip" ? `${kindLabel}, ${props.label}` : undefined}
       tooltip={props.detailsMode === "tooltip" ? props.details : undefined}
     />
   );
@@ -438,7 +440,9 @@ const composerContextPresentationRegistry = createContextPresentationRegistry<
           <ContextChip
             icon={isPullRequest ? <PullRequestGlyph.pullRequest /> : <MessageCircleIcon />}
             label={reviewCommentContextLabel(entry.record)}
-            kindLabel={isPullRequest ? pullRequestContextKindLabel(entry.record) : "Review comment"}
+            kindLabel={(gt) =>
+              isPullRequest ? pullRequestContextKindLabel(entry.record) : gt("Review comment")
+            }
             details={<ComposerReviewCommentDetails comment={entry.record} />}
             detailsMode={definition.capabilities.details}
             kind={isPullRequest ? PULL_REQUEST_CHIP_KINDS[pullRequestState] : "review-comment"}
@@ -454,7 +458,7 @@ const composerContextPresentationRegistry = createContextPresentationRegistry<
           <ContextChip
             icon={<MousePointerClickIcon />}
             label={previewAnnotationContextLabel(entry.record)}
-            kindLabel="Preview annotation"
+            kindLabel={(gt) => gt("Preview annotation")}
             details={
               <ComposerPreviewAnnotationDetails
                 annotation={entry.record}

@@ -845,7 +845,7 @@ export function useThreadComposerState(input: {
         if (freshContext) setFreshSessionPending(threadKey, true);
         setThreadComposerError(
           threadKey,
-          error instanceof Error ? error.message : "Failed to save the queued message.",
+          error instanceof Error ? error.message : gt("Failed to save the queued message."),
         );
       },
     );

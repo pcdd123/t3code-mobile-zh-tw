@@ -5,6 +5,7 @@ import { AsyncResult, type AtomRegistry } from "effect/reactivity";
 import { useGT } from "gt-react";
 
 import { getClientSettings } from "~/hooks/useSettings";
+import { getTranslator } from "~/i18n/currentTranslator";
 import { observedPullRequestTitle, pullRequestEnvironment } from "~/state/pullRequests";
 import {
   hasDesktopNotifications,
@@ -101,7 +102,6 @@ function watchGuideRun(
     const looking = document.visibilityState === "visible" && document.hasFocus();
     if (looking && isGuideShown(runKey)) return;
 
-    const title = failure === null ? "Review guide ready" : "Review guide failed";
     const body =
       watch.title ??
       observedPullRequestTitle(registry, watch.environmentId, watch.reference) ??
@@ -157,6 +157,8 @@ function watchGuideRun(
     )
       return;
     try {
+      const gt = getTranslator();
+      const title = failure === null ? gt("Review guide ready") : gt("Review guide failed");
       const notification = new Notification(title, { body, tag: `guide:${runKey}`, silent: true });
       notification.addEventListener("click", () => {
         notification.close();

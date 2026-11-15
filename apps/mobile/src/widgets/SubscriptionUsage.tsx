@@ -53,6 +53,24 @@ function SubscriptionUsage(
     !accessory && !monochrome && widgetEnvironment.showsContainerBackground !== false
       ? props.theme?.[appearance]
       : undefined;
+  // The app translates these; an embedded layout with no props yet falls back to English.
+  const labels = props.labels;
+  const percentLeft = (percent: number) =>
+    (labels?.percentLeft ?? "{percent}% left").replace("{percent}", String(percent));
+  const windowSummary = (
+    name: string,
+    window: { label: string; remaining: number; reset: string },
+    detail: string,
+  ) =>
+    (
+      labels?.windowSummary ??
+      "{provider}, {window}, {percent} percent remaining. {reset}. {detail}."
+    )
+      .replace("{provider}", name)
+      .replace("{window}", window.label)
+      .replace("{percent}", String(window.remaining))
+      .replace("{reset}", window.reset)
+      .replace("{detail}", detail);
   const primary = palette?.foreground ?? "primary";
   const secondary = palette?.secondary ?? "secondary";
   const providers = props.providers ?? [
@@ -90,9 +108,11 @@ function SubscriptionUsage(
               ].slice(0, limit)
             : windows.slice(0, limit);
     const detail = stale
-      ? "Open T3 to refresh"
+      ? (labels?.openToRefresh ?? "Open T3 to refresh")
       : period !== "auto" && windows.length === 0 && provider.windows.length > 0
-        ? `No ${period} limit reported`
+        ? period === "session"
+          ? (labels?.noSessionLimit ?? "No session limit reported")
+          : (labels?.noWeeklyLimit ?? "No weekly limit reported")
         : provider.detail;
     const barModifiers = [
       progressViewStyle("linear"),
@@ -109,8 +129,10 @@ function SubscriptionUsage(
             accessibilityElement("ignore"),
             accessibilityLabel(
               tightest
-                ? `${provider.name}, ${tightest.label}, ${tightest.remaining} percent remaining. ${tightest.reset}. ${provider.detail}.`
-                : `${provider.name}. ${detail}.`,
+                ? windowSummary(provider.name, tightest, provider.detail)
+                : (labels?.providerSummary ?? "{provider}. {detail}.")
+                    .replace("{provider}", provider.name)
+                    .replace("{detail}", detail),
             ),
           ]}
         >
@@ -135,10 +157,10 @@ function SubscriptionUsage(
               ]}
             >
               {tightest
-                ? `${tightest.remaining}% left`
+                ? percentLeft(tightest.remaining)
                 : period !== "auto" && !stale && provider.windows.length > 0
-                  ? "N/A"
-                  : "Open T3"}
+                  ? (labels?.notAvailable ?? "N/A")
+                  : (labels?.open ?? "Open T3")}
             </Text>
           </HStack>
           {tightest ? (
@@ -170,7 +192,7 @@ function SubscriptionUsage(
           <Text
             modifiers={[font({ textStyle: "caption2" }), foregroundStyle(secondary), lineLimit(1)]}
           >
-            {detail === "Subscription remaining" ? " " : detail}
+            {detail === (labels?.subscriptionRemaining ?? "Subscription remaining") ? " " : detail}
           </Text>
         ) : null}
         {shown.map((window) => (
@@ -180,9 +202,7 @@ function SubscriptionUsage(
             spacing={dense ? 1 : 2}
             modifiers={[
               accessibilityElement("ignore"),
-              accessibilityLabel(
-                `${provider.name}, ${window.label}, ${window.remaining} percent remaining. ${window.reset}. ${provider.detail}.`,
-              ),
+              accessibilityLabel(windowSummary(provider.name, window, provider.detail)),
             ]}
           >
             <HStack spacing={4}>
@@ -212,7 +232,7 @@ function SubscriptionUsage(
                   ),
                 ]}
               >
-                {window.remaining}% left
+                {percentLeft(window.remaining)}
               </Text>
             </HStack>
             <ProgressView value={window.remaining / 100} modifiers={barModifiers} />
@@ -229,9 +249,13 @@ function SubscriptionUsage(
           <Text
             modifiers={[font({ textStyle: "caption2" }), foregroundStyle(secondary), lineLimit(1)]}
           >
-            {(period === "auto" ? (provider.totalWindows ?? windows.length) : windows.length) -
-              limit}{" "}
-            more in T3
+            {(labels?.moreInApp ?? "{count} more in T3").replace(
+              "{count}",
+              String(
+                (period === "auto" ? (provider.totalWindows ?? windows.length) : windows.length) -
+                  limit,
+              ),
+            )}
           </Text>
         ) : null}
       </VStack>
@@ -253,7 +277,7 @@ function SubscriptionUsage(
     >
       {providers.length === 0 ? (
         <Text modifiers={[font({ textStyle: "caption" }), foregroundStyle(secondary)]}>
-          No subscription limits available.
+          {labels?.noLimits ?? "No subscription limits available."}
         </Text>
       ) : compact ? (
         <VStack alignment="leading" spacing={accessory || dense ? 4 : 8}>
@@ -270,8 +294,16 @@ function SubscriptionUsage(
           modifiers={[font({ textStyle: "caption2" }), foregroundStyle(secondary), lineLimit(1)]}
         >
           {props.checkedAt
-            ? `As of ${new Date(props.checkedAt).toLocaleString(undefined, { hour: "numeric", minute: "2-digit", month: "short", day: "numeric" })}`
-            : "Tap to connect in T3"}
+            ? (labels?.asOf ?? "As of {time}").replace(
+                "{time}",
+                new Date(props.checkedAt).toLocaleString(undefined, {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  month: "short",
+                  day: "numeric",
+                }),
+              )
+            : (labels?.tapToConnect ?? "Tap to connect in T3")}
         </Text>
       ) : null}
     </VStack>

@@ -1,6 +1,8 @@
 import type { OrchestrationV2RunStatus, RunId } from "@t3tools/contracts";
 
 import type { SidebarThreadSummary } from "../types";
+import { englishGt, type Translate } from "./Localized";
+import { localizeThreadStatusText } from "./threadStatusText";
 import {
   runOutcomeText,
   THREAD_STATUS_TEXT,
@@ -54,6 +56,7 @@ export function nextBackgroundThreadAnnouncement(
   previous: BackgroundThreadMemory,
   threads: ReadonlyArray<BackgroundThreadSnapshot>,
   openThreadKey: string | null,
+  gt: Translate = englishGt,
 ): { readonly memory: BackgroundThreadMemory; readonly announcement: string | null } {
   const memory = new Map<string, BackgroundThreadMemoryEntry>();
   const announcements: string[] = [];
@@ -71,14 +74,16 @@ export function nextBackgroundThreadAnnouncement(
       thread.request !== null &&
       (thread.request !== before.request || thread.requestId !== before.requestId)
     ) {
-      announcements.push(`${THREAD_STATUS_TEXT[thread.request]}: ${thread.title}`);
+      const status = localizeThreadStatusText(THREAD_STATUS_TEXT[thread.request], gt);
+      announcements.push(gt("{status}: {title}", { status, title: thread.title }));
     }
     // While another run still works, the latest run's ending (a queued message
     // cancelled before it started) isn't the thread finishing. The shell then
     // only reports the latest run, so the working run's own ending stays quiet.
     const anotherRunWorking = thread.activeRunId !== null && thread.activeRunId !== thread.runId;
     if (outcome !== null && thread.runId !== before.settledRunId && !anotherRunWorking) {
-      announcements.push(`${outcome}: ${thread.title}`);
+      const status = localizeThreadStatusText(outcome, gt);
+      announcements.push(gt("{status}: {title}", { status, title: thread.title }));
     }
   }
   return {

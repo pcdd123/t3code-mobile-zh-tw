@@ -2527,6 +2527,11 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         },
       ]
     : [];
+  // Computed apart from bannerItems so the React Compiler can still memoize the list.
+  const switchRuntimeModeLabel =
+    runtimeModeCeilingFallback === undefined
+      ? null
+      : gt("Switch to {mode}", { mode: runtimeModeLabel(gt, runtimeModeCeilingFallback) });
   const bannerItems: readonly ComposerBannerStackItem[] =
     runtimeModeCeilingDenial === undefined || activePendingProgress
       ? [...props.bannerItems, ...replyBannerItems]
@@ -2547,9 +2552,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       variant="ghost"
                       onClick={() => handleRuntimeModeChange(runtimeModeCeilingFallback)}
                     >
-                      {gt("Switch to {mode}", {
-                        mode: runtimeModeLabel(gt, runtimeModeCeilingFallback),
-                      })}
+                      {switchRuntimeModeLabel}
                     </Button>
                   ),
                 }),

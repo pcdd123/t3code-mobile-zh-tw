@@ -780,7 +780,7 @@ export function useThreadActions() {
 
   const pinThread = async (target: ScopedThreadRef, opts: { orderKey?: string } = {}) => {
     const result = await sendPin(target, opts);
-    if (result._tag === "Success") announce("Pinned 1 thread");
+    if (result._tag === "Success") announce(gt("Pinned 1 thread"));
     return result;
   };
 

@@ -10,6 +10,7 @@ import {
   useComposerDraftStore,
 } from "../composerDraftStore";
 import { showThreadUndoNotice } from "../hooks/showThreadUndoNotice";
+import { getTranslator } from "../i18n/currentTranslator";
 import * as ThreadUndo from "@t3tools/client-runtime/state/thread-undo";
 import { releaseDraftAttachments } from "./attachmentUploadQueue";
 
@@ -48,7 +49,7 @@ export function discardComposerDraft(target: ComposerThreadTarget): void {
   showThreadUndoNotice({
     action: "Discarded",
     claim,
-    failureTitle: "Failed to restore draft",
+    failureTitle: getTranslator()("Failed to restore draft"),
     undo: async () => {
       const current = useComposerDraftStore.getState().draftsByThreadKey[key];
       if (current && composerDraftHasUserContent(current)) {

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 
 import {
   type BootErrorEnvironment,
+  bootErrorUsesTraditionalChinese,
   buildErrorReport,
   resolveTriageCommand,
   updateActionFor,
@@ -129,5 +130,18 @@ describe("updateActionFor", () => {
       expect(updateActionFor(state(status))).toBeNull();
     }
     expect(updateActionFor(undefined)).toBeNull();
+  });
+});
+
+describe("bootErrorUsesTraditionalChinese", () => {
+  it("follows the saved language, then the first supported system language", () => {
+    expect(bootErrorUsesTraditionalChinese("zh-TW", ["en-US"])).toBe(true);
+    expect(bootErrorUsesTraditionalChinese("ja", ["zh-TW"])).toBe(false);
+    expect(bootErrorUsesTraditionalChinese("system", ["zh-Hant-TW", "en"])).toBe(true);
+    expect(bootErrorUsesTraditionalChinese(undefined, ["zh_TW"])).toBe(true);
+    // Hong Kong Traditional is unsupported, so the next language decides; Simplified is `zh`.
+    expect(bootErrorUsesTraditionalChinese("system", ["zh-HK", "en"])).toBe(false);
+    expect(bootErrorUsesTraditionalChinese("system", ["zh-CN", "zh-TW"])).toBe(false);
+    expect(bootErrorUsesTraditionalChinese("system", ["nl-NL", "zh-TW"])).toBe(true);
   });
 });

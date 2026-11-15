@@ -1,16 +1,31 @@
 import * as Dialog from "../../components/ui/Dialog";
 import { buildNewThreadLink, type LinkedPrompt } from "@t3tools/shared/promptLinks";
 
+import { getTranslator } from "../../i18n/currentTranslator";
 import { tryCopyTextWithHaptic } from "../../lib/copyTextWithHaptic";
 import {
   getComposerDraftSnapshot,
   setComposerDraftText,
   waitForComposerDraftsLoaded,
 } from "../../state/use-composer-drafts";
-import { linkedThreadDraftAction } from "./prompt-link-model";
+import { linkedThreadDraftAction, localizePromptLinkError } from "./prompt-link-model";
+
+export function showDraftsUnavailable(): void {
+  const gt = getTranslator();
+  Dialog.alert(
+    gt("Could not open link"),
+    gt("Drafts could not be loaded, so the prompt was not added."),
+  );
+}
+
+/** Shows a prompt link that could not be read, in the UI language. */
+export function showInvalidPromptLink(error: string): void {
+  const gt = getTranslator();
+  Dialog.alert(gt("Could not open link"), localizePromptLinkError(error, gt));
+}
 
 export function showPromptLinkNotice(notice: string): void {
-  Dialog.alert("Prompt from a link", notice);
+  Dialog.alert(getTranslator()("Prompt from a link"), notice);
 }
 
 export async function applyLinkedPromptToThreadDraft(
@@ -21,7 +36,7 @@ export async function applyLinkedPromptToThreadDraft(
   try {
     await waitForComposerDraftsLoaded();
   } catch {
-    Dialog.alert("Could not open link", "Drafts could not be loaded, so the prompt was not added.");
+    showDraftsUnavailable();
     return;
   }
   const action = linkedThreadDraftAction(getComposerDraftSnapshot(draftKey).text, prompt.text);
@@ -30,14 +45,16 @@ export async function applyLinkedPromptToThreadDraft(
     showPromptLinkNotice(notice);
     return;
   }
-  Dialog.alert("Linked prompt ready. Replace draft?", notice, [
-    { text: "Keep mine", style: "cancel" },
-    { text: "Replace", onPress: () => setComposerDraftText(draftKey, prompt.text) },
+  const gt = getTranslator();
+  Dialog.alert(gt("Linked prompt ready. Replace draft?"), notice, [
+    { text: gt("Keep mine"), style: "cancel" },
+    { text: gt("Replace"), onPress: () => setComposerDraftText(draftKey, prompt.text) },
   ]);
 }
 
 export async function copyPromptLink(prompt: string): Promise<void> {
   if (!(await tryCopyTextWithHaptic(buildNewThreadLink({ prompt }), { target: "prompt link" }))) {
-    Dialog.alert("Could not copy", "Try again.");
+    const gt = getTranslator();
+    Dialog.alert(gt("Could not copy"), gt("Try again."));
   }
 }

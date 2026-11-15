@@ -500,11 +500,12 @@ const RootStackConfig = createWorkspaceStackNavigator({
         transitionEnd: ({ data }) => recordHomeTransitionEnd(data.closing, navigation.isFocused()),
         focus: recordHomeFocus,
       }),
-      options: {
+      // A function, so the hidden "Threads" title reads the translator after GT renders.
+      options: () => ({
         ...pageRoute({ duoMinimize: "never", root: true }),
         contentStyle: { backgroundColor: "transparent" },
         ...getCompactBrandHeaderOptions(),
-      },
+      }),
     }),
     PullRequest: createNativeStackScreen({
       screen: PullRequestRouteScreen,

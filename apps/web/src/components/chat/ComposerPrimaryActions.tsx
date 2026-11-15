@@ -89,6 +89,33 @@ const formatPendingPrimaryActionLabel = (
   return input.questionIndex > 0 ? gt("Submit answers") : gt("Submit answer");
 };
 
+// Its own component so ComposerPrimaryActions passes plain values: gt() calls with option
+// objects in the parent kept the React Compiler from caching the tooltip on every keystroke.
+function SubmitTooltipText(props: {
+  readonly status: string | null;
+  readonly compactTokens: string | null;
+  readonly followUp: boolean;
+  readonly followUpBehavior: string;
+  readonly alternateAction: string;
+  readonly alternateShortcutLabel: string | null;
+  readonly submitLabel: string;
+}) {
+  const gt = useGT();
+  if (props.status !== null) return props.status;
+  if (props.compactTokens !== null) {
+    return gt("Summarize {tokens} tokens of history, then send", { tokens: props.compactTokens });
+  }
+  if (props.followUp) {
+    return formatFollowUpTooltip(gt, {
+      followUpBehavior: props.followUpBehavior,
+      alternateAction: props.alternateAction,
+      modifier: isMacPlatform(navigator.platform) ? "⌘" : "Ctrl",
+      alternateShortcutLabel: props.alternateShortcutLabel,
+    });
+  }
+  return props.submitLabel;
+}
+
 function formatFollowUpTooltip(
   gt: ReturnType<typeof useGT>,
   input: {
@@ -416,18 +443,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
             ? gt("Updating queued message")
             : gt("Submitting message")
           : null));
-  const submitTooltip =
-    submitStatus ??
-    (compactsBeforeSend
-      ? gt("Summarize {tokens} tokens of history, then send", { tokens: compactTokens })
-      : isRunning && !isEditingQueuedMessage && canSteer
-        ? formatFollowUpTooltip(gt, {
-            followUpBehavior,
-            alternateAction,
-            modifier: isMacPlatform(navigator.platform) ? "⌘" : "Ctrl",
-            alternateShortcutLabel,
-          })
-        : submitLabel);
+  const showFollowUpTooltip = isRunning && !isEditingQueuedMessage && canSteer;
 
   const sendButton = (
     <button
@@ -487,7 +503,17 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
   const submit = (
     <Tooltip key="submit">
       <TooltipTrigger render={<span className="inline-flex" />}>{sendButton}</TooltipTrigger>
-      <TooltipPopup>{submitTooltip}</TooltipPopup>
+      <TooltipPopup>
+        <SubmitTooltipText
+          status={submitStatus}
+          compactTokens={compactsBeforeSend ? compactTokens : null}
+          followUp={showFollowUpTooltip}
+          followUpBehavior={followUpBehavior}
+          alternateAction={alternateAction}
+          alternateShortcutLabel={alternateShortcutLabel}
+          submitLabel={submitLabel}
+        />
+      </TooltipPopup>
     </Tooltip>
   );
   if (compactTokens === null || hideCompactToggle) {

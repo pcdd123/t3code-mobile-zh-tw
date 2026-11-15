@@ -19,6 +19,7 @@ import { serverEnvironment } from "~/state/server";
 import { resolveVersionMismatch } from "~/versionSkew";
 import type { ServerUpdateOutcome, ServerUpdateTarget } from "../ServerUpdateAction";
 import { localized } from "../Localized";
+import { getTranslator } from "../../i18n/currentTranslator";
 import { stackedThreadToast, toastManager } from "../ui/toast";
 import {
   closeFinishedUpdateRun,
@@ -122,7 +123,7 @@ export function retryFailedUpdateRunServers(
           ? providerFailure
           : outcome.status === "failed"
             ? outcome.message
-            : "Could not start the update",
+            : getTranslator()("Could not start the update"),
         { serverUpdated: outcome.status === "updated" },
       ),
     );
@@ -341,7 +342,12 @@ function followHandedOffServers(servers: ReadonlyArray<HandedOffServer>): void {
       }
     };
     const timer = setTimeout(
-      () => settle(`Not back after ${HANDOFF_TIMEOUT_MS / 60_000} minutes`),
+      () =>
+        settle(
+          getTranslator()("Not back after {minutes} minutes", {
+            minutes: HANDOFF_TIMEOUT_MS / 60_000,
+          }),
+        ),
       server.startedAt + HANDOFF_TIMEOUT_MS - Date.now(),
     );
     const stopReconnectNudge = Effect.runCallback(

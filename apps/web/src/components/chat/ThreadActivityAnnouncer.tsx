@@ -3,6 +3,7 @@ import { memo, useEffect, useEffectEvent, useRef } from "react";
 
 import { useLiveRegion } from "../../hooks/useLiveRegion";
 import type { TimelineEntry } from "../../session-logic";
+import { localizeThreadStatusText } from "../threadStatusText";
 
 import {
   nextThreadAnnouncement,
@@ -84,6 +85,7 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
   }>({ quietUntil: 0, waiting: null });
   const localizeMessage = useEffectEvent((message: string) => localizeTurnMessage(gt, message));
   const localizeActivity = useEffectEvent((activity: string) => localizeTurnActivity(gt, activity));
+  const localizeStatus = useEffectEvent((status: string) => localizeThreadStatusText(status, gt));
 
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- writes the turn's status, messages and steps to the aria-live region after commit
   useEffect(() => {
@@ -143,11 +145,11 @@ export const ThreadActivityAnnouncer = memo(function ThreadActivityAnnouncer({
       // status that lands with a message is read as its last sentence.
       const messages = detail.messages.map(localizeMessage);
       const text = asOneAnnouncement(
-        turn.announcement === null ? messages : [...messages, turn.announcement],
+        turn.announcement === null ? messages : [...messages, localizeStatus(turn.announcement)],
       );
       write(text, holdAfter(text));
     } else if (turn.announcement !== null) {
-      announce(turn.announcement);
+      announce(localizeStatus(turn.announcement));
       step.quietUntil = Math.max(step.quietUntil, Date.now() + ACTIVITY_GAP_MS);
     }
     // A waiting label is stale once its step is over or the level no longer reads steps.

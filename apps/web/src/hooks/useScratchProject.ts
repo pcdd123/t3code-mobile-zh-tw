@@ -9,8 +9,9 @@ import {
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
 import type { EnvironmentId } from "@t3tools/contracts";
 import type { AtomRegistry } from "effect/reactivity";
-import { useContext } from "react";
+import { type ReactNode, useContext } from "react";
 
+import { localized } from "~/components/Localized";
 import { stackedThreadToast, toastManager } from "~/components/ui/toast";
 import {
   type EnvironmentPresentation,
@@ -20,12 +21,13 @@ import {
 import { projectEnvironment } from "~/state/projects";
 import { type NewThreadHandler, useNewThreadHandler } from "./useHandleNewThread";
 
-function reportScratchFailure(title: string, error: unknown) {
+function reportScratchFailure(title: ReactNode, error: unknown) {
   toastManager.add(
     stackedThreadToast({
       type: "error",
       title,
-      description: error instanceof Error ? error.message : "An error occurred.",
+      description:
+        error instanceof Error ? error.message : localized((gt) => gt("An error occurred.")),
     }),
   );
 }
@@ -61,7 +63,7 @@ export function createScratchProjectActions(input: {
 
   const openScratchProject = async (
     environmentId: EnvironmentId,
-    failureTitle = "Could not start without a project",
+    failureTitle: ReactNode = localized((gt) => gt("Could not start without a project")),
   ): Promise<EnvironmentProject | null> => {
     const command = projectEnvironment.openScratch;
     const result = await runAtomCommand(
@@ -83,7 +85,10 @@ export function createScratchProjectActions(input: {
       await input
         .handleNewThread(scopeProjectRef(project.environmentId, project.id))
         .catch((error: unknown) =>
-          reportScratchFailure("Could not start without a project", error),
+          reportScratchFailure(
+            localized((gt) => gt("Could not start without a project")),
+            error,
+          ),
         );
     }
   };

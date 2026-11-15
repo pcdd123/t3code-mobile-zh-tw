@@ -1,4 +1,4 @@
-import { englishGt, localized, type Translate } from "./Localized";
+import { localized, type Translate } from "./Localized";
 import {
   type EnvironmentThreadShell,
   type PendingSubagentRequest,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { getClientSettings, subscribeClientSettings } from "../hooks/useSettings";
+import { getTranslator } from "../i18n/currentTranslator";
 import { isWindowsPlatform } from "../lib/utils";
 import { environmentSummaries } from "../state/presentation";
 import { environmentShell } from "../state/shell";
@@ -210,8 +211,7 @@ export function startThreadNotifications(
     )
       return;
     try {
-      // System notifications take plain text, which no hook can translate here.
-      const notification = new Notification(titleWith(englishGt), {
+      const notification = new Notification(titleWith(getTranslator()), {
         body: thread.title,
         tag: threadNotificationTag(environmentId, thread.id),
         silent: true,

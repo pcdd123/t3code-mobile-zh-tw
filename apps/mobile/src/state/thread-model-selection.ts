@@ -6,6 +6,7 @@ import {
   type ThreadId,
 } from "@t3tools/contracts";
 
+import { getTranslator } from "../i18n/currentTranslator";
 import { scopedThreadKey } from "../lib/scopedEntities";
 import * as Dialog from "../components/ui/Dialog";
 import { appAtomRegistry } from "./atom-registry";
@@ -45,9 +46,12 @@ export function selectThreadModel(
       releaseComposerDraftModelSelection(threadKey, modelSelection);
     } else {
       const error = squashAtomCommandFailure(result);
+      const gt = getTranslator();
       Dialog.alert(
-        "Could not apply model selection",
-        `This model pick was not saved. ${error instanceof Error ? error.message : "Try again."}`,
+        gt("Could not apply model selection"),
+        gt("This model pick was not saved. {reason}", {
+          reason: error instanceof Error ? error.message : gt("Try again."),
+        }),
       );
     }
   });

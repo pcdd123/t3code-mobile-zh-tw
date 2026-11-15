@@ -28,6 +28,7 @@ import { environmentServerConfigsAtom, serverEnvironment } from "../state/server
 import { usePrimaryEnvironmentId } from "../state/environments";
 import { reviewEnvironment } from "../state/review";
 import { useAtomQueryRunner } from "../state/use-atom-query-runner";
+import { getTranslator } from "../i18n/currentTranslator";
 
 export function usePullRequestPreviewTarget(environmentId: EnvironmentId | null, url: string) {
   const projects = useProjects();
@@ -213,9 +214,9 @@ export function useOpenChangeRequestLink(
             const toastId = toastManager.add(
               stackedThreadToast({
                 type: "info",
-                title: "This commit is not in the thread's workspace",
+                title: getTranslator()("This commit is not in the thread's workspace"),
                 actionProps: {
-                  children: "Open link",
+                  children: getTranslator()("Open link"),
                   onClick: () => {
                     toastManager.close(toastId);
                     window.open(targetUrl, "_blank", "noopener,noreferrer");
@@ -260,8 +261,9 @@ export function useOpenPrLink(threadRef?: ScopedThreadRef) {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: "Unable to open pull request link",
-          description: error instanceof Error ? error.message : "An error occurred.",
+          title: getTranslator()("Unable to open pull request link"),
+          description:
+            error instanceof Error ? error.message : getTranslator()("An error occurred."),
         }),
       );
     });

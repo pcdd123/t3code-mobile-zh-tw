@@ -1,5 +1,6 @@
 import { Atom, type AtomRegistry } from "effect/reactivity";
 
+import { getTranslator } from "../../i18n/currentTranslator";
 import type { DraftComposerAttachment } from "../../lib/composerImages";
 import type { ComposerDraft } from "../../state/use-composer-drafts";
 import type {
@@ -210,10 +211,10 @@ export function makeIncomingShareImports(deps: ShareImportDeps) {
       if (stopped()) return;
       advance(entry, "reserved");
       const share = deps.getShare(shareId);
-      if (!share) throw new Error("The shared content is no longer in the inbox.");
+      if (!share) throw new Error(getTranslator()("The shared content is no longer in the inbox."));
       const selected = deps.selectAttachments(share, destination.environmentId);
       if (selected.status === "pending") {
-        throw new Error("Server attachment support is still loading.");
+        throw new Error(getTranslator()("Server attachment support is still loading."));
       }
       entry.needsRestore = true;
       let skippedAttachmentCount: number;
@@ -251,8 +252,14 @@ export function makeIncomingShareImports(deps: ShareImportDeps) {
       if (stopped()) return;
       const warnings = [...share.warnings, ...selected.warnings];
       if (skippedAttachmentCount > 0) {
+        const gt = getTranslator();
         warnings.push(
-          `${skippedAttachmentCount} shared file${skippedAttachmentCount === 1 ? " was" : "s were"} skipped because this draft reached the attachment limit.`,
+          skippedAttachmentCount === 1
+            ? gt("1 shared file was skipped because this draft reached the attachment limit.")
+            : gt(
+                "{count} shared files were skipped because this draft reached the attachment limit.",
+                { count: skippedAttachmentCount },
+              ),
         );
       }
       if (warnings.length > 0) deps.onWarnings(warnings);

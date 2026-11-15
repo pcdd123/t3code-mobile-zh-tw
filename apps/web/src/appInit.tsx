@@ -15,6 +15,7 @@ import { startBrowserProfileReporting } from "./browser/BrowserProfileReporter";
 import { startPreviewTitleRecording } from "./browserHistoryStore";
 import { retainThreadOverlaysForThread } from "./components/chat/threadOverlayRetention";
 import { resolveWindowTitleThreadStatus } from "./components/Sidebar.logic";
+import { localizeThreadStatusText } from "./components/threadStatusText";
 import { startBackgroundThreadAnnouncements } from "./components/BackgroundThreadAnnouncer";
 import { startSshPasswordPromptQueue } from "./components/desktop/SshPasswordPromptDialog";
 import { startHostFreezeToasts } from "./components/HostFreezeToastCoordinator";
@@ -59,6 +60,7 @@ import { primaryServerConfigAtom } from "./state/server";
 import { environmentShell } from "./state/shell";
 import { installChatRouteCommands } from "./shortcuts/chatRouteCommands";
 import { startWorkspaceFocus } from "./lib/workspaceFocus";
+import { getTranslator, subscribeTranslator } from "./i18n/currentTranslator";
 import { startI18n } from "./i18n/runtime";
 import { installCommandPaletteCommands } from "./shortcuts/commandPaletteCommands";
 import { registerOpenFavoriteEditorCommand } from "./components/chat/OpenInPickerShortcut";
@@ -157,6 +159,7 @@ function startDocumentTitle(router: AppRouter): void {
               scopeProjectRef(thread.environmentId, thread.projectId),
             ),
           );
+    const threadStatus = thread === null ? null : resolveWindowTitleThreadStatus(thread);
     const title = resolveWindowTitle({
       appDisplayName: resolveServerBackedAppDisplayName({
         baseName: APP_BASE_NAME,
@@ -169,7 +172,8 @@ function startDocumentTitle(router: AppRouter): void {
       threadTitle: thread?.title ?? null,
       ...(getClientSettings().screenReaderWindowTitle && {
         screenReader: {
-          threadStatus: thread === null ? null : resolveWindowTitleThreadStatus(thread),
+          threadStatus:
+            threadStatus === null ? null : localizeThreadStatusText(threadStatus, getTranslator()),
         },
       }),
       desktop: isElectron,
@@ -208,6 +212,7 @@ function startDocumentTitle(router: AppRouter): void {
   appAtomRegistry.subscribe(primaryServerConfigAtom, write, { immediate: true });
   appAtomRegistry.subscribe(environmentProjects.projectsAtom, write);
   subscribeClientSettings(write);
+  subscribeTranslator(write);
   router.subscribe("onResolved", updateOpenThread);
   useComposerDraftStore.subscribe(updateOpenThread);
 }

@@ -1,17 +1,38 @@
 import { useIsFocused } from "@react-navigation/native";
 import {
   nextThreadAnnouncement,
+  THREAD_STATUS_TEXT,
   type ThreadAnnouncementMemory,
 } from "@t3tools/client-runtime/state/thread-activity-announcement";
 import { useEffect, useRef } from "react";
 import { AccessibilityInfo } from "react-native";
 
+import { getTranslator, type Translate } from "../../i18n/currentTranslator";
 import { useAppActive } from "../../lib/appState";
 import {
   nextThreadActivitySnapshot,
   type ThreadActivityInput,
   type ThreadActivityMemory,
 } from "./threadStatusAnnouncement";
+
+function localizeThreadStatusText(text: string, gt: Translate): string {
+  switch (text) {
+    case THREAD_STATUS_TEXT.working:
+      return gt("Working");
+    case THREAD_STATUS_TEXT.approval:
+      return gt("Needs approval");
+    case THREAD_STATUS_TEXT.input:
+      return gt("Needs your input");
+    case THREAD_STATUS_TEXT.done:
+      return gt("Done");
+    case THREAD_STATUS_TEXT.failed:
+      return gt("Failed");
+    case THREAD_STATUS_TEXT.stopped:
+      return gt("Stopped");
+    default:
+      return text;
+  }
+}
 
 /** Tells VoiceOver and TalkBack when the open thread starts working, needs the user, or finishes. */
 export function useThreadStatusAnnouncements({
@@ -65,8 +86,11 @@ export function useThreadStatusAnnouncements({
     memoryRef.current = { threadKey: activeKey, activity, announcement: next.memory };
     // Queued, like the web's polite region, so VoiceOver doesn't cut off what it is reading.
     if (next.announcement !== null) {
+      // Read when spoken, so the effect does not rerun when the language changes.
+      const gt = getTranslator();
+      const status = localizeThreadStatusText(next.announcement, gt);
       AccessibilityInfo.announceForAccessibilityWithOptions(
-        subject === null ? next.announcement : `${next.announcement}: ${subject}`,
+        subject === null ? status : gt("{status}: {title}", { status, title: subject }),
         { queue: true },
       );
     }

@@ -2,11 +2,12 @@ import "./intl-polyfills";
 import { SYSTEM_LANGUAGE, resolveLocale } from "@t3tools/client-runtime/locales";
 import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
-import { GTProvider, initializeGT } from "gt-react-native";
+import { GTProvider, initializeGT, useGT } from "gt-react-native";
 import { useDeferredValue, type ReactNode } from "react";
 import { Platform, TurboModuleRegistry, View, type TurboModule } from "react-native";
 
 import { mobilePreferencesAtom } from "../state/preferences";
+import { adoptTranslator } from "./currentTranslator";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "./locales";
 import de from "./translations/de.json";
 import es from "./translations/es.json";
@@ -60,6 +61,11 @@ export function useLanguagePreference(): string {
     : DEFAULT_LOCALE;
 }
 
+function CurrentTranslator() {
+  adoptTranslator(useGT());
+  return null;
+}
+
 /** Translates the screens inside it into the saved language; "system" follows the device. */
 export function I18nProvider(props: { readonly children: ReactNode }) {
   // GT suspends while a locale's catalog loads. Deferring the switch keeps the current language
@@ -69,6 +75,7 @@ export function I18nProvider(props: { readonly children: ReactNode }) {
   );
   return (
     <GTProvider locale={locale} fallback={<View className="flex-1 bg-screen" />}>
+      <CurrentTranslator />
       {props.children}
     </GTProvider>
   );

@@ -5,6 +5,7 @@ import { parseThreadLinkPrompt, type LinkedPrompt } from "@t3tools/shared/prompt
 import * as Option from "effect/Option";
 import { AsyncResult } from "effect/reactivity";
 
+import { getTranslator } from "../../i18n/currentTranslator";
 import { findStackRoute } from "../../lib/appLinking";
 import { rootNavigationRef } from "../../lib/rootNavigation";
 import { scopedThreadKey } from "../../lib/scopedEntities";
@@ -12,6 +13,7 @@ import { appAtomRegistry } from "../../state/atom-registry";
 import { environmentThreadShells, environmentThreads } from "../../state/threads";
 import { applyLinkedPromptToThreadDraft } from "./prompt-link-actions";
 import {
+  localizePromptLinkError,
   promptLinkNotice,
   promptLinkSearchFromParams,
   stepPendingPromptLink,
@@ -57,7 +59,8 @@ export function takeThreadPromptLink(
   if (environmentId === null || threadId === null) return nextState;
   const parsed = parseThreadLinkPrompt(search);
   if (!parsed.ok) {
-    Dialog.alert("Could not open link", parsed.error);
+    const gt = getTranslator();
+    Dialog.alert(gt("Could not open link"), localizePromptLinkError(parsed.error, gt));
     return nextState;
   }
   if (parsed.value !== null) {

@@ -6,11 +6,56 @@ import {
   type LimitPresentations,
 } from "@t3tools/shared/usageLimits";
 
+import { getTranslator } from "../i18n/currentTranslator";
 import type { WidgetTheme } from "./widgetTheme";
+
+/**
+ * The widget extension runs without the app's translator, so the app sends its words.
+ * `{name}` placeholders are filled in the widget.
+ */
+export interface SubscriptionUsageLabels {
+  openToRefresh: string;
+  open: string;
+  notAvailable: string;
+  percentLeft: string;
+  noSessionLimit: string;
+  noWeeklyLimit: string;
+  moreInApp: string;
+  asOf: string;
+  tapToConnect: string;
+  noLimits: string;
+  subscriptionRemaining: string;
+  windowSummary: string;
+  providerSummary: string;
+}
+
+function subscriptionUsageLabels(): SubscriptionUsageLabels {
+  const gt = getTranslator();
+  const keep = (...names: string[]) => Object.fromEntries(names.map((name) => [name, `{${name}}`]));
+  return {
+    openToRefresh: gt("Open T3 to refresh"),
+    open: gt("Open T3"),
+    notAvailable: gt("N/A"),
+    percentLeft: gt("{percent}% left", keep("percent")),
+    noSessionLimit: gt("No session limit reported"),
+    noWeeklyLimit: gt("No weekly limit reported"),
+    moreInApp: gt("{count} more in T3", keep("count")),
+    asOf: gt("As of {time}", keep("time")),
+    tapToConnect: gt("Tap to connect in T3"),
+    noLimits: gt("No subscription limits available."),
+    subscriptionRemaining: gt("Subscription remaining"),
+    windowSummary: gt(
+      "{provider}, {window}, {percent} percent remaining. {reset}. {detail}.",
+      keep("provider", "window", "percent", "reset", "detail"),
+    ),
+    providerSummary: gt("{provider}. {detail}.", keep("provider", "detail")),
+  };
+}
 
 export interface SubscriptionUsageSnapshot {
   theme?: WidgetTheme;
   url?: string;
+  labels?: SubscriptionUsageLabels;
   checkedAt: number;
   providers: Array<{
     name: string;
@@ -49,12 +94,24 @@ export function createWidgetRefresher<Id>(refresh: (id: Id) => Promise<unknown>)
 const isUpcoming = (reset: LimitPoolWindow["resets"][number]) =>
   reset.at > Date.parse(reset.member.account.limits.checkedAt);
 
+function resetText(at: number, upcoming: boolean): string {
+  const gt = getTranslator();
+  const time = new Date(at).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return upcoming ? gt("Next reset {time}", { time }) : gt("Reset {time}", { time });
+}
+
 function subscriptionUsageProps(
   accounts: readonly LimitAccount[],
   now: number,
   configuredDrivers: ReadonlySet<string>,
   maxWindowsPerProvider: number,
 ): SubscriptionUsageSnapshot {
+  const gt = getTranslator();
   const pools = collectLimitPools(accounts, now);
   const checked = accounts
     .filter((account) => account.driver === "codex" || account.driver === "claudeAgent")
@@ -72,7 +129,7 @@ function subscriptionUsageProps(
         if (!pool)
           return {
             name,
-            detail: "No limits available",
+            detail: gt("No limits available"),
             windows: [],
             expiresAt: 0,
             totalWindows: 0,
@@ -101,10 +158,10 @@ function subscriptionUsageProps(
         return {
           name,
           detail: !fresh
-            ? "Open T3 to refresh"
+            ? gt("Open T3 to refresh")
             : pool.accounts.length > 1
-              ? `${pool.accounts.length} accounts · pooled`
-              : "Subscription remaining",
+              ? gt("{count} accounts · pooled", { count: pool.accounts.length })
+              : gt("Subscription remaining"),
           expiresAt: fresh ? expiresAt : 0,
           totalWindows: fresh ? pool.windows.length : 0,
           windows: fresh
@@ -113,15 +170,8 @@ function subscriptionUsageProps(
                 label: window.label,
                 remaining: Math.round(window.remainingPercent),
                 reset: window.resets[0]
-                  ? `${isUpcoming(window.resets[0]) ? "Next reset" : "Reset"} ${new Date(
-                      window.resets[0].at,
-                    ).toLocaleString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}`
-                  : "Reset time unavailable",
+                  ? resetText(window.resets[0].at, isUpcoming(window.resets[0]))
+                  : gt("Reset time unavailable"),
               }))
             : [],
         };
@@ -155,6 +205,7 @@ export function buildSubscriptionUsageSnapshot(
       maxWindowsPerProvider,
     ),
     url,
+    labels: subscriptionUsageLabels(),
   };
 }
 
@@ -168,7 +219,12 @@ export function subscriptionUsageTimeline(snapshot: SubscriptionUsageSnapshot, n
       ...snapshot,
       providers: snapshot.providers.map((provider) =>
         provider.windows.length > 0 && provider.expiresAt <= date
-          ? { ...provider, detail: "Open T3 to refresh", windows: [], totalWindows: 0 }
+          ? {
+              ...provider,
+              detail: snapshot.labels?.openToRefresh ?? "Open T3 to refresh",
+              windows: [],
+              totalWindows: 0,
+            }
           : provider,
       ),
     },

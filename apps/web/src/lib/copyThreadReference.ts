@@ -4,6 +4,7 @@ import {
   encodeComposerContextFragment,
 } from "@t3tools/shared/composerContextClipboard";
 
+import { localized } from "../components/Localized";
 import { stackedThreadToast, toastManager } from "../components/ui/toast";
 import { writeTextToClipboard } from "../hooks/useCopyToClipboard";
 
@@ -20,8 +21,13 @@ export async function copyThreadReference(target: ThreadReferenceCopyTarget): Pr
     toastManager.add(
       stackedThreadToast({
         type: "error",
-        title: target.failureTitle,
-        description: error instanceof Error ? error.message : "An error occurred.",
+        title: localized((gt) =>
+          target.kind === "pull-request"
+            ? gt("Failed to copy PR link")
+            : gt("Failed to copy thread"),
+        ),
+        description:
+          error instanceof Error ? error.message : localized((gt) => gt("An error occurred.")),
       }),
     );
   }

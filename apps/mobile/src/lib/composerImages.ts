@@ -24,6 +24,7 @@ import { fitComposerImage, renderPhoto } from "./composerImageFit";
 import { beginForegroundHandoff } from "./foreground-handoff";
 import { uuidv4 } from "./uuid";
 import { writeFileAtomically } from "./atomic-file";
+import { getTranslator } from "../i18n/currentTranslator";
 
 export interface DraftComposerImageAttachment extends Omit<UploadChatImageAttachment, "dataUrl"> {
   readonly id: string;
@@ -328,7 +329,9 @@ export async function pickComposerFiles(input: {
         const base64 = fitted?.base64 ?? original;
         const sizeBytes = estimateBase64ByteSize(base64);
         if (sizeBytes <= 0 || sizeBytes > PROVIDER_SEND_TURN_MAX_IMAGE_BYTES) {
-          throw new Error(`'${name}' exceeds the 10 MB attachment limit.`);
+          throw new Error(
+            getTranslator()("''{name}'' exceeds the 10 MB attachment limit.", { name }),
+          );
         }
         const dataUrl = `data:${mimeType};base64,${base64}`;
         attachments.push({
@@ -514,7 +517,7 @@ export async function pickComposerMedia(input: {
 
     const sizeBytes = estimateBase64ByteSize(image.base64);
     if (sizeBytes <= 0 || sizeBytes > PROVIDER_SEND_TURN_MAX_IMAGE_BYTES) {
-      error = `'${name}' exceeds the 10 MB attachment limit.`;
+      error = getTranslator()("''{name}'' exceeds the 10 MB attachment limit.", { name });
       continue;
     }
 
@@ -619,8 +622,8 @@ export async function convertPastedImagesToAttachments(input: {
       if (sizeBytes <= 0 || sizeBytes > PROVIDER_SEND_TURN_MAX_IMAGE_BYTES) {
         error =
           sizeBytes > 0
-            ? "A pasted image exceeds the 10 MB attachment limit."
-            : "Could not read a pasted image.";
+            ? getTranslator()("A pasted image exceeds the 10 MB attachment limit.")
+            : getTranslator()("Could not read a pasted image.");
         continue;
       }
       const dataUrl = `data:${mimeType};base64,${base64}`;

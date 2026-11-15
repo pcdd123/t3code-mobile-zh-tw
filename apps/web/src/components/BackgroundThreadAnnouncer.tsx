@@ -6,6 +6,7 @@ import type { AtomRegistry } from "effect/reactivity";
 
 import { useComposerDraftStore } from "../composerDraftStore";
 import { createLiveRegion } from "../hooks/useLiveRegion";
+import { getTranslator } from "../i18n/currentTranslator";
 import { liveShellEnvironmentIdsAtom } from "../state/shell";
 import { environmentThreadShells } from "../state/threads";
 import { resolveActiveThreadRouteRef, resolveThreadRouteTarget } from "../threadRoutes";
@@ -56,7 +57,12 @@ export function startBackgroundThreadAnnouncements(
         snoozed: effectiveSnoozed(thread, { now }),
       });
     }
-    const next = nextBackgroundThreadAnnouncement(memory, snapshots, openThreadKey);
+    const next = nextBackgroundThreadAnnouncement(
+      memory,
+      snapshots,
+      openThreadKey,
+      getTranslator(),
+    );
     memory = next.memory;
     if (next.announcement !== null) backgroundThreadLiveRegion.announce(next.announcement);
   };

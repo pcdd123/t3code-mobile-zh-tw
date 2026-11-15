@@ -1,5 +1,7 @@
 import type { PromptLinkRepository } from "@t3tools/shared/promptLinks";
 
+import { getTranslator, type Translate } from "../../i18n/currentTranslator";
+
 const PROMPT_LINK_PARAM_KEYS = ["prompt", "repo", "pr", "provider", "model"] as const;
 
 type RouteParams = Readonly<Record<string, unknown>> | undefined;
@@ -25,20 +27,51 @@ export function withoutPromptLinkParams(params: object | undefined): Record<stri
   );
 }
 
+// packages/shared/src/promptLinks.ts writes these in English.
+export function localizePromptLinkError(error: string, gt: Translate): string {
+  switch (error) {
+    case "This link names a pull request T3 Code cannot read.":
+      return gt("This link names a pull request T3 Code cannot read.");
+    case "This link has no prompt.":
+      return gt("This link has no prompt.");
+    case "This link names a repository T3 Code cannot read.":
+      return gt("This link names a repository T3 Code cannot read.");
+    case "This prompt had only hidden characters, so it may be malicious. T3 Code did not open it.":
+      return gt(
+        "This prompt had only hidden characters, so it may be malicious. T3 Code did not open it.",
+      );
+  }
+  const length =
+    /^This prompt is longer than ([\d,]+) characters, so T3 Code did not open it\.$/.exec(
+      error,
+    )?.[1];
+  return length === undefined
+    ? error
+    : gt("This prompt is longer than {length} characters, so T3 Code did not open it.", {
+        length,
+      });
+}
+
 export function promptLinkNotice(input: {
   readonly hiddenCharacters: number;
   readonly modelUnavailable?: boolean;
   readonly pullRequestUnavailable?: number | null;
 }): string {
+  const gt = getTranslator();
   return [
     input.hiddenCharacters > 0
-      ? "This prompt had hidden characters, it may be malicious. They were removed. Read it before you send."
-      : "This prompt came from a link. Read it before you send.",
+      ? gt(
+          "This prompt had hidden characters, it may be malicious. They were removed. Read it before you send.",
+        )
+      : gt("This prompt came from a link. Read it before you send."),
     input.modelUnavailable
-      ? "The requested model is not available, so your default is used."
+      ? gt("The requested model is not available, so your default is used.")
       : null,
     input.pullRequestUnavailable != null
-      ? `Pull request #${input.pullRequestUnavailable} could not be loaded, so this task starts from your default branch.`
+      ? gt(
+          "Pull request #{number} could not be loaded, so this task starts from your default branch.",
+          { number: input.pullRequestUnavailable },
+        )
       : null,
   ]
     .filter((line) => line !== null)

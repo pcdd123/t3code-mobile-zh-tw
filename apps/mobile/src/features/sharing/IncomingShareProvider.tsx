@@ -22,6 +22,7 @@ import {
 } from "./incoming-share-model";
 import { createIncomingSharePayloadReader } from "./incoming-share-native";
 import { IncomingShareInbox } from "./incoming-share-inbox";
+import { getTranslator } from "../../i18n/currentTranslator";
 import { persistComposerAttachmentFile } from "../../lib/composerImages";
 import { subscribeAppActive } from "../../lib/appState";
 import { coalescedRun } from "../../lib/coalescedRun";
@@ -234,11 +235,15 @@ function reportRefreshFailure(cause: unknown) {
     cause,
     cause instanceof Error ? cause.cause : null,
   );
-  const error = cause instanceof Error ? cause : new Error("Could not import shared content.");
-  Dialog.alert("Could not import shared content", error.message, [
-    { text: "Dismiss", style: "cancel" },
-    { text: "Retry", onPress: () => void refreshIncomingShares() },
-  ]);
+  const gt = getTranslator();
+  Dialog.alert(
+    gt("Could not import shared content"),
+    cause instanceof Error ? cause.message : gt("Could not import shared content."),
+    [
+      { text: gt("Dismiss"), style: "cancel" },
+      { text: gt("Retry"), onPress: () => void refreshIncomingShares() },
+    ],
+  );
 }
 
 // A resume while a refresh runs may carry a native handoff that refresh already
@@ -318,30 +323,34 @@ export const incomingShareImports = makeIncomingShareImports({
     }),
   releaseUnusedAttachments: scheduleUnusedComposerAttachmentCleanup,
   onWarnings: (warnings) => {
-    Dialog.alert("Some shared content was skipped", warnings.join("\n"));
+    Dialog.alert(getTranslator()("Some shared content was skipped"), warnings.join("\n"));
   },
   onImportFailure: (target, error) => {
+    const gt = getTranslator();
     Dialog.alert(
-      "Could not import shared content",
-      error instanceof Error ? error.message : "The shared content could not be saved.",
+      gt("Could not import shared content"),
+      error instanceof Error ? error.message : gt("The shared content could not be saved."),
       [
         {
-          text: "Cancel import",
+          text: gt("Cancel import"),
           style: "cancel",
           onPress: () => void incomingShareImports.cancel(target),
         },
-        { text: "Retry", onPress: () => incomingShareImports.retry(target) },
+        { text: gt("Retry"), onPress: () => incomingShareImports.retry(target) },
       ],
       { cancelable: false },
     );
   },
   onCancelFailure: (target, error) => {
+    const gt = getTranslator();
     Dialog.alert(
-      "Could not cancel import",
-      error instanceof Error ? error.message : "The shared content could not be restored safely.",
+      gt("Could not cancel import"),
+      error instanceof Error
+        ? error.message
+        : gt("The shared content could not be restored safely."),
       [
-        { text: "Retry import", onPress: () => incomingShareImports.retry(target) },
-        { text: "Retry cancel", onPress: () => void incomingShareImports.cancel(target) },
+        { text: gt("Retry import"), onPress: () => incomingShareImports.retry(target) },
+        { text: gt("Retry cancel"), onPress: () => void incomingShareImports.cancel(target) },
       ],
       { cancelable: false },
     );

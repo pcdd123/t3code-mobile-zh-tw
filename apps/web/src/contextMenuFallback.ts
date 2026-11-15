@@ -1,5 +1,7 @@
 import type { ContextMenuItem } from "@t3tools/contracts";
 
+import { getTranslator } from "./i18n/currentTranslator";
+
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 const ICON_PATHS: Record<string, ReadonlyArray<{ tag: string; attrs: Record<string, string> }>> = {
@@ -395,7 +397,10 @@ export function showContextMenuFallback<T extends string>(
       menu.dataset.level = String(level);
       menu.dataset.contextMenu = "true";
       menu.setAttribute("role", "menu");
-      menu.setAttribute("aria-label", parentTrigger?.textContent ?? "Context menu");
+      menu.setAttribute(
+        "aria-label",
+        parentTrigger?.textContent ?? getTranslator()("Context menu"),
+      );
       menu.tabIndex = -1;
 
       const inner = document.createElement("div");

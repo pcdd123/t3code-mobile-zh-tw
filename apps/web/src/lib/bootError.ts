@@ -10,6 +10,108 @@ const MAX_ERROR_CHARS = 6_000;
 const COPY_BLOCKED = "Copy was blocked. The text is selected so you can copy it manually.";
 const UPDATE_DOWNLOAD_FAILED = "The update download failed. Try Download update again.";
 const UPDATE_INSTALL_FAILED = "The update install failed. Try Restart to update again.";
+const CLIENT_SETTINGS_STORAGE_KEY = "t3code:client-settings:v1";
+const SETTINGS_READ_TIMEOUT_MS = 500;
+
+// GT has not loaded when startup fails, so this screen carries its own Traditional Chinese.
+const ZH_TW: Readonly<Record<string, string>> = {
+  [COPY_BLOCKED]: "複製遭到封鎖。文字已選取，你可以手動複製。",
+  [UPDATE_DOWNLOAD_FAILED]: "更新下載失敗。請再試一次「下載更新」。",
+  [UPDATE_INSTALL_FAILED]: "更新安裝失敗。請再試一次「重新啟動以更新」。",
+  "Press ⌘C to copy": "按下 ⌘C 複製",
+  "Press Ctrl+C to copy": "按下 Ctrl+C 複製",
+  "Download update": "下載更新",
+  "Downloading update ({percent}%)": "正在下載更新（{percent}%）",
+  "Restart to update": "重新啟動以更新",
+  "T3 Code failed to start": "T3 Code 無法啟動",
+  "This browser appears to be offline. Check the connection, then reload.":
+    "此瀏覽器似乎已離線。請檢查連線，然後重新載入。",
+  "We are not sure why. Try a reload first.": "目前無法確定原因。請先試著重新載入。",
+  Reload: "重新載入",
+  "Copy command": "複製指令",
+  Copied: "已複製",
+  "Copied to clipboard.": "已複製到剪貼簿。",
+  "Copy error details": "複製錯誤詳細資料",
+  "More options if it keeps failing": "持續失敗時的更多選項",
+  "Download and reinstall the latest nightly build": "下載並重新安裝最新的 nightly 版本",
+  "Download and reinstall T3 Code": "下載並重新安裝 T3 Code",
+  "Run this on the computer that runs T3 Code. Your agent can check the local logs and help you file a bug report.":
+    "請在執行 T3 Code 的電腦上執行此指令。你的代理程式可以檢查本機記錄，並協助你提交錯誤回報。",
+  "Details may include local file paths and names. Check before sharing.":
+    "詳細資料可能包含本機檔案路徑與名稱。分享前請先檢查。",
+  "File a bug report on GitHub": "在 GitHub 上提交錯誤回報",
+};
+
+type BootText = (english: string, values?: Record<string, string | number>) => string;
+
+// Mirrors resolveLocale in client-runtime/locales; this file must run before any app module loads.
+const SUPPORTED_LOCALES = ["en", "de", "es", "fr", "ja", "ko", "pt-BR", "ru", "zh", "zh-TW"];
+
+/** Whether the app would show Traditional Chinese for this saved language and these system languages. */
+export function bootErrorUsesTraditionalChinese(
+  language: string | undefined,
+  systemLanguages: ReadonlyArray<string>,
+) {
+  if (language !== undefined && SUPPORTED_LOCALES.includes(language)) return language === "zh-TW";
+  for (const tag of systemLanguages) {
+    const normalized = tag.trim().toLowerCase().replaceAll("_", "-");
+    if (/^zh-(?:hant-)?tw(?:-|$)/.test(normalized) || /^zh-hant(?:-u-|$)/.test(normalized)) {
+      return true;
+    }
+    if (/^zh-(hant|tw|hk|mo)\b/.test(normalized)) continue;
+    const base = normalized.split("-")[0];
+    if (
+      SUPPORTED_LOCALES.some((locale) => locale.toLowerCase() === normalized || locale === base)
+    ) {
+      return false;
+    }
+  }
+  return false;
+}
+
+function bootErrorText(traditionalChinese: boolean): BootText {
+  return (english, values) =>
+    (traditionalChinese ? (ZH_TW[english] ?? english) : english).replace(
+      /\{(\w+)\}/g,
+      (_, key: string) => String(values?.[key] ?? ""),
+    );
+}
+
+function readBrowserLanguage(): string | undefined {
+  try {
+    const settings: unknown = JSON.parse(
+      window.localStorage.getItem(CLIENT_SETTINGS_STORAGE_KEY) ?? "null",
+    );
+    return typeof settings === "object" &&
+      settings !== null &&
+      "language" in settings &&
+      typeof settings.language === "string"
+      ? settings.language
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Desktop keeps the language setting in the main process; a stuck read must not hold the screen. */
+function readDesktopLanguage(bridge: DesktopBridge): Promise<string | undefined> {
+  return Promise.race([
+    bridge.getClientSettings().then(
+      (settings) => settings?.language,
+      () => undefined,
+    ),
+    new Promise<undefined>((resolve) => setTimeout(resolve, SETTINGS_READ_TIMEOUT_MS)),
+  ]).catch(() => undefined);
+}
+
+function systemLanguages(bridge: DesktopBridge | undefined): ReadonlyArray<string> {
+  try {
+    const languages = bridge?.getPreferredSystemLanguages?.() ?? [];
+    return languages.length > 0 ? languages : navigator.languages;
+  } catch {
+    return navigator.languages ?? [];
+  }
+}
 
 /** The Windows launcher is a `.cmd` run from PowerShell, which needs `&` to run a quoted path. */
 function launcherCommand(launcherPath: string) {
@@ -185,12 +287,19 @@ function copySelection() {
 }
 
 /** Plain http has no Clipboard API, but the legacy copy command still works on a selection. */
-function copyText(target: HTMLElement, onCopied: () => void, onBlocked: (hint: string) => void) {
+function copyText(
+  target: HTMLElement,
+  onCopied: () => void,
+  onBlocked: (hint: string) => void,
+  t: BootText,
+) {
   const fallback = () => {
     selectContents(target);
     if (copySelection()) return onCopied();
     onBlocked(
-      /Mac|iPhone|iPad/.test(navigator.platform) ? "Press ⌘C to copy" : "Press Ctrl+C to copy",
+      /Mac|iPhone|iPad/.test(navigator.platform)
+        ? t("Press ⌘C to copy")
+        : t("Press Ctrl+C to copy"),
     );
   };
   const clipboard = window.isSecureContext ? navigator.clipboard : undefined;
@@ -203,6 +312,7 @@ function mountUpdateButton(
   button: HTMLButtonElement,
   note: HTMLParagraphElement,
   announce: (text: string) => void,
+  t: BootText,
 ) {
   let action: ReturnType<typeof updateActionFor> = null;
   const render = (state: DesktopUpdateState) => {
@@ -210,16 +320,16 @@ function mountUpdateButton(
     button.hidden = action === null;
     // aria-disabled keeps keyboard focus on the button while the download runs.
     button.setAttribute("aria-disabled", String(action?.kind === "downloading"));
-    if (action?.kind === "download") button.textContent = "Download update";
+    if (action?.kind === "download") button.textContent = t("Download update");
     if (action?.kind === "downloading")
-      button.textContent = `Downloading update (${action.percent}%)`;
-    if (action?.kind === "install") button.textContent = "Restart to update";
+      button.textContent = t("Downloading update ({percent}%)", { percent: action.percent });
+    if (action?.kind === "install") button.textContent = t("Restart to update");
     const failure = !action
       ? ""
       : state.errorContext === "download"
-        ? UPDATE_DOWNLOAD_FAILED
+        ? t(UPDATE_DOWNLOAD_FAILED)
         : state.errorContext === "install"
-          ? UPDATE_INSTALL_FAILED
+          ? t(UPDATE_INSTALL_FAILED)
           : "";
     if (failure === note.textContent) return;
     note.textContent = failure;
@@ -256,10 +366,21 @@ function mountUpdateButton(
 
 export function showBootError(error: unknown) {
   console.error("T3 Code failed to start.", error);
+  const bridge = window.desktopBridge;
+  const render = (language: string | undefined) =>
+    renderBootError(
+      error,
+      bridge,
+      bootErrorText(bootErrorUsesTraditionalChinese(language, systemLanguages(bridge))),
+    );
+  if (bridge) void readDesktopLanguage(bridge).then(render);
+  else render(readBrowserLanguage());
+}
+
+function renderBootError(error: unknown, bridge: DesktopBridge | undefined, t: BootText) {
   const bootShell = document.getElementById("boot-shell");
   if (!bootShell) return;
 
-  const bridge = window.desktopBridge;
   const environment = readEnvironment(bridge);
   const offline = !bridge && navigator.onLine === false;
 
@@ -274,11 +395,11 @@ export function showBootError(error: unknown) {
   };
 
   const message = element("div", {}, [
-    element("h1", { textContent: "T3 Code failed to start" }),
+    element("h1", { textContent: t("T3 Code failed to start") }),
     element("p", {
       textContent: offline
-        ? "This browser appears to be offline. Check the connection, then reload."
-        : "We are not sure why. Try a reload first.",
+        ? t("This browser appears to be offline. Check the connection, then reload.")
+        : t("We are not sure why. Try a reload first."),
     }),
   ]);
   message.setAttribute("role", "alert");
@@ -286,36 +407,37 @@ export function showBootError(error: unknown) {
   const reload = element("button", {
     id: "boot-error-reload",
     type: "button",
-    textContent: "Reload",
+    textContent: t("Reload"),
   });
   reload.addEventListener("click", () => window.location.reload());
   const update = element("button", { id: "boot-error-update", type: "button", hidden: true });
   const updateNote = element("p", { id: "boot-error-update-note", hidden: true });
-  if (bridge) mountUpdateButton(bridge, update, updateNote, announce);
+  if (bridge) mountUpdateButton(bridge, update, updateNote, announce, t);
 
   const command = element("code", { textContent: FALLBACK_TRIAGE_COMMAND });
   const copyCommand = element("button", {
     className: "boot-error-icon",
     type: "button",
-    title: "Copy command",
+    title: t("Copy command"),
     innerHTML: COPY_ICON,
   });
-  copyCommand.setAttribute("aria-label", "Copy command");
+  copyCommand.setAttribute("aria-label", t("Copy command"));
   copyCommand.addEventListener("click", () =>
     copyText(
       command,
       () => {
         copyCommand.innerHTML = CHECK_ICON;
-        copyCommand.title = "Copied";
-        copyCommand.setAttribute("aria-label", "Copied");
-        announce("Copied to clipboard.");
+        copyCommand.title = t("Copied");
+        copyCommand.setAttribute("aria-label", t("Copied"));
+        announce(t("Copied to clipboard."));
       },
       (hint) => {
         copyCommand.textContent = hint;
         copyCommand.title = hint;
         copyCommand.setAttribute("aria-label", hint);
-        announce(COPY_BLOCKED);
+        announce(t(COPY_BLOCKED));
       },
+      t,
     ),
   );
   void resolveTriageCommand(bridge).then((value) => (command.textContent = value));
@@ -327,18 +449,19 @@ export function showBootError(error: unknown) {
     console.warn("Could not describe the startup error.", reportError);
   }
   const details = element("pre", { id: "boot-error-details", tabIndex: 0, textContent: report });
-  const copyDetails = element("button", { type: "button", textContent: "Copy error details" });
+  const copyDetails = element("button", { type: "button", textContent: t("Copy error details") });
   copyDetails.addEventListener("click", () =>
     copyText(
       details,
       () => {
-        copyDetails.textContent = "Copied";
-        announce("Copied to clipboard.");
+        copyDetails.textContent = t("Copied");
+        announce(t("Copied to clipboard."));
       },
       (hint) => {
         copyDetails.textContent = hint;
-        announce(COPY_BLOCKED);
+        announce(t(COPY_BLOCKED));
       },
+      t,
     ),
   );
 
@@ -353,32 +476,33 @@ export function showBootError(error: unknown) {
   const nightly = environment.channel === "nightly";
 
   const more = element("details", { open: isRepeatFailure(Date.now()) }, [
-    element("summary", { textContent: "More options if it keeps failing" }),
+    element("summary", { textContent: t("More options if it keeps failing") }),
     ...(bridge
       ? [
           link(
             nightly ? `${DOWNLOAD_URL}?channel=nightly` : DOWNLOAD_URL,
             nightly
-              ? "Download and reinstall the latest nightly build"
-              : "Download and reinstall T3 Code",
+              ? t("Download and reinstall the latest nightly build")
+              : t("Download and reinstall T3 Code"),
           ),
         ]
       : []),
     element("div", {}, [
       element("p", {
-        textContent:
+        textContent: t(
           "Run this on the computer that runs T3 Code. Your agent can check the local logs and help you file a bug report.",
+        ),
       }),
       element("div", { id: "boot-error-command" }, [command, copyCommand]),
     ]),
     element("div", {}, [
       details,
       element("p", {
-        textContent: "Details may include local file paths and names. Check before sharing.",
+        textContent: t("Details may include local file paths and names. Check before sharing."),
       }),
       element("div", { id: "boot-error-report" }, [
         copyDetails,
-        link(issue.href, "File a bug report on GitHub"),
+        link(issue.href, t("File a bug report on GitHub")),
       ]),
     ]),
   ]);

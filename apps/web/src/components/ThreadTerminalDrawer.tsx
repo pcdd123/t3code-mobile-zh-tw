@@ -105,6 +105,7 @@ import {
   resolveTerminalFontSizePreference,
   TYPOGRAPHY_ADVANCED_STORAGE_KEY,
 } from "../appearanceFonts";
+import { getTranslator } from "../i18n/currentTranslator";
 
 const MIN_DRAWER_HEIGHT = 180;
 const MAX_DRAWER_HEIGHT_RATIO = 0.75;
@@ -868,7 +869,7 @@ function TerminalSessionViewport({
         try {
           await writeTextToClipboard(text, "terminal selection");
         } catch (error) {
-          reportIfCurrent(requestId, error, "Unable to copy terminal selection");
+          reportIfCurrent(requestId, error, getTranslator()("Unable to copy terminal selection"));
         }
         focusIfCurrent(requestId);
       };
@@ -884,7 +885,7 @@ function TerminalSessionViewport({
             () => requestId === selectionActionRequestIdRef.current,
           );
         } catch (error) {
-          reportIfCurrent(requestId, error, "Unable to read the clipboard");
+          reportIfCurrent(requestId, error, getTranslator()("Unable to read the clipboard"));
           return;
         }
         focusIfCurrent(requestId);
@@ -908,7 +909,11 @@ function TerminalSessionViewport({
             { x: event.clientX, y: event.clientY },
           );
         } catch (error) {
-          reportIfCurrent(requestId, error, "Unable to open the terminal context menu");
+          reportIfCurrent(
+            requestId,
+            error,
+            getTranslator()("Unable to open the terminal context menu"),
+          );
           focusIfCurrent(requestId);
           return;
         }

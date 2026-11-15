@@ -24,10 +24,13 @@ export function registerMessages(): void {
   );
   msg("Appearance: {mode}");
   msg("Approval needed");
+  msg("Archived 1 thread");
+  msg("Archived {count} threads");
   msg("Available. {hint}");
   msg("Branch is behind upstream. Pull/rebase before creating a {changeRequest}.");
   msg("Branch is behind upstream. Pull/rebase before pushing.");
   msg("Browser element, {label}");
+  msg("ChatGPT sign-in couldn't finish");
   msg("Choose an Antigravity model before sending.");
   msg(
     "Claude Code {version} is too old for {model}. Upgrade to v{minVersion} or newer to access it.",
@@ -48,6 +51,7 @@ export function registerMessages(): void {
   msg("Commit, push & create {shortLabel} from default ref?");
   msg("Connect with {method} to use Antigravity and load models.");
   msg("Context compacted after {age} idle");
+  msg("Context menu");
   msg("Continued for {duration}");
   msg("Copy Link");
   msg("Could not copy the link");
@@ -62,7 +66,9 @@ export function registerMessages(): void {
   msg(
     "Could not start Codex CLI (`{binary}`). Check Settings → Providers → Codex → Binary path on the server.",
   );
+  msg("Could not start the update");
   msg("Could not start update download");
+  msg("Could not start without a project");
   msg("Could not start {model}");
   msg("Could not verify {name}. {detail}");
   msg(
@@ -76,6 +82,8 @@ export function registerMessages(): void {
   msg("Detached HEAD: check out a branch before creating a {changeRequest}.");
   msg("Detached HEAD: check out a branch before pushing.");
   msg("Device lease ended: {reason}");
+  msg("Discarded 1 draft");
+  msg("Discarded {count} drafts");
   msg("Dismiss branch change notice");
   msg("Dismiss fallback model notice");
   msg("Downloaded {name}");
@@ -90,9 +98,13 @@ export function registerMessages(): void {
   msg("Expires in {duration}");
   msg("Failed stage: {stage}.");
   msg("Failed to clear goal.");
+  msg("Failed to compact context.");
   msg("Failed to copy");
+  msg("Failed to copy PR link");
+  msg("Failed to copy thread");
   msg("Failed to execute OpenCode CLI health check: {detail}");
   msg("Failed to load OpenCode provider inventory: {detail}");
+  msg("Failed to restore draft");
   msg("Failed to resume goal.");
   msg("Failed to revert thread state.");
   msg("Failed {program}");
@@ -110,6 +122,7 @@ export function registerMessages(): void {
     "Google does not publish an Antigravity runtime for {platform}. Use a supported remote environment or a custom executable.",
   );
   msg("Guest request");
+  msg("Hide requests");
   msg(
     "Homebrew's local package metadata may be stale. Run brew update && {command} on this environment's host, then refresh provider status.",
   );
@@ -131,8 +144,11 @@ export function registerMessages(): void {
   msg(
     "Migrating {count} threads from the previous version. You can keep working while this finishes.",
   );
+  msg("Needs approval");
+  msg("Needs your input");
   msg("No local commits to include in a {changeRequest}.");
   msg("Not available on this server: {hint}");
+  msg("Not back after {minutes} minutes");
   msg(
     "On a device already connected to {host}, open Settings > Sharing & access and approve the device showing {code}.",
   );
@@ -145,6 +161,7 @@ export function registerMessages(): void {
   msg("Open Sharing & access");
   msg("Open T3 Code in the desktop app to use the in-app preview.");
   msg("Open approval");
+  msg("Open link");
   msg("Open or restart T3 Code on {host}.");
   msg("Open question");
   msg("Open with");
@@ -158,6 +175,7 @@ export function registerMessages(): void {
   msg("Or run `t3 auth connect-device approve {code}` on {host}.");
   msg("Permissions have changed for {environment}");
   msg("Pi {version} is unsupported. Update to Pi {minVersion} or newer.");
+  msg("Pinned 1 thread");
   msg("Preview annotation, {label}");
   msg("Preview is desktop-only");
   msg("Prompt added from a link");
@@ -195,6 +213,7 @@ export function registerMessages(): void {
   msg("Restoring your threads…");
   msg("Resume");
   msg("Retry or remove failed uploads before saving.");
+  msg("Return to the provider and try again.");
   msg("Review comment");
   msg("Running {command}");
   msg("Running {items}");
@@ -202,13 +221,20 @@ export function registerMessages(): void {
   msg("Running · {label}");
   msg("Secure connection to {host}'s tunnel failed");
   msg("Select ref");
+  msg("Settled 1 thread");
+  msg("Settled {count} threads");
+  msg("Show requests");
   msg("Showing the source response. The saved quote is unchanged.");
   msg("Side chat waiting");
+  msg("Sidebar hidden");
+  msg("Sidebar shown");
   msg('Sign in in provider settings using "{method}".');
   msg(
     'Sign in in provider settings using "{method}". The login terminal runs on this environment.',
   );
   msg("Sign in to Antigravity in provider settings before sending.");
+  msg("Snoozed 1 thread");
+  msg("Snoozed {count} threads");
   msg("Some requests are slow");
   msg("Star on GitHub");
   msg("Starring…");
@@ -261,6 +287,7 @@ export function registerMessages(): void {
   msg("This browser cannot decode the Duo panel's {codec} stream.");
   msg("This browser cannot decode this device's {codec} stream.");
   msg("This browser cannot decode {codec}.");
+  msg("This commit is not in the thread's workspace");
   msg(
     "This connection still uses the old permissions, so some actions may no longer be available. Pair again using a new link with the permissions you need.",
   );
@@ -276,8 +303,24 @@ export function registerMessages(): void {
   msg("Timed out after {seconds}s while checking Claude account status.");
   msg("Tunnel works, but T3 Code on {host} did not answer");
   msg("Turn on automatic date and time on this device and on {host}, then retry.");
+  msg("Unable to copy terminal selection");
+  msg("Unable to open pull request link");
   msg("Unable to open release notes");
+  msg("Unable to open the terminal context menu");
+  msg("Unable to read the clipboard");
   msg("Unable to resize browser viewport");
+  msg("Undid archive of 1 thread");
+  msg("Undid archive of {count} threads");
+  msg("Undid discard of 1 draft");
+  msg("Undid discard of {count} drafts");
+  msg("Undid settle of 1 thread");
+  msg("Undid settle of {count} threads");
+  msg("Undid snooze of 1 thread");
+  msg("Undid snooze of {count} threads");
+  msg("Undid unpin of 1 thread");
+  msg("Undid unpin of {count} threads");
+  msg("Unpinned 1 thread");
+  msg("Unpinned {count} threads");
   msg("Update T3 Code on {host}.");
   msg("Update command exited with code {code}.");
   msg("Update command exited with code {code}: {reason}");
@@ -335,6 +378,8 @@ export function registerMessages(): void {
   msg("{provider} is turned off.");
   msg("{provider} is unavailable.");
   msg("{status} in {duration}");
+  msg("{status}: {title}");
+  msg("{summary}, {label}");
   msg("{tokens} tokens");
   msg("{used} / {budget} tokens");
 }

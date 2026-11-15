@@ -4,16 +4,29 @@
 import { msg } from "gt-react-native";
 
 export function registerMessages(): void {
+  msg("''{name}'' exceeds the 10 MB attachment limit.");
+  msg("''{name}'' exceeds the {size} attachment limit.");
+  msg("''{name}'' is empty or could not be read.");
+  msg("''{name}'' is not a supported image type.");
+  msg("''{name}'' was skipped because this server does not support files.");
   msg("1 background task");
+  msg("1 byte");
   msg("1 command");
   msg("1 monitor");
+  msg("1 needs attention");
+  msg("1 needs you");
   msg("1 reset credit banked");
+  msg("1 shared file was skipped because this draft reached the attachment limit.");
   msg("1 subagent");
   msg("1 upstream provider connected through OpenCode.");
   msg("1 upstream provider connected through the configured OpenCode server.");
   msg(
     "A VPN or Tailscale exit node on {host} can block the tunnel (port 7844). Turn it off or allow the tunnel.",
   );
+  msg(
+    "A new version has been downloaded and installs automatically the next time you leave the app. Install it now instead?",
+  );
+  msg("A pasted image exceeds the 10 MB attachment limit.");
   msg("ACP Registry agent ''{agentId}'' has no compatible distribution for this environment.");
   msg("ACP Registry agent ''{agentId}'' has not been prepared on this environment.");
   msg("ACP Registry agent {agentId} has no {distribution} distribution for {platform}.");
@@ -30,13 +43,16 @@ export function registerMessages(): void {
   msg('Add an "origin" remote before pushing or creating {changeRequest}.');
   msg("Allow");
   msg("Allow {app} to run {tool}?");
+  msg("An attachment could not upload.");
   msg("Antigravity did not respond to its local health check within {seconds} seconds.");
   msg("Antigravity is installed. Connect with {method} to load models.");
   msg("Antigravity needs at least {size} MiB of free space to install.");
   msg(
     "Antigravity {version} no longer works with this T3 Code release. Update it in Antigravity setup.",
   );
+  msg("As of {time}");
   msg("Branch is behind upstream. Pull/rebase before creating {changeRequest}.");
+  msg("Cancel import");
   msg("Changed {count} files");
   msg("Checked linked pull requests {count} times");
   msg("Choose branch");
@@ -52,6 +68,7 @@ export function registerMessages(): void {
   msg(
     "Claude could not authenticate. For subscription login, run `claude auth login` on this environment's machine, then start a new thread. For API-key authentication, check this instance's configured credentials.",
   );
+  msg("Clone");
   msg(
     "Codex CLI is not authenticated. Run `codex login` with CODEX_HOME set to {path} and try again.",
   );
@@ -61,6 +78,7 @@ export function registerMessages(): void {
   msg("Commit, push & create {changeRequest} from default branch?");
   msg("Commit, push & {changeRequest}");
   msg("Completed in {duration}");
+  msg("Connect an environment first.");
   msg("Connect with {method} to use Antigravity and load models.");
   msg("Connection failed. Reason: {reason}");
   msg("Connection {number}");
@@ -70,18 +88,29 @@ export function registerMessages(): void {
   msg("Context compacted {before} → {after} tokens");
   msg("Context compaction");
   msg("Continued for {duration}");
+  msg("Could not apply model selection");
+  msg("Could not cancel import");
+  msg("Could not clone");
   msg("Could not download ACP Registry agent {agentId} {version}.");
+  msg("Could not download the update.");
   msg("Could not fetch ACP Registry index from {url}.");
+  msg("Could not import shared content");
+  msg("Could not import shared content.");
   msg("Could not inspect ACP Registry agent: {reason}");
   msg("Could not install ACP Registry agent {agentId}.");
   msg("Could not link Antigravity user skills at {path}.");
+  msg("Could not open link");
+  msg("Could not read ''{name}''.");
+  msg("Could not read a pasted image.");
   msg("Could not read {secrets} from its secret provider. Unlock it, then refresh.");
+  msg("Could not save pending state.");
   msg(
     "Could not start Codex CLI (`{binaryPath}`). Check Settings → Providers → Codex → Binary path on the server. Installing ChatGPT or Codex desktop may not add codex to PATH.",
   );
   msg(
     "Could not start Codex CLI (`{binaryPath}`). Check Settings → Providers → Codex → Binary path on the server. Make sure the configured executable exists and can be run.",
   );
+  msg("Couldn't reach T3 Connect");
   msg(
     "Couldn't reach the configured OpenCode server at {url}. Check that the server is running and the URL is correct.",
   );
@@ -94,6 +123,8 @@ export function registerMessages(): void {
   msg("Detached HEAD: checkout a branch before creating {changeRequest}.");
   msg("Device lease ended: {reason}");
   msg("Device stream offer failed ({status}). Retrying…");
+  msg("Downloaded, but could not restart the app.");
+  msg("Drafts could not be loaded, so the prompt was not added.");
   msg("Driver ''{driver}'' failed to create instance: {detail}");
   msg("Driver ''{driver}'' is not registered in this build.");
   msg("Edit pending message");
@@ -107,6 +138,7 @@ export function registerMessages(): void {
   msg("Failed to connect. Retrying {environment}...");
   msg("Failed to execute OpenCode CLI health check: {detail}");
   msg("Failed to load OpenCode provider inventory: {detail}");
+  msg("Failed to save the queued message.");
   msg("Failed {program}");
   msg("Filter {index} needs a path under body, headers or query, and a value.");
   msg("Filter {index} needs a path under body, headers or query, and at least one value.");
@@ -120,14 +152,30 @@ export function registerMessages(): void {
   msg(
     "Google does not publish an Antigravity runtime for {platform}. Use a supported remote environment or a custom executable.",
   );
+  msg("Got it");
   msg("Guest");
   msg("If it keeps failing, remove {host} from this device and add it again.");
+  msg("Install Now");
   msg("Its CPU is overloaded (load {load} on {cores} cores).");
+  msg("Keep mine");
+  msg("Later");
+  msg("Linked prompt ready. Replace draft?");
   msg("Linked {count} pull requests");
+  msg("Loading agents…");
   msg("Make sure T3 Code is running on {host}.");
   msg("Make sure {host} is awake and T3 Code is running on it.");
   msg("Make sure {host} is awake and online.");
+  msg("N/A");
+  msg("Needs approval");
+  msg("Needs your input");
+  msg("Next reset {time}");
+  msg("No active agents");
+  msg("No connected environment offers threads without a project.");
+  msg("No limits available");
   msg("No local commits to include in {changeRequest}.");
+  msg("No session limit reported");
+  msg("No subscription limits available.");
+  msg("No weekly limit reported");
   msg(
     "On a device already connected to {host}, open Settings > Sharing & access and approve the device showing {code}.",
   );
@@ -136,16 +184,27 @@ export function registerMessages(): void {
   );
   msg("On {host}, check Settings > Sharing & access or run `t3 connect status`.");
   msg("On {host}, open Settings > Sharing & access and turn T3 Connect on.");
+  msg("One shared file could not be read.");
+  msg("One shared item was not a supported image.");
+  msg("Only the first {count} shared files were attached.");
+  msg("Only the first {count} shared images were attached.");
+  msg("Open T3");
+  msg("Open T3 to refresh");
   msg("Open a link from {app}?");
   msg("Open or restart T3 Code on {host}.");
+  msg("Open the link again after the clone to get the prompt.");
   msg("OpenCode v{version} is too old. Upgrade to v{minVersion} or newer.");
   msg("OpenCode {version} lists 1 model.");
   msg("OpenCode {version} lists {count} models.");
   msg("Or run `t3 auth connect-device approve {code}` on {host}.");
   msg("Originally queued, then promoted to steer the active turn");
+  msg("Out of date");
   msg("Path: {path}");
   msg("Performed {count} other actions");
+  msg("Permissions have changed for {environment}");
   msg("Pi {version} is unsupported. Update to Pi {minVersion} or newer.");
+  msg("Prompt from a link");
+  msg("Pull request #{number} could not be loaded, so this task starts from your default branch.");
   msg("Push & create {changeRequest}");
   msg("Push & create {changeRequest} from default branch?");
   msg("Push to {branch}");
@@ -170,12 +229,20 @@ export function registerMessages(): void {
   msg("Relay rejected the environment connection request ({reason}).");
   msg("Relay rejected the environment link proof ({reason}).");
   msg("Relay returned an unexpected HTTP {status}.");
+  msg(
+    "Remove attachments from the draft before restoring this message. Messages can contain at most {count} attachments.",
+  );
   msg('Remove checkout "{name}" and delete its 1 thread?');
   msg('Remove checkout "{name}" and delete its {count} threads?');
   msg('Remove checkout "{name}"?');
   msg('Remove project "{name}" and delete its 1 thread?');
   msg('Remove project "{name}" and delete its {count} threads?');
   msg('Remove project "{name}"?');
+  msg("Replace");
+  msg("Reset time unavailable");
+  msg("Reset {time}");
+  msg("Retry cancel");
+  msg("Retry import");
   msg("Running command");
   msg("Running {command}");
   msg("Running {program}");
@@ -186,6 +253,7 @@ export function registerMessages(): void {
   msg("Searched the web {count} times");
   msg("Secure connection to {host}'s tunnel failed");
   msg("Send this message from {app}?");
+  msg("Server attachment support is still loading.");
   msg(
     "Set {variables} under this instance's environment variables in provider settings. T3 Code will detect it on the next provider refresh.",
   );
@@ -195,13 +263,18 @@ export function registerMessages(): void {
   msg(
     'Sign in in provider settings using "{method}". The login terminal runs on this environment.',
   );
+  msg("Sign in to T3 Connect to see agents");
+  msg("Some queued messages could not be loaded");
+  msg("Some shared content was skipped");
   msg("Starting {provider}");
   msg("Steer waiting for the agent to read it after the running command finishes");
   msg("Steer · waiting to be read");
   msg("Steered the active turn");
+  msg("Stopped");
   msg("Stopped command");
   msg("Stopped watching {count} pull requests");
   msg("Stopped {program}");
+  msg("Subscription remaining");
   msg("T3 Code could not determine the Pi version. Pi {minVersion} or newer is required.");
   msg("T3 Code on {host} did not accept this device");
   msg("T3 Code on {host} did not answer");
@@ -209,8 +282,20 @@ export function registerMessages(): void {
   msg("T3 Code on {host} was too busy to answer.");
   msg("T3 Connect could not reach {host}'s tunnel");
   msg("T3 Connect is not turned on for {host}");
+  msg("Tap to connect in T3");
   msg(
     "The ACP agent did not resolve and create a test session within {seconds} seconds. Package installation or agent startup may be slow; this check retries on the next provider refresh.",
+  );
+  msg("The message could not be sent.");
+  msg("The prompt opens in a new task once the clone starts.");
+  msg("The requested model is not available, so your default is used.");
+  msg("The shared content could not be restored safely.");
+  msg("The shared content could not be saved.");
+  msg("The shared content is no longer in the inbox.");
+  msg("The size of ''{name}'' could not be determined.");
+  msg("The unsent message could not be restored.");
+  msg(
+    "The {changeRequest} worktree has local changes and could not update to the {changeRequest} head. Resolve them before trying again.",
   );
   msg(
     'This action will commit and push changes on "{branch}". You can continue on this branch or create a feature branch and run the same action there.',
@@ -229,7 +314,20 @@ export function registerMessages(): void {
   );
   msg("This client is older than the server on {environment}; its usage is excluded from totals.");
   msg("This client requires a newer server. Update T3 Code on {host} to connect.");
+  msg(
+    "This connection still uses the old permissions, so some actions may no longer be available. Pair again using a new link with the permissions you need.",
+  );
   msg("This device can't reach {host}'s tunnel");
+  msg("This link has no prompt.");
+  msg("This link names a pull request T3 Code cannot read.");
+  msg("This link names a repository T3 Code cannot read.");
+  msg("This model pick was not saved. {reason}");
+  msg("This prompt came from a link. Read it before you send.");
+  msg(
+    "This prompt had hidden characters, it may be malicious. They were removed. Read it before you send.",
+  );
+  msg("This prompt had only hidden characters, so it may be malicious. T3 Code did not open it.");
+  msg("This prompt is longer than {length} characters, so T3 Code did not open it.");
   msg("This removes {count} grouped project entries.");
   msg("Thought (×{count})");
   msg("Timed out after {seconds}s while checking Claude account status.");
@@ -237,6 +335,7 @@ export function registerMessages(): void {
   msg("Tunnel works, but T3 Code on {host} did not answer");
   msg("Turn on automatic date and time on this device and on {host}, then retry.");
   msg("Unlinked {count} pull requests");
+  msg("Unreadable records and attachment files are still saved. Other messages can still be sent.");
   msg("Update T3 Code on {host}.");
   msg("Update command exited with code {code}.");
   msg("Update command exited with code {code}: {reason}");
@@ -246,6 +345,7 @@ export function registerMessages(): void {
   msg("Updating {count} providers…");
   msg("Updating {name}…");
   msg("Use at most {count} filters.");
+  msg("Use without project");
   msg("Used browser {count} times");
   msg("Used device controls {count} times");
   msg("Used {count} tools");
@@ -255,6 +355,7 @@ export function registerMessages(): void {
   msg("Waiting · {label}");
   msg("Watching {count} pull requests");
   msg("Worked for {duration}");
+  msg("You don't have {repository}");
   msg("You stopped after {duration}");
   msg("Your organization policy does not allow the {provider} provider.");
   msg("expires in {duration}");
@@ -265,13 +366,19 @@ export function registerMessages(): void {
   );
   msg("{advisory} Use {recommendation}.");
   msg("{completed}/{total} completed");
+  msg("{count} accounts · pooled");
+  msg("{count} active");
   msg("{count} background tasks");
   msg("{count} banked");
+  msg("{count} bytes");
   msg("{count} commands");
   msg("{count} left");
   msg("{count} malformed or inconsistent usage record(s) were skipped; usage may be incomplete.");
   msg("{count} monitors");
+  msg("{count} more in T3");
+  msg("{count} need you");
   msg("{count} reset credits banked");
+  msg("{count} shared files were skipped because this draft reached the attachment limit.");
   msg("{count} side chats need approval");
   msg("{count} side chats need input");
   msg("{count} side chats need you");
@@ -308,4 +415,7 @@ export function registerMessages(): void {
   msg("{organization} manages T3 Code updates.");
   msg("{organization} manages T3 Code updates. Only stable releases can be installed.");
   msg("{organization}'s policy does not allow the {provider} provider.");
+  msg("{provider}, {window}, {percent} percent remaining. {reset}. {detail}.");
+  msg("{provider}. {detail}.");
+  msg("{status}: {title}");
 }

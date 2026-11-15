@@ -32,6 +32,7 @@ import {
 import { liveNewTaskFlowKeys, newTaskFlowKey } from "./new-task-flow-state";
 import { AppBar } from "../../components/ui/AppBar";
 import "../../i18n/intl-polyfills";
+import { getTranslator } from "../../i18n/currentTranslator";
 import { useGT } from "gt-react-native";
 import { useWorkspaceBackNavigation } from "../layout/workspace/useAndroidWorkspaceNavigation";
 
@@ -68,9 +69,10 @@ const branchCheckouts = makeNewTaskBranchCheckouts({
   onFailure: (request, result) => {
     if (!isAtomCommandInterrupted(result)) {
       const error = squashAtomCommandFailure(result);
+      const gt = getTranslator();
       Dialog.alert(
-        "Could not switch branch",
-        error instanceof Error ? error.message : "The branch could not be checked out.",
+        gt("Could not switch branch"),
+        error instanceof Error ? error.message : gt("The branch could not be checked out."),
       );
     }
     rootNavigationRef.dispatch({

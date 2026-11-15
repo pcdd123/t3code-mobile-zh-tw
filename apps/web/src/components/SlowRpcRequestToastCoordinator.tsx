@@ -1,6 +1,7 @@
 import { useGT } from "gt-react";
 
 import { localized, type Translate } from "./Localized";
+import { getTranslator } from "../i18n/currentTranslator";
 import { type SlowRpcAckRequest, subscribeSlowRpcAckRequests } from "../rpc/requestLatencyState";
 import { toastManager } from "./ui/toast";
 
@@ -50,11 +51,12 @@ export function startSlowRpcRequestToasts(): () => void {
       return;
     }
 
+    const gt = getTranslator();
     const nextToast = {
       data: {
         expandableContent: <SlowRequestDetails requests={slowRequests} />,
         expandableDescriptionTrigger: true,
-        expandableLabels: { collapse: "Hide requests", expand: "Show requests" },
+        expandableLabels: { collapse: gt("Hide requests"), expand: gt("Show requests") },
       },
       description: localized((gt) => describeSlowRequests(slowRequests, gt)),
       timeout: 0,

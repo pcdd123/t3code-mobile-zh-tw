@@ -306,7 +306,10 @@ it("app-open-thread-from-draft", async () => {
 
 // Through the diff.toggle shortcut, the same handler as the header's diff button.
 const toggleDiff = (to: "open" | "close") => async () => {
-  await userEvent.keyboard("{Control>}d{/Control}");
+  // diff.toggle is mod+d; Chromium on macOS maps mod to Meta.
+  await userEvent.keyboard(
+    /mac/i.test(navigator.platform) ? "{Meta>}d{/Meta}" : "{Control>}d{/Control}",
+  );
   const diff = page.getByRole("group", { name: "Diff layout" });
   if (to === "open") await expect.element(diff).toBeVisible();
   else await expect.element(diff).not.toBeInTheDocument();

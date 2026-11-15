@@ -8,6 +8,7 @@ import { create } from "zustand";
 
 import { stackedThreadToast, toastManager } from "../components/ui/toast";
 import { shortcutLabelForCommand } from "../keybindings";
+import { getTranslator } from "../i18n/currentTranslator";
 import { announce, cancelAnnouncement } from "../lib/announce";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 import { primaryServerKeybindingsAtom } from "../state/server";
@@ -29,21 +30,47 @@ type UndoNotice = {
 
 export const useThreadUndoNotice = create<{ notice: UndoNotice | null }>(() => ({ notice: null }));
 
-const UNDONE_ACTION = {
-  Settled: "settle",
-  Snoozed: "snooze",
-  Unpinned: "unpin",
-  Archived: "archive",
-  Discarded: "discard",
-} satisfies Record<UndoOptions["action"], string>;
-
-function countLabel(action: UndoOptions["action"], count: number) {
-  const noun = action === "Discarded" ? "draft" : "thread";
-  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+function threadUndoNoticeSummary(
+  { action, count }: Pick<UndoNotice, "action" | "count">,
+  gt: Translate,
+): string {
+  const one = count === 1;
+  switch (action) {
+    case "Settled":
+      return one ? gt("Settled 1 thread") : gt("Settled {count} threads", { count });
+    case "Snoozed":
+      return one ? gt("Snoozed 1 thread") : gt("Snoozed {count} threads", { count });
+    case "Unpinned":
+      return one ? gt("Unpinned 1 thread") : gt("Unpinned {count} threads", { count });
+    case "Archived":
+      return one ? gt("Archived 1 thread") : gt("Archived {count} threads", { count });
+    case "Discarded":
+      return one ? gt("Discarded 1 draft") : gt("Discarded {count} drafts", { count });
+  }
 }
 
-function threadUndoNoticeSummary(notice: Pick<UndoNotice, "action" | "count">): string {
-  return `${notice.action} ${countLabel(notice.action, notice.count)}`;
+function undoneSummary(action: UndoOptions["action"], count: number, gt: Translate): string {
+  const one = count === 1;
+  switch (action) {
+    case "Settled":
+      return one
+        ? gt("Undid settle of 1 thread")
+        : gt("Undid settle of {count} threads", { count });
+    case "Snoozed":
+      return one
+        ? gt("Undid snooze of 1 thread")
+        : gt("Undid snooze of {count} threads", { count });
+    case "Unpinned":
+      return one ? gt("Undid unpin of 1 thread") : gt("Undid unpin of {count} threads", { count });
+    case "Archived":
+      return one
+        ? gt("Undid archive of 1 thread")
+        : gt("Undid archive of {count} threads", { count });
+    case "Discarded":
+      return one
+        ? gt("Undid discard of 1 draft")
+        : gt("Undid discard of {count} drafts", { count });
+  }
 }
 
 export function threadUndoLabel(
@@ -61,12 +88,13 @@ let announcedSummary: string | null = null;
 // separately from the alert that shows it.
 function setNotice(notice: UndoNotice | null) {
   useThreadUndoNotice.setState({ notice });
-  const summary = notice ? threadUndoNoticeSummary(notice) : null;
+  const gt = getTranslator();
+  const summary = notice ? threadUndoNoticeSummary(notice, gt) : null;
   if (summary === announcedSummary) return;
   announcedSummary = summary;
   if (summary) {
-    const label = threadUndoLabel(appAtomRegistry.get(primaryServerKeybindingsAtom));
-    announce(`${summary}, ${label}`, "thread-undo-notice");
+    const label = threadUndoLabel(appAtomRegistry.get(primaryServerKeybindingsAtom), gt);
+    announce(gt("{summary}, {label}", { summary, label }), "thread-undo-notice");
   } else {
     cancelAnnouncement("thread-undo-notice");
   }
@@ -131,7 +159,7 @@ function refreshNotice() {
       );
       // Failures already raise a toast, so only what was actually restored is spoken.
       if (undone > 0) {
-        announce(`Undid ${UNDONE_ACTION[latest.action]} of ${countLabel(latest.action, undone)}`);
+        announce(undoneSummary(latest.action, undone, getTranslator()));
       }
     },
   });
