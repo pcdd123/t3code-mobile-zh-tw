@@ -1,4 +1,6 @@
 import { Button } from "../../components/ui/Button";
+import "../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 import {
   AuthSettingsWriteScope,
   isManagedSettingPath,
@@ -72,6 +74,7 @@ export function AutoSettleSettingsRows(props: {
   readonly write: (patch: ServerSettingsPatch) => void;
   readonly pending: boolean;
 }) {
+  const gt = useGT();
   const { selectedTargets, projectGroups, selectedProjectKey } = useSettingsEnvironmentFilter();
   const selectedProject = projectGroups.find((group) => group.key === selectedProjectKey);
   const writableEnvironments = useEnvironmentsWithScope(selectedTargets, AuthSettingsWriteScope);
@@ -126,36 +129,40 @@ export function AutoSettleSettingsRows(props: {
   return (
     <View className="gap-6">
       {!projectSelected ? (
-        <SettingsSection title="Usage limits">
+        <SettingsSection title={gt("Usage limits")}>
           <SettingsSwitchRow
             icon="clock"
-            label="Resume after usage limits"
-            subtitle="Automatically resume threads when their usage limits reset. You can cancel auto-resume in each thread."
+            label={gt("Resume after usage limits")}
+            subtitle={gt(
+              "Automatically resume threads when their usage limits reset. You can cancel auto-resume in each thread.",
+            )}
             value={uniformMobileSetting(displayTargets, "autoResumeLimitedThreads")}
             disabled={disabledFor("autoResumeLimitedThreads")}
             onValueChange={(value) => writeToAll({ autoResumeLimitedThreads: value })}
           />
           <SettingsSwitchRow
             icon="clock"
-            label="Snooze until limits reset"
-            subtitle="Snooze threads until their usage limits reset. Enable auto-resume to continue the agent after the reset."
+            label={gt("Snooze until limits reset")}
+            subtitle={gt(
+              "Snooze threads until their usage limits reset. Enable auto-resume to continue the agent after the reset.",
+            )}
             value={uniformMobileSetting(displayTargets, "snoozeLimitedThreads")}
             disabled={disabledFor("snoozeLimitedThreads")}
             onValueChange={(value) => writeToAll({ snoozeLimitedThreads: value })}
           />
         </SettingsSection>
       ) : null}
-      <SettingsSection title="Auto-settle">
+      <SettingsSection title={gt("Auto-settle")}>
         <SettingsSwitchRow
           icon="arrow.triangle.branch"
-          label="Auto-settle merged threads"
+          label={gt("Auto-settle merged threads")}
           value={referenceSettings.sidebarAutoSettleOnMerge}
           disabled={disabledFor("sidebarAutoSettleOnMerge")}
           onValueChange={(value) => writeToAll({ sidebarAutoSettleOnMerge: value })}
         />
         <SettingsSwitchRow
           icon="clock"
-          label="Auto-settle inactive threads"
+          label={gt("Auto-settle inactive threads")}
           value={afterDays !== null}
           disabled={disabledFor("sidebarAutoSettleAfterDays")}
           onValueChange={(value) =>
@@ -165,7 +172,9 @@ export function AutoSettleSettingsRows(props: {
         {afterDays !== null ? (
           <View className="flex-row items-center gap-4 px-4 py-4 android:min-h-14 android:py-3">
             <View className="w-[22px] android:w-6" />
-            <Text className="flex-1 text-foreground text-lg android:text-base">Inactive days</Text>
+            <Text className="flex-1 text-foreground text-lg android:text-base">
+              {gt("Inactive days")}
+            </Text>
             <AutoSettleDaysField
               value={afterDays}
               disabled={disabledFor("sidebarAutoSettleAfterDays")}
@@ -175,14 +184,14 @@ export function AutoSettleSettingsRows(props: {
         ) : null}
       </SettingsSection>
       {!props.pending && mismatches.length > 0 ? (
-        <SettingsSection title="Across environments">
+        <SettingsSection title={gt("Across environments")}>
           <View className="gap-3 p-4">
-            <Text className="text-base text-foreground">Auto-settle defaults differ</Text>
+            <Text className="text-base text-foreground">{gt("Auto-settle defaults differ")}</Text>
             <Text className="text-sm text-foreground-muted">
               {mismatches.map((mismatch) => mismatch.label).join(", ")}
             </Text>
             <Button
-              label="Apply auto-settle defaults"
+              label={gt("Apply auto-settle defaults")}
               tone="secondary"
               disabled={disabledFor("sidebarAutoSettleOnMerge", "sidebarAutoSettleAfterDays")}
               onPress={() => writeToAll(autoSettlePatch)}
@@ -195,6 +204,7 @@ export function AutoSettleSettingsRows(props: {
 }
 
 export function WorkingSectionSettings() {
+  const gt = useGT();
   const savePreferences = useAtomSet(updateMobilePreferencesAtom);
   const preferences = useAtomValue(mobilePreferencesAtom);
   const workingShelfEnabled =
@@ -202,35 +212,36 @@ export function WorkingSectionSettings() {
 
   return (
     <View className="gap-3">
-      <SettingsSection title="Sidebar">
+      <SettingsSection title={gt("Sidebar")}>
         <SettingsSwitchRow
           icon="bolt.circle"
-          label="Working section"
+          label={gt("Working section")}
           value={workingShelfEnabled}
           onValueChange={(value) => savePreferences({ workingShelfEnabled: value })}
         />
       </SettingsSection>
       <Text className="px-2 text-sm text-foreground-muted">
-        Fold working and monitoring threads into a Working section. They return to the top of the
-        list when they need you. While this is on, active threads are ordered by time and cannot be
-        moved.
+        {gt(
+          "Fold working and monitoring threads into a Working section. They return to the top of the list when they need you. While this is on, active threads are ordered by time and cannot be moved.",
+        )}
       </Text>
     </View>
   );
 }
 
 export function NewThreadSettingsSection() {
+  const gt = useGT();
   const savePreferences = useAtomSet(updateMobilePreferencesAtom);
   const preferences = useAtomValue(mobilePreferencesAtom);
   const useLastProject =
     AsyncResult.isSuccess(preferences) && preferences.value.useLastProjectForNewThreads !== false;
 
   return (
-    <SettingsSection title="New threads">
+    <SettingsSection title={gt("New threads")}>
       <SettingsSwitchRow
         icon="square.and.pencil"
-        label="Use last project"
-        subtitle="Start new threads in the last project you used on this device."
+        label={gt("Use last project")}
+        subtitle={gt("Start new threads in the last project you used on this device.")}
         value={useLastProject}
         onValueChange={(value) => savePreferences({ useLastProjectForNewThreads: value })}
       />

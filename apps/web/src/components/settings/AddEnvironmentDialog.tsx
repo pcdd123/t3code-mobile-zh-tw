@@ -458,7 +458,9 @@ export function AddEnvironmentDialog({
     toastManager.add({
       type: "success",
       title: gt("Route added"),
-      description: `${routeTarget.label} falls back to T3 Connect when its other routes are unreachable.`,
+      description: gt("{name} falls back to T3 Connect when its other routes are unreachable.", {
+        name: routeTarget.label,
+      }),
     });
   };
   const renderRemoteModeBody = () => (
@@ -466,7 +468,7 @@ export function AddEnvironmentDialog({
       {relayRouteOffer !== null ? (
         <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
           <p className="text-xs text-muted-foreground">
-            This machine is on your T3 Connect account. Use it as a fallback route.
+            {gt("This machine is on your T3 Connect account. Use it as a fallback route.")}
           </p>
           <Button
             size="xs"
@@ -474,7 +476,7 @@ export function AddEnvironmentDialog({
             disabled={isAddingSavedBackend}
             onClick={() => void addRelayRoute()}
           >
-            Add T3 Connect
+            {gt("Add T3 Connect")}
           </Button>
         </div>
       ) : null}
@@ -503,7 +505,7 @@ export function AddEnvironmentDialog({
             htmlFor="saved-backend-ssh-host"
             className="mb-1.5 block text-xs font-medium text-foreground"
           >
-            SSH host or alias
+            {gt("SSH host or alias")}
           </label>
           <Autocomplete
             items={filteredDiscoveredSshHosts}
@@ -572,7 +574,7 @@ export function AddEnvironmentDialog({
                   </AutocompleteList>
                 ) : (
                   <AutocompleteEmpty className="break-all">
-                    No hosts match "{savedBackendSshHost.trim()}".
+                    {gt("No hosts match “{host}”.", { host: savedBackendSshHost.trim() })}
                   </AutocompleteEmpty>
                 )}
               </AutocompletePopup>
