@@ -4,19 +4,21 @@ import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
+import type { useGT } from "gt-react";
 
 import { stackedThreadToast } from "./ui/toast";
 
 type TitleRegenerationResult = AtomCommandResult<ThreadTitleRegenerationOutcome | null, unknown>;
+type Translate = ReturnType<typeof useGT>;
 
-function failureMessage(result: TitleRegenerationResult): string | null {
+function failureMessage(result: TitleRegenerationResult, gt: Translate): string | null {
   if (result._tag === "Failure") {
     if (isAtomCommandInterrupted(result)) return null;
     const error = squashAtomCommandFailure(result);
-    return error instanceof Error ? error.message : "An error occurred.";
+    return error instanceof Error ? error.message : gt("An error occurred.");
   }
   return result.value?.status === "failed"
-    ? (result.value.message ?? "Title generation failed.")
+    ? (result.value.message ?? gt("Title generation failed."))
     : null;
 }
 
@@ -24,9 +26,12 @@ function isKept(result: TitleRegenerationResult): boolean {
   return result._tag === "Success" && result.value?.status === "unchanged";
 }
 
-export function titleRegenerationToast(results: ReadonlyArray<TitleRegenerationResult>) {
+export function titleRegenerationToast(
+  results: ReadonlyArray<TitleRegenerationResult>,
+  gt: Translate,
+) {
   const failures = results.flatMap((result) => {
-    const message = failureMessage(result);
+    const message = failureMessage(result, gt);
     return message === null ? [] : [message];
   });
   if (failures.length > 0) {
@@ -34,8 +39,11 @@ export function titleRegenerationToast(results: ReadonlyArray<TitleRegenerationR
       type: "error",
       title:
         results.length === 1
-          ? "Failed to regenerate thread title"
-          : `Failed to regenerate ${failures.length} of ${results.length} thread titles`,
+          ? gt("Failed to regenerate thread title")
+          : gt("Failed to regenerate {failed} of {total} thread titles", {
+              failed: failures.length,
+              total: results.length,
+            }),
       description: failures[0],
     });
   }
@@ -44,16 +52,19 @@ export function titleRegenerationToast(results: ReadonlyArray<TitleRegenerationR
   if (results.length === 1) {
     return stackedThreadToast({
       type: "info",
-      title: "Title kept",
-      description: "The current title already fits this thread.",
+      title: gt("Title kept"),
+      description: gt("The current title already fits this thread."),
     });
   }
   return stackedThreadToast({
     type: "info",
-    title: kept === results.length ? "Titles kept" : `Kept ${kept} of ${results.length} titles`,
+    title:
+      kept === results.length
+        ? gt("Titles kept")
+        : gt("Kept {kept} of {total} titles", { kept, total: results.length }),
     description:
       kept === results.length
-        ? "The current titles already fit these threads."
-        : "Those titles already fit their threads.",
+        ? gt("The current titles already fit these threads.")
+        : gt("Those titles already fit their threads."),
   });
 }

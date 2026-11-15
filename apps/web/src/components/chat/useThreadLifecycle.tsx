@@ -709,7 +709,7 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
         environmentId: activeThreadRef.environmentId,
         input: { threadId: activeThreadRef.threadId },
       }).then((result) => {
-        const toast = titleRegenerationToast([result]);
+        const toast = titleRegenerationToast([result], gt);
         if (toast) toastManager.add(toast);
       });
     },
