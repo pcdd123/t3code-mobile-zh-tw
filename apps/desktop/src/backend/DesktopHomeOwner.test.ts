@@ -12,6 +12,7 @@ import * as TestClock from "effect/testing/TestClock";
 
 import * as DesktopConfig from "../app/DesktopConfig.ts";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
+import { desktopTranslator } from "../i18n/desktopText.ts";
 import * as DesktopHomeOwner from "./DesktopHomeOwner.ts";
 
 const withTempHome = <A, E>(
@@ -79,7 +80,7 @@ describe("DesktopHomeOwner.readLiveHomeOwner", () => {
         Option.some({ pid: process.pid, port: 3790, serverVersion: "1.2.3" }),
       );
       assert.include(
-        DesktopHomeOwner.homeOwnedMessage(owner),
+        DesktopHomeOwner.homeOwnedMessage(owner, desktopTranslator("en")),
         `PID ${process.pid}, port 3790, version 1.2.3`,
       );
     }),

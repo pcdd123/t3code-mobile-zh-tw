@@ -22,6 +22,7 @@ import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopUpdates from "../updates/DesktopUpdates.ts";
 import * as DesktopWindow from "./DesktopWindow.ts";
 import * as DesktopClientSettings from "../settings/DesktopClientSettings.ts";
+import * as DesktopLanguage from "../i18n/DesktopLanguage.ts";
 
 const decodeClientSettings = Schema.decodeSync(ClientSettingsSchema);
 
@@ -130,12 +131,16 @@ const configureMenu = (
         Layer.provideMerge(layerDesktopWindow(selectedAction)),
         Layer.provideMerge(layerDesktopUpdates),
         Layer.provideMerge(layerElectronDialog),
-        Layer.provideMerge(layerElectronApp),
         Layer.provideMerge(
-          Layer.succeed(DesktopClientSettings.DesktopClientSettings, {
-            get: Effect.succeedSome(decodeClientSettings({ language })),
-            set: () => Effect.void,
-          }),
+          DesktopLanguage.layer.pipe(
+            Layer.provide(layerElectronApp),
+            Layer.provide(
+              Layer.succeed(DesktopClientSettings.DesktopClientSettings, {
+                get: Effect.succeedSome(decodeClientSettings({ language })),
+                set: () => Effect.void,
+              }),
+            ),
+          ),
         ),
         Layer.provideMerge(
           DesktopEnvironment.layer({ ...environmentInput, ...environment }).pipe(
@@ -158,28 +163,38 @@ describe("DesktopApplicationMenu", () => {
       }
     }),
   );
-  it("translates menu labels and roles while preserving accelerators and actions", () => {
-    const click = vi.fn();
-    const translated = DesktopApplicationMenu.translateDesktopMenu(
-      [
-        {
-          label: "Edit",
-          submenu: [
-            { role: "copy" },
-            { label: "Paste as Text", accelerator: "CmdOrCtrl+Shift+V", click },
-          ],
-        },
-      ],
-      "T3 Code",
-    );
-    assert.equal(translated[0]?.label, "編輯");
-    const submenu = translated[0]?.submenu;
-    if (!Array.isArray(submenu)) throw new Error("Expected submenu.");
-    assert.equal(submenu[0]?.label, "拷貝");
-    assert.equal(submenu[1]?.label, "以純文字貼上");
-    assert.equal(submenu[1]?.accelerator, "CmdOrCtrl+Shift+V");
-    assert.strictEqual(submenu[1]?.click, click);
-  });
+  it.effect("translates labels and roles while preserving accelerators and actions", () =>
+    Effect.gen(function* () {
+      const selectedAction = yield* Deferred.make<string>();
+      const template = yield* Deferred.make<readonly Electron.MenuItemConstructorOptions[]>();
+      yield* configureMenu(selectedAction, template, { platform: "darwin" }, "zh-TW");
+      const items = yield* Deferred.await(template);
+      const appSubmenu = items[0]?.submenu;
+      if (!Array.isArray(appSubmenu)) throw new Error("Expected app submenu.");
+      assert.match(appSubmenu[0]?.label ?? "", /^關於 T3 Code/);
+      const edit = items.find((item) => item.label === "編輯")?.submenu;
+      if (!Array.isArray(edit)) throw new Error("Expected Edit submenu.");
+      assert.equal(edit.find((item) => item.role === "copy")?.label, "複製");
+      const pasteAsText = edit.find((item) => item.label === "以純文字貼上");
+      assert.equal(pasteAsText?.accelerator, "CmdOrCtrl+Shift+V");
+      const view = items.find((item) => item.label === "顯示方式")?.submenu;
+      if (!Array.isArray(view)) throw new Error("Expected View submenu.");
+      const reload = view.find((item) => item.label === "重新載入");
+      reload?.click?.({} as Electron.MenuItem, undefined, {} as KeyboardEvent);
+      assert.equal(yield* Deferred.await(selectedAction), "main-reload");
+      assert.isDefined(view.find((item) => item.label === "顯示或隱藏開發者工具"));
+      assert.equal(items.find((item) => item.role === "help")?.label, "說明");
+    }),
+  );
+  it.effect("keeps Electron's role labels in English", () =>
+    Effect.gen(function* () {
+      const template = yield* Deferred.make<readonly Electron.MenuItemConstructorOptions[]>();
+      yield* configureMenu(yield* Deferred.make<string>(), template, { platform: "darwin" }, "ja");
+      const items = yield* Deferred.await(template);
+      assert.isDefined(items.find((item) => item.label === "Edit"));
+      assert.isUndefined(items.find((item) => item.role === "help")?.label);
+    }),
+  );
   it.effect("leaves the accelerator to Chromium instead of injecting a paste", () =>
     Effect.gen(function* () {
       const selectedAction = yield* Deferred.make<string>();

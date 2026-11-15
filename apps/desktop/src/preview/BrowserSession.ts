@@ -17,6 +17,8 @@ import * as SynchronizedRef from "effect/SynchronizedRef";
 
 import * as ElectronApp from "../electron/ElectronApp.ts";
 import * as ElectronDialog from "../electron/ElectronDialog.ts";
+import * as DesktopLanguage from "../i18n/DesktopLanguage.ts";
+import { desktopTranslator, type DesktopTranslate } from "../i18n/desktopText.ts";
 
 const PREVIEW_PARTITION_PREFIX = "persist:t3code-preview-";
 /** Ephemeral partitions omit persist: but retain a product prefix so the webview gate recognizes them. */
@@ -264,13 +266,15 @@ export const make = Effect.gen(function* BrowserSessionMake() {
   const fileSystem = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const platform = yield* HostProcess.Platform;
+  const language = yield* DesktopLanguage.DesktopLanguage;
+  const translator = language.locale.pipe(Effect.map(desktopTranslator));
   const runFork = Effect.runForkWith(yield* Effect.context<never>());
   // One prompt at a time, so a page cannot stack dialogs by looping a deep link.
   let permissionPromptOpen = false;
   /** Settles with `undefined` when the user gave no answer: another prompt was open or the dialog failed. */
   const promptPermission = (
     requester: WebContents | null,
-    prompt: {
+    prompt: (t: DesktopTranslate) => {
       readonly buttons: readonly [allow: string, deny: string];
       readonly message: string;
       readonly detail?: string;
@@ -288,25 +292,27 @@ export const make = Effect.gen(function* BrowserSessionMake() {
         callback(answer);
       });
     runFork(
-      electronDialog
-        .showMessageBox(
-          {
-            type: "question",
-            buttons: [...prompt.buttons],
-            // Default to deny so an Enter typed into the page cannot accept a prompt it raised.
-            defaultId: 1,
-            cancelId: 1,
-            message: prompt.message,
-            ...(prompt.detail === undefined ? {} : { detail: prompt.detail }),
-          },
-          previewHostWindow(requester),
-        )
-        .pipe(
-          Effect.map(({ response }): boolean | undefined => response === 0),
-          Effect.orElseSucceed(() => undefined),
-          Effect.flatMap(settle),
-          Effect.onInterrupt(() => settle(undefined)),
-        ),
+      translator.pipe(
+        Effect.flatMap((t) => {
+          const { buttons, message, detail } = prompt(t);
+          return electronDialog.showMessageBox(
+            {
+              type: "question",
+              buttons: [...buttons],
+              // Default to deny so an Enter typed into the page cannot accept a prompt it raised.
+              defaultId: 1,
+              cancelId: 1,
+              message,
+              ...(detail === undefined ? {} : { detail }),
+            },
+            previewHostWindow(requester),
+          );
+        }),
+        Effect.map(({ response }): boolean | undefined => response === 0),
+        Effect.orElseSucceed(() => undefined),
+        Effect.flatMap(settle),
+        Effect.onInterrupt(() => settle(undefined)),
+      ),
     );
   };
   /** Electron launches external protocols after granting openExternal; untrusted pages require confirmation. */
@@ -322,11 +328,13 @@ export const make = Effect.gen(function* BrowserSessionMake() {
     }
     promptPermission(
       requester,
-      {
-        buttons: ["Open", "Cancel"],
-        message: `Open this ${new URL(url).protocol.slice(0, -1)} link?`,
-        detail: `A page in the browser wants to open another application:\n\n${truncateForPrompt(url)}`,
-      },
+      (t) => ({
+        buttons: [t("Open"), t("Cancel")],
+        message: t("Open this {protocol} link?", { protocol: new URL(url).protocol.slice(0, -1) }),
+        detail: t("A page in the browser wants to open another application:\n\n{url}", {
+          url: truncateForPrompt(url),
+        }),
+      }),
       (answer) => callback(answer === true),
     );
   };
@@ -450,52 +458,63 @@ export const make = Effect.gen(function* BrowserSessionMake() {
     const host = new URL(approval.origin).host;
     const revocations = trust.revocations;
     runFork(
-      electronDialog
-        .showMessageBox(
-          {
-            type: "warning",
-            buttons: ["Trust and Remember", "Cancel"],
-            defaultId: 1,
-            cancelId: 1,
-            signal: dismiss.signal,
-            message: `${host} has an untrusted certificate`,
-            detail: [
-              reason,
-              "",
-              `Issued to: ${promptCertificateName(certificate.subjectName)}`,
-              `Issued by: ${promptCertificateName(certificate.issuerName)}`,
-              `Valid: ${promptCertificateDate(certificate.validStart)} – ${promptCertificateDate(certificate.validExpiry)}`,
-              `Fingerprint: ${approval.fingerprint}`,
-              "",
-              "Trust it only if you know this certificate belongs to the site. Clearing this browser profile's cookies forgets it.",
-            ].join("\n"),
-          },
-          // In the reporter's Windows test, a box owned by the host window
-          // blocked all mouse input, its own buttons included, until it closed.
-          platform === "win32" ? undefined : previewHostWindow(contents),
-        )
-        .pipe(
-          Effect.flatMap(({ response }) =>
-            response === 0 && !dismiss.signal.aborted
-              ? rememberCertificate(trust, key, approval, revocations).pipe(
-                  Effect.catch((cause) =>
-                    Effect.logWarning("Failed to save a certificate approval.", { cause }).pipe(
-                      Effect.andThen(
-                        electronDialog.showErrorBox(
-                          `Could not trust the certificate for ${host}`,
-                          "T3 Code could not save this approval, so the page stays blocked. Check that the disk is not full and its data folder is writable, then try again.",
+      translator.pipe(
+        Effect.flatMap((t) =>
+          electronDialog
+            .showMessageBox(
+              {
+                type: "warning",
+                buttons: [t("Trust and Remember"), t("Cancel")],
+                defaultId: 1,
+                cancelId: 1,
+                signal: dismiss.signal,
+                message: t("{host} has an untrusted certificate", { host }),
+                detail: [
+                  t(reason),
+                  "",
+                  t("Issued to: {name}", { name: promptCertificateName(certificate.subjectName) }),
+                  t("Issued by: {name}", { name: promptCertificateName(certificate.issuerName) }),
+                  t("Valid: {start} – {end}", {
+                    start: promptCertificateDate(certificate.validStart),
+                    end: promptCertificateDate(certificate.validExpiry),
+                  }),
+                  t("Fingerprint: {fingerprint}", { fingerprint: approval.fingerprint }),
+                  "",
+                  t(
+                    "Trust it only if you know this certificate belongs to the site. Clearing this browser profile's cookies forgets it.",
+                  ),
+                ].join("\n"),
+              },
+              // In the reporter's Windows test, a box owned by the host window
+              // blocked all mouse input, its own buttons included, until it closed.
+              platform === "win32" ? undefined : previewHostWindow(contents),
+            )
+            .pipe(
+              Effect.flatMap(({ response }) =>
+                response === 0 && !dismiss.signal.aborted
+                  ? rememberCertificate(trust, key, approval, revocations).pipe(
+                      Effect.catch((cause) =>
+                        Effect.logWarning("Failed to save a certificate approval.", { cause }).pipe(
+                          Effect.andThen(
+                            electronDialog.showErrorBox(
+                              t("Could not trust the certificate for {host}", { host }),
+                              t(
+                                "T3 Code could not save this approval, so the page stays blocked. Check that the disk is not full and its data folder is writable, then try again.",
+                              ),
+                            ),
+                          ),
+                          Effect.as(false),
                         ),
                       ),
-                      Effect.as(false),
-                    ),
-                  ),
-                )
-              : Effect.succeed(false),
-          ),
-          Effect.orElseSucceed(() => false),
-          Effect.flatMap(settle),
-          Effect.onInterrupt(() => settle(false)),
+                    )
+                  : Effect.succeed(false),
+              ),
+            ),
         ),
+        Effect.orElseSucceed(() => false),
+        Effect.flatMap(settle),
+        Effect.onInterrupt(() => settle(false)),
+      ),
     );
   };
   yield* electronApp.on(
@@ -604,10 +623,12 @@ export const make = Effect.gen(function* BrowserSessionMake() {
             }
             promptPermission(
               requester,
-              {
-                buttons: ["Allow", "Block"],
-                message: `${truncateForPrompt(origin)} wants to see text and images copied to the clipboard`,
-              },
+              (t) => ({
+                buttons: [t("Allow"), t("Block")],
+                message: t("{origin} wants to see text and images copied to the clipboard", {
+                  origin: truncateForPrompt(origin),
+                }),
+              }),
               (answer) => {
                 if (answer !== undefined) clipboardReadDecisions.set(origin, answer);
                 callback(answer === true);

@@ -44,6 +44,8 @@ import * as ElectronWindow from "../../electron/ElectronWindow.ts";
 import * as Electron from "electron";
 import * as MacPermissions from "../../permissions/MacPermissions.ts";
 import { safariPermissionCheck } from "../../preview/BrowserImport/SafariPermission.ts";
+import * as DesktopLanguage from "../../i18n/DesktopLanguage.ts";
+import { desktopTranslator } from "../../i18n/desktopText.ts";
 import * as IpcChannels from "../channels.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
 import {
@@ -301,13 +303,14 @@ export const pickProjectFavicon = DesktopIpc.makeIpcMethod({
     if (!(yield* appSettings.get).localEnvironmentEnabled) {
       return null;
     }
+    const t = desktopTranslator(yield* (yield* DesktopLanguage.DesktopLanguage).locale);
     const paths = yield* dialog.pickFiles({
       owner: yield* electronWindow.focusedMainOrFirst,
       defaultPath: Option.fromNullishOr(initialPath),
       multiple: false,
       filters: [
         {
-          name: "Images",
+          name: t("Images"),
           extensions: PROJECT_FAVICON_EXTENSIONS.map((extension) => extension.slice(1)),
         },
       ],

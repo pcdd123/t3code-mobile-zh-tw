@@ -40,6 +40,8 @@ import * as DesktopAppSettings from "../settings/DesktopAppSettings.ts";
 import * as DesktopClientSettings from "../settings/DesktopClientSettings.ts";
 import * as ElectronApp from "../electron/ElectronApp.ts";
 import * as DesktopRendererHistory from "../telemetry/DesktopRendererHistory.ts";
+import * as DesktopLanguage from "../i18n/DesktopLanguage.ts";
+import { desktopTranslator, labelMenuRoles, type DesktopTranslate } from "../i18n/desktopText.ts";
 import { makeQuitShortcutHandler } from "./QuitHold.ts";
 import { copyContextMenuImage } from "./ContextMenuImage.ts";
 
@@ -393,6 +395,7 @@ export const make = Effect.gen(function* () {
   const clientSettings = yield* DesktopClientSettings.DesktopClientSettings;
   const electronApp = yield* ElectronApp.ElectronApp;
   const rendererHistory = yield* DesktopRendererHistory.DesktopRendererHistory;
+  const language = yield* DesktopLanguage.DesktopLanguage;
   const backendReadyRef = yield* Ref.make(false);
   let backendHasStarted = false;
   let mainClosedDuringStartup = false;
@@ -657,76 +660,85 @@ export const make = Effect.gen(function* () {
         // Right-clicking a guest may leave native editing roles targeting the host renderer.
         contents.focus();
 
-        const menuTemplate: Electron.MenuItemConstructorOptions[] = [];
+        const buildTemplate = (t: DesktopTranslate) => {
+          const menuTemplate: Electron.MenuItemConstructorOptions[] = [];
 
-        if (params.misspelledWord) {
-          for (const suggestion of params.dictionarySuggestions.slice(0, 5)) {
+          if (params.misspelledWord) {
+            for (const suggestion of params.dictionarySuggestions.slice(0, 5)) {
+              menuTemplate.push({
+                label: suggestion,
+                click: () => {
+                  if (!contents.isDestroyed()) contents.replaceMisspelling(suggestion);
+                },
+              });
+            }
+            if (params.dictionarySuggestions.length === 0) {
+              menuTemplate.push({ label: t("No suggestions"), enabled: false });
+            }
+            menuTemplate.push({ type: "separator" });
+          }
+
+          if (Option.isSome(ElectronShell.parseSafeExternalUrl(params.linkURL))) {
+            menuTemplate.push(
+              {
+                label: t("Copy Link"),
+                click: () => {
+                  void runPromise(electronShell.copyText(params.linkURL));
+                },
+              },
+              { type: "separator" },
+            );
+          }
+
+          const mailtoAddress = parseMailtoAddress(params.linkURL);
+          if (Option.isSome(mailtoAddress)) {
+            menuTemplate.push(
+              {
+                label: t("Copy Email Address"),
+                click: () => {
+                  void runPromise(electronShell.copyText(mailtoAddress.value));
+                },
+              },
+              { type: "separator" },
+            );
+          }
+
+          if (params.mediaType === "image") {
             menuTemplate.push({
-              label: suggestion,
+              label: t("Copy Image"),
               click: () => {
-                if (!contents.isDestroyed()) contents.replaceMisspelling(suggestion);
+                void runPromise(
+                  Effect.tryPromise({
+                    try: () => copyContextMenuImage(contents, params),
+                    catch: (cause) => new ContextMenuImageCopyError({ cause }),
+                  }).pipe(
+                    Effect.catch(() => logWindowWarning("failed to copy context-menu image")),
+                  ),
+                );
               },
             });
+            menuTemplate.push({ type: "separator" });
           }
-          if (params.dictionarySuggestions.length === 0) {
-            menuTemplate.push({ label: "No suggestions", enabled: false });
-          }
-          menuTemplate.push({ type: "separator" });
-        }
 
-        if (Option.isSome(ElectronShell.parseSafeExternalUrl(params.linkURL))) {
           menuTemplate.push(
-            {
-              label: "Copy Link",
-              click: () => {
-                void runPromise(electronShell.copyText(params.linkURL));
-              },
-            },
-            { type: "separator" },
+            { role: "cut", enabled: params.editFlags.canCut },
+            { role: "copy", enabled: params.editFlags.canCopy },
+            { role: "paste", enabled: params.editFlags.canPaste },
+            { role: "selectAll", enabled: params.editFlags.canSelectAll },
           );
-        }
-
-        const mailtoAddress = parseMailtoAddress(params.linkURL);
-        if (Option.isSome(mailtoAddress)) {
-          menuTemplate.push(
-            {
-              label: "Copy Email Address",
-              click: () => {
-                void runPromise(electronShell.copyText(mailtoAddress.value));
-              },
-            },
-            { type: "separator" },
-          );
-        }
-
-        if (params.mediaType === "image") {
-          menuTemplate.push({
-            label: "Copy Image",
-            click: () => {
-              void runPromise(
-                Effect.tryPromise({
-                  try: () => copyContextMenuImage(contents, params),
-                  catch: (cause) => new ContextMenuImageCopyError({ cause }),
-                }).pipe(Effect.catch(() => logWindowWarning("failed to copy context-menu image"))),
-              );
-            },
-          });
-          menuTemplate.push({ type: "separator" });
-        }
-
-        menuTemplate.push(
-          { role: "cut", enabled: params.editFlags.canCut },
-          { role: "copy", enabled: params.editFlags.canCopy },
-          { role: "paste", enabled: params.editFlags.canPaste },
-          { role: "selectAll", enabled: params.editFlags.canSelectAll },
-        );
+          return menuTemplate;
+        };
 
         void runPromise(
-          electronMenu.popupTemplate({
-            window: ownerWindow,
-            template: menuTemplate,
-            ...(params.frame ? { frame: params.frame } : {}),
-          }),
+          language.locale.pipe(
+            Effect.flatMap((locale) =>
+              electronMenu.popupTemplate({
+                window: ownerWindow,
+                template: labelMenuRoles(buildTemplate(desktopTranslator(locale)), locale),
+                ...(params.frame ? { frame: params.frame } : {}),
+              }),
+            ),
+          ),
         );
       });
       contents.on("did-create-window", (popup) => {

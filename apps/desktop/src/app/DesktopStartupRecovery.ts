@@ -13,6 +13,12 @@ import * as ElectronShell from "../electron/ElectronShell.ts";
 import * as ElectronTheme from "../electron/ElectronTheme.ts";
 import * as ElectronWindow from "../electron/ElectronWindow.ts";
 import * as DesktopUpdates from "../updates/DesktopUpdates.ts";
+import * as DesktopLanguage from "../i18n/DesktopLanguage.ts";
+import {
+  desktopTranslator,
+  type DesktopLocale,
+  type DesktopTranslate,
+} from "../i18n/desktopText.ts";
 import type { BackendStartupFailure } from "../backend/DesktopBackendManager.ts";
 import * as DesktopEnvironment from "./DesktopEnvironment.ts";
 import * as DesktopObservability from "./DesktopObservability.ts";
@@ -78,33 +84,49 @@ const escapeHtml = (value: string) =>
 const actionLink = (action: StartupRecoveryAction, label: string, primary = false) =>
   `<a class="button${primary ? " primary" : ""}" href="${ACTION_ORIGIN}/${action}">${escapeHtml(label)}</a>`;
 
-function describeOffer(offer: StartupRecoveryOffer): { text: string; action: string } {
+function describeOffer(
+  offer: StartupRecoveryOffer,
+  t: DesktopTranslate,
+): { text: string; action: string } {
   switch (offer._tag) {
     case "Checking":
-      return { text: "Checking for a newer version…", action: "" };
+      return { text: t("Checking for a newer version…"), action: "" };
     case "Update":
       return {
-        text: `Version ${offer.version} is available. It can contain a fix.`,
-        action: actionLink("update", `Update to ${offer.version}`, true),
+        text: t("Version {version} is available. It can contain a fix.", offer),
+        action: actionLink("update", t("Update to {version}", offer), true),
       };
     case "Downloading":
       return {
-        text: `Downloading ${offer.version}${offer.percent === null ? "" : ` (${Math.floor(offer.percent / 10) * 10}%)`}. T3 Code restarts when the download is done.`,
+        text:
+          offer.percent === null
+            ? t("Downloading {version}. T3 Code restarts when the download is done.", {
+                version: offer.version,
+              })
+            : t("Downloading {version} ({percent}%). T3 Code restarts when the download is done.", {
+                version: offer.version,
+                percent: Math.floor(offer.percent / 10) * 10,
+              }),
         action: "",
       };
     case "Reinstall":
       return {
-        text: `Version ${offer.version} started correctly on this computer. Download it and install it to go back.`,
-        action: actionLink("reinstall", `Download ${offer.version}`, true),
+        text: t(
+          "Version {version} started correctly on this computer. Download it and install it to go back.",
+          offer,
+        ),
+        action: actionLink("reinstall", t("Download {version}", offer), true),
       };
     case "Releases":
       return {
-        text: "Get a different version from the releases page.",
-        action: actionLink("releases", "Open releases", true),
+        text: t("Get a different version from the releases page."),
+        action: actionLink("releases", t("Open releases"), true),
       };
     case "ManagedPolicy":
       return {
-        text: "Your organization's managed policy stopped T3 Code from starting. Send the details below to your IT administrator.",
+        text: t(
+          "Your organization's managed policy stopped T3 Code from starting. Send the details below to your IT administrator.",
+        ),
         action: "",
       };
   }
@@ -115,10 +137,12 @@ function buildStartupRecoveryHtml(input: {
   readonly failure: BackendStartupFailure;
   readonly offer: StartupRecoveryOffer;
   readonly logDir: string;
+  readonly locale: DesktopLocale;
 }): string {
-  const offer = describeOffer(input.offer);
+  const t = desktopTranslator(input.locale);
+  const offer = describeOffer(input.offer, t);
   const output = input.failure.output.trim();
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>T3 Code could not start</title><style>
+  return `<!doctype html><html lang="${input.locale}"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>${escapeHtml(t("T3 Code could not start"))}</title><style>
 :root{color-scheme:light dark;--bg:#fff;--fg:#111;--muted:#666;--line:#ddd;--code:#f4f4f4}
 @media (prefers-color-scheme:dark){:root{--bg:#000;--fg:#fff;--muted:#999;--line:#333;--code:#111}}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg)}
@@ -129,12 +153,12 @@ h1{font-size:18px;margin:0}p{margin:0}.muted{color:var(--muted)}
 .button.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 pre{flex:1;min-height:60px;margin:0;overflow:auto;background:var(--code);border:1px solid var(--line);border-radius:6px;padding:10px;font:11px/1.4 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
 </style></head><body>
-<h1>T3 Code could not start</h1>
+<h1>${escapeHtml(t("T3 Code could not start"))}</h1>
 <p>${escapeHtml(input.failure.reason)}</p>
 <p>${escapeHtml(offer.text)}</p>
-<div class="actions">${offer.action}${actionLink("copy", "Copy details")}${actionLink("quit", "Quit")}</div>
-<pre>${escapeHtml(output.length > 0 ? output : "The server wrote no output.")}</pre>
-<p class="muted">Version ${escapeHtml(input.appVersion)}. T3 Code tries again in the background. Logs: ${escapeHtml(input.logDir)}</p>
+<div class="actions">${offer.action}${actionLink("copy", t("Copy details"))}${actionLink("quit", t("Quit"))}</div>
+<pre>${escapeHtml(output.length > 0 ? output : t("The server wrote no output."))}</pre>
+<p class="muted">${escapeHtml(t("Version {version}. T3 Code tries again in the background. Logs: {logDir}", { version: input.appVersion, logDir: input.logDir }))}</p>
 </body></html>`;
 }
 
@@ -160,6 +184,7 @@ export const listen: Effect.Effect<
   const electronTheme = yield* ElectronTheme.ElectronTheme;
   const electronWindow = yield* ElectronWindow.ElectronWindow;
   const fileSystem = yield* FileSystem.FileSystem;
+  const language = yield* DesktopLanguage.DesktopLanguage;
   const runFork = Effect.runForkWith(yield* Effect.context<never>());
 
   const lastStartedVersionPath = environment.path.join(
@@ -199,6 +224,7 @@ export const listen: Effect.Effect<
       failure: failure.value,
       offer: yield* offer,
       logDir: environment.logDir,
+      locale: yield* language.locale,
     });
     if ((yield* Ref.getAndSet(renderedHtmlRef, html)) === html) return;
     void window.value.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
@@ -267,7 +293,7 @@ export const listen: Effect.Effect<
           minWidth: 420,
           minHeight: 320,
           show: false,
-          title: "T3 Code could not start",
+          title: desktopTranslator(yield* language.locale)("T3 Code could not start"),
           autoHideMenuBar: true,
           backgroundColor: shouldUseDarkColors ? "#000000" : "#ffffff",
           webPreferences: {

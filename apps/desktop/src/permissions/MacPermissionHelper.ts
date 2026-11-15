@@ -8,6 +8,7 @@ import {
   type SettingsWindow,
 } from "./MacSettingsWindow.ts";
 
+import { desktopTranslator, type DesktopLocale } from "../i18n/desktopText.ts";
 import { MAC_PERMISSION_TITLES, type MacPermission } from "./MacPermission.ts";
 
 const permissionGranted = (permission: MacPermission) => {
@@ -38,11 +39,17 @@ const escapeHtml = (value: string) =>
     }
   });
 
-function helperHtml(permission: MacPermission, icon: string) {
-  const title = MAC_PERMISSION_TITLES[permission];
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+const helperTitle = (permission: MacPermission, locale: DesktopLocale) => {
+  const t = desktopTranslator(locale);
+  return t("Set up {permission}", { permission: t(MAC_PERMISSION_TITLES[permission]) });
+};
+
+function helperHtml(permission: MacPermission, icon: string, locale: DesktopLocale) {
+  const t = desktopTranslator(locale);
+  const title = escapeHtml(helperTitle(permission, locale));
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
-<title>Set up ${title}</title><style>
+<title>${title}</title><style>
 :root { color-scheme: light dark; --base: #fff; --row: #e7e7e7; --text: #292929; --line: #e3e3e3; }
 @media (prefers-color-scheme: dark) { :root { --base: #242424; --row: #383838; --text: #f5f5f5; --line: #484848; } }
 * { box-sizing: border-box; }
@@ -58,9 +65,9 @@ button:focus-visible { outline: 2px solid #007aff; outline-offset: -2px; }
 #app:active { cursor: grabbing; }
 img { width: 32px; height: 32px; pointer-events: none; }
 </style></head><body><main id="panel">
-<button id="close" aria-label="Close permission helper">×</button>
-<header>↑ Drag T3 Code into the list above</header>
-<button id="app" draggable="true" aria-label="Drag T3 Code to System Settings, or click to reveal in Finder"><img src="${escapeHtml(icon)}" alt="" draggable="false">T3 Code</button>
+<button id="close" aria-label="${escapeHtml(t("Close permission helper"))}">×</button>
+<header>${escapeHtml(t("↑ Drag T3 Code into the list above"))}</header>
+<button id="app" draggable="true" aria-label="${escapeHtml(t("Drag T3 Code to System Settings, or click to reveal in Finder"))}"><img src="${escapeHtml(icon)}" alt="" draggable="false">T3 Code</button>
 </main></body></html>`;
 }
 
@@ -80,6 +87,7 @@ export class MacPermissionHelper {
     owner: Electron.BrowserWindow | null,
     iconPaths: readonly string[],
     isGranted: () => boolean | Promise<boolean> = () => permissionGranted(permission),
+    locale: DesktopLocale = "en",
   ) {
     this.close();
     const generation = this.generation;
@@ -109,7 +117,7 @@ export class MacPermissionHelper {
       fullscreenable: false,
       alwaysOnTop: true,
       skipTaskbar: true,
-      title: `Set up ${MAC_PERMISSION_TITLES[permission]}`,
+      title: helperTitle(permission, locale),
       webPreferences: { preload, sandbox: true, contextIsolation: true, nodeIntegration: false },
     });
     this.window = window;
@@ -192,7 +200,7 @@ export class MacPermissionHelper {
     window.webContents.on("will-navigate", (event) => event.preventDefault());
     try {
       await window.loadURL(
-        `data:text/html;charset=utf-8,${encodeURIComponent(helperHtml(permission, icon.toDataURL()))}`,
+        `data:text/html;charset=utf-8,${encodeURIComponent(helperHtml(permission, icon.toDataURL(), locale))}`,
       );
       if (!window.isDestroyed()) {
         stopTracking = watchMacSettingsWindow(

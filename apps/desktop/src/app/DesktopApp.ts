@@ -36,6 +36,8 @@ import * as DesktopShellEnvironment from "../shell/DesktopShellEnvironment.ts";
 import * as DesktopStartupRecovery from "./DesktopStartupRecovery.ts";
 import * as DesktopState from "./DesktopState.ts";
 import * as DesktopRemoteUpdates from "../updates/DesktopRemoteUpdates.ts";
+import * as DesktopLanguage from "../i18n/DesktopLanguage.ts";
+import { desktopTranslator } from "../i18n/desktopText.ts";
 import * as DesktopUpdates from "../updates/DesktopUpdates.ts";
 import * as DesktopSnapShot from "../snapShot/DesktopSnapShot.ts";
 import * as DesktopWslBackend from "../wsl/DesktopWslBackend.ts";
@@ -145,8 +147,9 @@ const handleFatalStartupError = Effect.fn("desktop.startup.handleFatalStartupErr
   });
   const wasQuitting = yield* Ref.getAndSet(state.quitting, true);
   if (!wasQuitting) {
+    const t = desktopTranslator(yield* (yield* DesktopLanguage.DesktopLanguage).locale);
     yield* electronDialog.showErrorBox(
-      "T3 Code failed to start",
+      t("T3 Code failed to start"),
       `Stage: ${stage}\n${message}${detail}`,
     );
   }
@@ -214,9 +217,10 @@ const startLocalBackend = Effect.gen(function* () {
     yield* logBootstrapWarning("bootstrap found another server owning the T3 home", {
       owner: Option.getOrNull(owner),
     });
+    const t = desktopTranslator(yield* (yield* DesktopLanguage.DesktopLanguage).locale);
     yield* (yield* ElectronDialog.ElectronDialog).showErrorBox(
-      "This T3 home is unavailable",
-      DesktopHomeOwner.homeOwnedMessage(owner),
+      t("This T3 home is unavailable"),
+      DesktopHomeOwner.homeOwnedMessage(owner, t),
     );
     yield* (yield* ElectronApp.ElectronApp).quit;
     return false;

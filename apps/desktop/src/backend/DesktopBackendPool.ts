@@ -24,6 +24,8 @@ import { ChildProcessSpawner } from "effect/process";
 import * as DesktopBackendConfiguration from "./DesktopBackendConfiguration.ts";
 import * as DesktopBackendManager from "./DesktopBackendManager.ts";
 import * as DesktopHomeOwner from "./DesktopHomeOwner.ts";
+import * as DesktopLanguage from "../i18n/DesktopLanguage.ts";
+import { desktopTranslator } from "../i18n/desktopText.ts";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopObservability from "../app/DesktopObservability.ts";
 import * as DesktopState from "../app/DesktopState.ts";
@@ -123,6 +125,7 @@ export const layer = Layer.effect(
     const desktopWindow = yield* DesktopWindow.DesktopWindow;
     const electronDialog = yield* ElectronDialog.ElectronDialog;
     const electronApp = yield* ElectronApp.ElectronApp;
+    const language = yield* DesktopLanguage.DesktopLanguage;
     const appSettings = yield* DesktopAppSettings.DesktopAppSettings;
     const { primaryBackendStartup } = yield* DesktopState.DesktopState;
     // Parent instance scopes to the pool so shutdown runs stop finalizers before the OS kills backends.
@@ -171,14 +174,18 @@ export const layer = Layer.effect(
     const handlePrimaryPreflightFailure = Effect.fn("desktop.backendPool.primaryPreflightFailed")(
       function* (failure: DesktopBackendManager.PreflightFailure) {
         const { reason, fatal } = failure;
+        const t = desktopTranslator(yield* language.locale);
         if (!fatal) {
           yield* logBackendPoolWarning(
             "primary WSL preflight retry window exhausted; using Windows for this launch",
             { reason },
           );
           yield* electronDialog.showErrorBox(
-            "WSL backend is still unavailable",
-            `${reason}\n\nT3 Code will use the Windows backend for this launch and retry WSL the next time the app starts.`,
+            t("WSL backend is still unavailable"),
+            t(
+              "{reason}\n\nT3 Code will use the Windows backend for this launch and retry WSL the next time the app starts.",
+              { reason },
+            ),
           );
           yield* appSettings.applyWslWindowsFallbackInMemory;
           return true;
@@ -188,8 +195,11 @@ export const layer = Layer.effect(
           reason,
         });
         yield* electronDialog.showErrorBox(
-          "WSL backend couldn't start",
-          `${reason}\n\nFalling back to the Windows backend so T3 Code can open. Re-enable the WSL backend from Settings > Sharing & access once the WSL distro is fixed.`,
+          t("WSL backend couldn't start"),
+          t(
+            "{reason}\n\nFalling back to the Windows backend so T3 Code can open. Re-enable the WSL backend from Settings > Sharing & access once the WSL distro is fixed.",
+            { reason },
+          ),
         );
         // Clear wslOnly too so enabling WSL cannot restore a failed mode.
         // Keep the in-memory fallback if persistence fails.
@@ -232,13 +242,14 @@ export const layer = Layer.effect(
         ),
       onPreflightFailed: handlePrimaryPreflightFailure,
       onStateDirOwned: () =>
-        DesktopHomeOwner.readLiveHomeOwner().pipe(
-          Effect.flatMap((owner) =>
-            electronDialog.showErrorBox(
-              "This T3 home is unavailable",
-              DesktopHomeOwner.homeOwnedMessage(owner),
-            ),
-          ),
+        Effect.all([DesktopHomeOwner.readLiveHomeOwner(), language.locale]).pipe(
+          Effect.flatMap(([owner, locale]) => {
+            const t = desktopTranslator(locale);
+            return electronDialog.showErrorBox(
+              t("This T3 home is unavailable"),
+              DesktopHomeOwner.homeOwnedMessage(owner, t),
+            );
+          }),
           Effect.provideContext(homeOwnerContext),
           Effect.andThen(electronApp.quit),
         ),

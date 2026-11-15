@@ -19,6 +19,8 @@ import type * as Electron from "electron";
 import * as ElectronWindow from "../../electron/ElectronWindow.ts";
 import * as ElectronDialog from "../../electron/ElectronDialog.ts";
 import * as DesktopSnapShot from "../../snapShot/DesktopSnapShot.ts";
+import * as DesktopLanguage from "../../i18n/DesktopLanguage.ts";
+import { desktopTranslator } from "../../i18n/desktopText.ts";
 import * as IpcChannels from "../channels.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
 
@@ -113,12 +115,13 @@ export const previewSnapShotConfig = DesktopIpc.makeIpcMethod({
     let selectedPath: string | undefined;
     if (request.chooseFile) {
       const state = yield* capture.state;
+      const t = desktopTranslator(yield* (yield* DesktopLanguage.DesktopLanguage).locale);
       const paths = yield* (yield* ElectronDialog.ElectronDialog).pickFiles({
         owner: Option.some(window),
         defaultPath: Option.fromUndefinedOr(state.shortcutConfigPath),
         filters: [
           {
-            name: "Desktop config",
+            name: t("Desktop config"),
             extensions: state.linuxBackend === "niri" ? ["kdl"] : ["conf", "lua"],
           },
         ],
