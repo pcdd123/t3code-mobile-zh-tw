@@ -241,6 +241,20 @@ describe("threadListV2RowAccessibilityLabel", () => {
     regeneratingTitle: false,
   } as const;
 
+  it("speaks translated wake and pending-message labels without changing the title", () => {
+    expect(
+      threadListV2RowAccessibilityLabel({
+        ...row,
+        woke: true,
+        hasQueuedMessages: true,
+        regeneratingTitle: true,
+        wokeLabel: "提醒已結束",
+        queuedLabel: "訊息已排入傳送佇列",
+        regeneratingLabel: "正在重新產生標題",
+      }),
+    ).toBe("Fix login, 提醒已結束, Codex, 訊息已排入傳送佇列, 正在重新產生標題");
+  });
+
   it("speaks the status or time the row shows beside its title", () => {
     expect(threadListV2RowAccessibilityLabel({ ...row, statusLabel: "Approval" })).toBe(
       "Fix login, Approval, Codex",

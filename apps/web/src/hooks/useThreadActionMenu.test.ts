@@ -34,6 +34,9 @@ function recordEffect(action: string) {
   state.completed.resolve();
 }
 
+vi.mock("../components/useLocalizedThreadMenu", () => ({
+  useLocalizedThreadMenu: () => (items: unknown) => items,
+}));
 vi.mock("../components/CustomSnoozeDialog", () => ({ requestCustomSnooze: vi.fn() }));
 vi.mock("react", () => ({
   useCallback: (callback: unknown) => callback,
