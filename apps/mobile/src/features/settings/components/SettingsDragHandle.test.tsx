@@ -12,6 +12,7 @@ type PanHandlers = {
 
 const pans = vi.hoisted(() => [] as PanHandlers[]);
 
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
 vi.mock("react-native", () => ({
   View: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }));

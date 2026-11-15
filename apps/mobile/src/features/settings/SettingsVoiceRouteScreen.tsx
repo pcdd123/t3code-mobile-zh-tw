@@ -73,7 +73,7 @@ function useMicrophonePermission() {
   return { permission, request };
 }
 
-const KINDS: Record<
+function useMicrophoneKinds(): Record<
   MicrophoneKind,
   {
     readonly label: string;
@@ -81,50 +81,53 @@ const KINDS: Record<
     readonly rowDescription: string;
     readonly icon: AppSymbolName;
   }
-> = {
-  wired: {
-    label: "Wired",
-    row: "Other wired",
-    rowDescription: "Headsets and USB microphones not listed here",
-    icon: "cable.connector",
-  },
-  bluetooth: {
-    label: "Bluetooth",
-    row: "Other Bluetooth",
-    rowDescription:
-      Platform.OS === "android"
-        ? "Earbuds, headsets, and cars, including Android Auto, not listed here"
-        : "AirPods, headsets, and cars not listed here",
-    icon: "headphones",
-  },
-  builtIn: {
-    label: "Built-in",
-    row: "Built-in microphone",
-    rowDescription: "The microphone on this device",
-    icon: "iphone",
-  },
-  carPlay: {
-    label: "CarPlay",
-    row: "CarPlay",
-    rowDescription: "The car’s microphone",
-    icon: "car",
-  },
-};
+> {
+  const gt = useGT();
+  return {
+    wired: {
+      label: gt("Wired"),
+      row: gt("Other wired"),
+      rowDescription: gt("Headsets and USB microphones not listed here"),
+      icon: "cable.connector",
+    },
+    bluetooth: {
+      label: gt("Bluetooth"),
+      row: gt("Other Bluetooth"),
+      rowDescription:
+        Platform.OS === "android"
+          ? gt("Earbuds, headsets, and cars, including Android Auto, not listed here")
+          : gt("AirPods, headsets, and cars not listed here"),
+      icon: "headphones",
+    },
+    builtIn: {
+      label: gt("Built-in"),
+      row: gt("Built-in microphone"),
+      rowDescription: gt("The microphone on this device"),
+      icon: "iphone",
+    },
+    carPlay: {
+      label: gt("CarPlay"),
+      row: gt("CarPlay"),
+      rowDescription: gt("The car’s microphone"),
+      icon: "car",
+    },
+  };
+}
 
-const UNAVAILABLE_EXPLANATION =
-  Platform.OS === "android"
-    ? "Dictation on this device needs Android 12 or later and Google speech services that support your language. Your keyboard’s voice typing is separate."
-    : "Dictation on this device needs iOS 26 or later, a supported device, and a supported language. Your keyboard’s dictation is separate.";
-
-function saveDestination(id: EnvironmentId | null) {
-  try {
-    chooseVoiceDestination(id);
-  } catch {
-    Dialog.alert(
-      "Could not save transcription choice",
-      "Dictation on an environment is off for this session. Save again before closing the app, or your previous choice may return when it restarts.",
-    );
-  }
+function useSaveDestination() {
+  const gt = useGT();
+  return (id: EnvironmentId | null) => {
+    try {
+      chooseVoiceDestination(id);
+    } catch {
+      Dialog.alert(
+        gt("Could not save transcription choice"),
+        gt(
+          "Dictation on an environment is off for this session. Save again before closing the app, or your previous choice may return when it restarts.",
+        ),
+      );
+    }
+  };
 }
 
 function EnvironmentChoice({
@@ -138,6 +141,7 @@ function EnvironmentChoice({
   onCloudOnly: () => void;
 }) {
   const gt = useGT();
+  const saveDestination = useSaveDestination();
   const local = useAtomValue(voiceConnectionAtom(environment.environmentId)) !== null;
   const cloud = useAtomValue(cloudVoiceConnectionAtom(environment.environmentId)) !== null;
   const usable = local || cloud;
@@ -184,6 +188,7 @@ function EnvironmentMethodSection({
   onCloudOpenChange: (open: boolean) => void;
 }) {
   const gt = useGT();
+  const saveDestination = useSaveDestination();
   const id = environment.environmentId;
   const destination = grant?.destination.environmentId === id ? grant.destination : null;
   const cloudCapable =
@@ -212,6 +217,7 @@ function EnvironmentMethodSection({
 
 export function SettingsVoiceRouteScreen() {
   const gt = useGT();
+  const saveDestination = useSaveDestination();
   const transcriber = useAtomValue(localVoiceTranscriberAtom);
   const grant = useAtomValue(voiceGrantAtom);
   const { environments, isReady } = useEnvironments();
@@ -329,7 +335,15 @@ export function SettingsVoiceRouteScreen() {
           />
         ) : null}
         {!grant && transcriber === null ? (
-          <Text className="px-2 text-sm text-foreground-muted">{UNAVAILABLE_EXPLANATION}</Text>
+          <Text className="px-2 text-sm text-foreground-muted">
+            {Platform.OS === "android"
+              ? gt(
+                  "Dictation on this device needs Android 12 or later and Google speech services that support your language. Your keyboard’s voice typing is separate.",
+                )
+              : gt(
+                  "Dictation on this device needs iOS 26 or later, a supported device, and a supported language. Your keyboard’s dictation is separate.",
+                )}
+          </Text>
         ) : null}
         {permission === "ask" || permission === "denied" ? (
           <>
@@ -413,7 +427,8 @@ function MicrophoneRow(props: {
   readonly onForget: (() => void) | undefined;
 }) {
   const { lifted, offset, entry, onForget } = props;
-  const kind = KINDS[entry.kind];
+  const gt = useGT();
+  const kind = useMicrophoneKinds()[entry.kind];
   const title = isMicrophoneDevice(entry) ? entry.name : kind.row;
   const { width: windowWidth } = useWindowDimensions();
   const style = useAnimatedStyle(() => ({
@@ -431,8 +446,13 @@ function MicrophoneRow(props: {
     <View className="flex-row items-center bg-grouped-card">
       <View
         accessible
-        accessibilityLabel={`${title}, ${kind.label}, ${props.position} of ${props.count}`}
-        accessibilityActions={onForget ? [{ name: "forget", label: "Forget" }] : undefined}
+        accessibilityLabel={gt("{title}, {kind}, {position} of {count}", {
+          title,
+          kind: kind.label,
+          position: props.position,
+          count: props.count,
+        })}
+        accessibilityActions={onForget ? [{ name: "forget", label: gt("Forget") }] : undefined}
         onAccessibilityAction={({ nativeEvent }) => {
           if (nativeEvent.actionName === "forget") onForget?.();
         }}
@@ -473,10 +493,10 @@ function MicrophoneRow(props: {
           fullSwipeWidth={windowWidth - 40}
           onDelete={onForget}
           primaryAction={{
-            accessibilityLabel: `Forget ${title}`,
+            accessibilityLabel: gt("Forget {title}", { title }),
             destructive: true,
             icon: "trash",
-            label: "Forget",
+            label: gt("Forget"),
             onPress: onForget,
           }}
           secondaryAction={null}
