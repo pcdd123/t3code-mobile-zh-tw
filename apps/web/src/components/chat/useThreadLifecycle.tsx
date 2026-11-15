@@ -1,3 +1,4 @@
+import { useGT, useLocale } from "gt-react";
 import type { EnvironmentServerConfig } from "@t3tools/client-runtime/connection";
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/shell";
 import type { Dispatch } from "react";
@@ -142,6 +143,8 @@ interface ThreadLifecycleInput {
  * banners, opening related threads, and standalone slash commands.
  */
 export function useThreadLifecycle(input: ThreadLifecycleInput) {
+  const gt = useGT();
+  const locale = useLocale();
   const {
     environmentId,
     routeThreadKey,
@@ -617,15 +620,21 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
   const settledAt = activeThreadShell?.settledAt ?? null;
   // Same rounding as the sidebar's snoozed shelf, so both read the same hour.
   const snoozeWake = snoozedUntil
-    ? snoozeWakeLabel(snoozedUntil, { now: `${nowMinute}:00.000Z` })
+    ? snoozeWakeLabel(snoozedUntil, { now: `${nowMinute}:00.000Z`, locale })
     : null;
   const threadStatusLine = activeThreadSnoozed ? (
     limitRecoveryHoldsSnooze ? null : (
       <ThreadStatusLine
         icon={<AlarmClockIcon />}
-        label={snoozeWake && snoozeWake !== "now" ? `Snoozed, ${snoozeWake} left` : "Snoozed"}
+        label={
+          snoozeWake &&
+          snoozedUntil &&
+          Date.parse(snoozedUntil) > Date.parse(`${nowMinute}:00.000Z`)
+            ? gt("Snoozed, {time} left", { time: snoozeWake })
+            : gt("Snoozed")
+        }
         clockMinute={nowMinute}
-        actionLabel={isUnsnoozing ? "Waking..." : "Wake now"}
+        actionLabel={isUnsnoozing ? gt("Waking...") : gt("Wake now")}
         actionDisabled={!canOperateThread || isUnsnoozing}
         onAction={() => void handleUnsnoozeActiveThreadStable()}
       />
@@ -633,17 +642,21 @@ export function useThreadLifecycle(input: ThreadLifecycleInput) {
   ) : activeThreadSettled ? (
     <ThreadStatusLine
       icon={<CheckCircle2Icon />}
-      label={settledAt ? `Settled ${formatRelativeTimeLabel(settledAt)}` : "Settled"}
+      label={
+        settledAt
+          ? gt("Settled {time}", { time: formatRelativeTimeLabel(settledAt) })
+          : gt("Settled")
+      }
       clockMinute={nowMinute}
-      actionLabel={isUnsettling ? "Un-settling..." : "Un-settle"}
+      actionLabel={isUnsettling ? gt("Un-settling...") : gt("Un-settle")}
       actionDisabled={!canOperateThread || isUnsettling}
       onAction={() => void handleUnsettleActiveThreadStable()}
     />
   ) : activeThreadWokeVisible ? (
     <ThreadStatusLine
       icon={<AlarmClockIcon />}
-      label="Woke from snooze"
-      actionLabel="Dismiss"
+      label={gt("Woke from snooze")}
+      actionLabel={gt("Dismiss")}
       onAction={acknowledgeActiveThreadWokeStable}
     />
   ) : null;

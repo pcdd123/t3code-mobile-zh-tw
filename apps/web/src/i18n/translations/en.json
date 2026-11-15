@@ -406,5 +406,15 @@
   "e456a25c2ed6b9e2": "Minutes",
   "ce659422b9a8dcf5": "Hours",
   "73c71e0dd21b305f": "Days",
-  "576b5c9e345cb757": "Edit snooze options"
+  "576b5c9e345cb757": "Edit snooze options",
+  "47935f737b273409": "Snoozed, {time} left",
+  "68f55a32be30741f": "Snoozed",
+  "6e67ab167cd02e15": "Settled",
+  "6eac883528a286d7": "Settled {time}",
+  "fd4e45408394aac4": "Woke from snooze",
+  "b3fb8cf724de33c2": "Wake now",
+  "55c0728ebb0b05b1": "Un-settle",
+  "5bbf199afe39d5e1": "Dismiss",
+  "e4fb59de91f77e5e": "Waking...",
+  "46057a7aacae5167": "Un-settling..."
 }

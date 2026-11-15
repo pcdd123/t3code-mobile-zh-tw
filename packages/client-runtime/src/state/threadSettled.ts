@@ -383,16 +383,24 @@ export function pickSnoozePreset(input: {
   return (setting && resolveSnoozePreset(setting, input.now, input.formatTime)) ?? ahead;
 }
 
-export function snoozeWakeLabel(snoozedUntil: string, options: { readonly now: string }): string {
+export function snoozeWakeLabel(
+  snoozedUntil: string,
+  options: { readonly now: string; readonly locale?: string },
+): string {
   const wakeMs = Date.parse(snoozedUntil);
   const nowMs = Date.parse(options.now);
-  if (Number.isNaN(wakeMs) || Number.isNaN(nowMs)) return "now";
-  if (wakeMs <= nowMs) return "now";
+  const traditional = options.locale === "zh-TW";
+  if (Number.isNaN(wakeMs) || Number.isNaN(nowMs) || wakeMs <= nowMs)
+    return traditional ? "現在" : "now";
   // Count clock minutes: callers pass a minute-floored or live `now`, and durations keep seconds.
   const minutes = Math.max(1, Math.floor(wakeMs / 60_000) - Math.floor(nowMs / 60_000));
-  if (minutes < 60) return `${minutes}m`;
-  if (minutes < 24 * 60) return `${Math.ceil(minutes / 60)}h`;
-  return `${Math.ceil(minutes / (24 * 60))}d`;
+  if (minutes < 60) return traditional ? `${minutes} 分鐘` : `${minutes}m`;
+  if (minutes < 24 * 60) {
+    const hours = Math.ceil(minutes / 60);
+    return traditional ? `${hours} 小時` : `${hours}h`;
+  }
+  const days = Math.ceil(minutes / (24 * 60));
+  return traditional ? `${days} 天` : `${days}d`;
 }
 
 export type CustomSnoozeInput =

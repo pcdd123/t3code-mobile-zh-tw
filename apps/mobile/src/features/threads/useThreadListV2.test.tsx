@@ -12,6 +12,8 @@ import { olderSettledThreads } from "../../state/threads";
 import { makeRawThreadShell } from "../../test-fixtures";
 import { useThreadListV2 } from "./useThreadListV2";
 
+vi.mock("gt-react-native", () => ({ useLocale: () => "en" }));
+
 vi.mock("../../state/threads", () => ({
   olderSettledThreads: { shelfAtom: vi.fn() },
   threadFamilies: { mountRows: () => () => {} },

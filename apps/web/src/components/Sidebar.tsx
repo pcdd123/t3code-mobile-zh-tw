@@ -1,5 +1,5 @@
 import { attachSidebarTree } from "../lib/sidebarTree";
-import { useGT } from "gt-react";
+import { useGT, useLocale } from "gt-react";
 import { type EnvironmentId, type ScopedProjectRef } from "@t3tools/contracts";
 import type { EnvironmentServerConfig } from "@t3tools/client-runtime/connection";
 import {
@@ -902,6 +902,7 @@ function readRouteThreadKey(router: AnyRouter): string | null {
 
 export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReveal }) {
   const gt = useGT();
+  const locale = useLocale();
   const {
     projects,
     serverConfigs,
@@ -3415,6 +3416,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
                               section === "snoozed" && thread.snoozedUntil != null
                                 ? snoozeWakeLabel(thread.snoozedUntil, {
                                     now: new Date().toISOString(),
+                                    locale,
                                   })
                                 : null
                             }

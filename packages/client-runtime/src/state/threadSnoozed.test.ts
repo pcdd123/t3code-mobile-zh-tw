@@ -533,6 +533,16 @@ describe("pickSnoozePreset", () => {
 });
 
 describe("snoozeWakeLabel", () => {
+  it("shows Traditional Chinese units with the same countdown boundaries", () => {
+    const locale = "zh-TW";
+    expect(snoozeWakeLabel("2026-04-10T12:59:00.000Z", { now: NOW, locale })).toBe("59 分鐘");
+    expect(snoozeWakeLabel("2026-04-10T13:00:00.000Z", { now: NOW, locale })).toBe("1 小時");
+    expect(snoozeWakeLabel("2026-04-11T12:00:00.000Z", { now: NOW, locale })).toBe("1 天");
+    expect(snoozeWakeLabel("2026-04-10T12:00:00.000Z", { now: NOW, locale })).toBe("現在");
+    expect(snoozeWakeLabel("invalid", { now: NOW, locale })).toBe("現在");
+    expect(snoozeWakeLabel("2026-04-10T13:00:00.000Z", { now: NOW, locale: "en" })).toBe("1h");
+  });
+
   it("reads a one-hour snooze as 1h on minute and live clocks", () => {
     const wake = "2026-04-10T13:00:30.000Z";
     expect(snoozeWakeLabel(wake, { now: NOW })).toBe("1h");

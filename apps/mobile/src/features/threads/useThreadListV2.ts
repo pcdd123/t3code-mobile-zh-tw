@@ -1,3 +1,5 @@
+import "../../i18n/intl-polyfills";
+import { useLocale } from "gt-react-native";
 import type { OlderSettledScope } from "@t3tools/client-runtime/state/threads";
 import type { EnvironmentId } from "@t3tools/contracts";
 import { useMemo, useSyncExternalStore } from "react";
@@ -66,6 +68,7 @@ export function useThreadListV2(input: {
   readonly settledShelfExpanded: boolean;
   readonly selectedThreadKey: string | null;
 }) {
+  const locale = useLocale();
   const { threads, workingShelfEnabled } = input;
   const layoutTime = useMemo(
     () => threadListV2LayoutTime({ threads, now: input.now, searchQuery: input.searchQuery }),
@@ -224,6 +227,7 @@ export function useThreadListV2(input: {
         settledShelfExpanded: input.settledShelfExpanded,
         settledShelfHeaderIndex: layout.settledShelfHeaderIndex,
         snoozeLabelNow: `${input.now.slice(0, 16)}:00.000Z`,
+        locale,
         snoozeEnvironmentIds: input.snoozeEnvironmentIds,
         queuedThreadKeys: input.queuedThreadKeys,
         moveAvailability,
@@ -236,6 +240,7 @@ export function useThreadListV2(input: {
       input.snoozedShelfExpanded,
       input.settledShelfExpanded,
       input.now,
+      locale,
       input.snoozeEnvironmentIds,
       input.queuedThreadKeys,
       moveAvailability,

@@ -1,6 +1,6 @@
 import { ChildThreadApprovals } from "./ChildThreadApprovals";
 import "../../i18n/intl-polyfills";
-import { useGT } from "gt-react-native";
+import { useGT, useLocale } from "gt-react-native";
 import { useOpenThreadInspector } from "./thread-inspector-navigation";
 import { useSidebarWorkspaceTabs } from "../layout/workspace/useSystemWorkspaceTabBar";
 import { useWorkspaceTabs } from "../layout/workspace/WorkspaceTabsContext";
@@ -412,6 +412,7 @@ function ThreadDetailBody(
   },
 ) {
   const gt = useGT();
+  const locale = useLocale();
   const usesNativeWorkspaceColumns = useNativeWorkspaceColumnsSupported();
   const { layout } = useAdaptiveWorkspaceLayout();
   const deviceType = useDeviceType();
@@ -868,11 +869,17 @@ function ThreadDetailBody(
       const state = lifecycleSnoozed ? "snoozed" : settled ? "settled" : "woke";
       const label =
         lifecycleSnoozed && snoozedUntil !== null
-          ? `Snoozed, wakes in ${snoozeWakeLabel(snoozedUntil, { now: lifecycleNow })}`
+          ? gt("Snoozed, wakes in {time}", {
+              time: snoozeWakeLabel(snoozedUntil, { now: lifecycleNow, locale }),
+            })
           : settled
-            ? "Settled"
-            : "Woke from snooze";
-      const actionLabel = lifecycleSnoozed ? "Wake now" : settled ? "Un-settle" : "Dismiss";
+            ? gt("Settled")
+            : gt("Woke from snooze");
+      const actionLabel = lifecycleSnoozed
+        ? gt("Wake now")
+        : settled
+          ? gt("Un-settle")
+          : gt("Dismiss");
       return {
         kind: "lifecycle",
         state,
@@ -880,10 +887,10 @@ function ThreadDetailBody(
         action: {
           label: statusPending
             ? lifecycleSnoozed
-              ? "Waking..."
+              ? gt("Waking...")
               : settled
-                ? "Un-settling..."
-                : "Dismissing..."
+                ? gt("Un-settling...")
+                : gt("Dismissing...")
             : actionLabel,
           accessibilityLabel: actionLabel,
           disabled: !props.canOperateThread || statusPending,

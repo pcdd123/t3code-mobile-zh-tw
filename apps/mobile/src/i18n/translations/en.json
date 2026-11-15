@@ -486,5 +486,14 @@
   "eb4ae844f33fffd0": "Duration unit",
   "c19a0ed0ac547356": "Custom snooze",
   "5f8693d00859a838": "Cancel custom snooze",
-  "ef27c4211844aef9": "Snooze"
+  "ef27c4211844aef9": "Snooze",
+  "2994f6bd00c5d90a": "Snoozed, wakes in {time}",
+  "6e67ab167cd02e15": "Settled",
+  "fd4e45408394aac4": "Woke from snooze",
+  "b3fb8cf724de33c2": "Wake now",
+  "55c0728ebb0b05b1": "Un-settle",
+  "5bbf199afe39d5e1": "Dismiss",
+  "e4fb59de91f77e5e": "Waking...",
+  "46057a7aacae5167": "Un-settling...",
+  "dcd0df320cf5a1dc": "Dismissing..."
 }
