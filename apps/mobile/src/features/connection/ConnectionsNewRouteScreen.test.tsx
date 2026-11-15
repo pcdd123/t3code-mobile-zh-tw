@@ -18,6 +18,7 @@ vi.mock("react-native", () => ({
   Linking: { openSettings: vi.fn() },
   StyleSheet: { absoluteFill: {} },
 }));
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
 vi.mock("react-native-svg", () => ({
   default: Children,
   Defs: Children,

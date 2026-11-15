@@ -52,9 +52,10 @@ function activateLocale(locale: string): void {
 
 function applyLanguageSetting(): void {
   // Not desktopBridge.getSystemLocale(): that is the regional/time locale, not the UI language.
+  const systemLanguages = window.desktopBridge?.getPreferredSystemLanguages?.() ?? [];
   requestedLocale = resolveLocale(
     getClientSettings().language,
-    navigator.languages,
+    systemLanguages.length > 0 ? systemLanguages : navigator.languages,
     SUPPORTED_LOCALES,
     DEFAULT_LOCALE,
   );

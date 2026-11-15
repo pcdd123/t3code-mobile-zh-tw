@@ -4,6 +4,8 @@ import { createRoot } from "react-dom/client";
 import { AsyncResult } from "effect/reactivity";
 import { expect, it, vi } from "vite-plus/test";
 
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
+
 interface Snapshot {
   readonly projects: ReadonlyArray<{
     readonly environmentId: string;

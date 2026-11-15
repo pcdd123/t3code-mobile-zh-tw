@@ -1,5 +1,5 @@
 import "./intl-polyfills";
-import { resolveLocale } from "@t3tools/client-runtime/locales";
+import { SYSTEM_LANGUAGE, resolveLocale } from "@t3tools/client-runtime/locales";
 import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
 import { GTProvider, initializeGT } from "gt-react-native";
@@ -16,14 +16,13 @@ import ko from "./translations/ko.json";
 import ptBR from "./translations/pt-BR.json";
 import ru from "./translations/ru.json";
 import zh from "./translations/zh.json";
-
-// Screens import GT from here so the polyfills above always load first.
-export { useGT } from "gt-react-native";
+import zhTW from "./translations/zh-TW.json";
 
 // Committed catalogs, so forks and offline installs never reach GT's CDN. English is the source.
 const TRANSLATIONS: Readonly<Record<string, Record<string, string>>> = {
   es,
   zh,
+  "zh-TW": zhTW,
   "pt-BR": ptBR,
   fr,
   de,
@@ -57,7 +56,7 @@ function readSystemLocales(): ReadonlyArray<string> {
 export function useLanguagePreference(): string {
   const preferences = useAtomValue(mobilePreferencesAtom);
   return AsyncResult.isSuccess(preferences)
-    ? (preferences.value.language ?? DEFAULT_LOCALE)
+    ? (preferences.value.language ?? SYSTEM_LANGUAGE)
     : DEFAULT_LOCALE;
 }
 

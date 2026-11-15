@@ -2,6 +2,8 @@ import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScroll
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { SidebarProjectGroupingMode } from "@t3tools/contracts";
 import { AsyncResult } from "effect/reactivity";
+import "../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SettingsScreen } from "./components/SettingsScreen";
@@ -14,29 +16,14 @@ import { ListChoiceRow as SettingsChoiceRow } from "../../components/ui/ListChoi
 import { SettingsSection } from "./components/SettingsSection";
 import { NewThreadSettingsSection, WorkingSectionSettings } from "./ThreadSettingsSections";
 
-const GROUPING_OPTIONS: ReadonlyArray<{
-  readonly mode: SidebarProjectGroupingMode;
-  readonly label: string;
-  readonly description: string;
-}> = [
-  {
-    mode: "repository",
-    label: "Group by repository",
-    description: "Matching repositories appear as one project.",
-  },
-  {
-    mode: "repository_path",
-    label: "Group by repository path",
-    description: "Keep monorepo paths separate.",
-  },
-  {
-    mode: "separate",
-    label: "Keep separate",
-    description: "Show every workspace as its own project.",
-  },
+const GROUPING_OPTIONS: ReadonlyArray<{ readonly mode: SidebarProjectGroupingMode }> = [
+  { mode: "repository" },
+  { mode: "repository_path" },
+  { mode: "separate" },
 ];
 
 export function SettingsProjectGroupingRouteScreen() {
+  const gt = useGT();
   const insets = useSafeAreaInsets();
   const preferencesResult = useAtomValue(mobilePreferencesAtom);
   const savePreferences = useAtomSet(updateMobilePreferencesAtom);
@@ -46,7 +33,7 @@ export function SettingsProjectGroupingRouteScreen() {
     : null;
 
   return (
-    <SettingsScreen title="General">
+    <SettingsScreen title={gt("General")}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
@@ -54,12 +41,24 @@ export function SettingsProjectGroupingRouteScreen() {
         contentContainerClassName="gap-3 px-5 pt-4"
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 18) + 18 }}
       >
-        <SettingsSection title="Project grouping">
+        <SettingsSection title={gt("Project grouping")}>
           {GROUPING_OPTIONS.map((option, index) => (
             <SettingsChoiceRow
               key={option.mode}
-              label={option.label}
-              description={option.description}
+              label={
+                option.mode === "repository"
+                  ? gt("Group by repository")
+                  : option.mode === "repository_path"
+                    ? gt("Group by repository path")
+                    : gt("Keep separate")
+              }
+              description={
+                option.mode === "repository"
+                  ? gt("Matching repositories appear as one project.")
+                  : option.mode === "repository_path"
+                    ? gt("Keep monorepo paths separate.")
+                    : gt("Show every workspace as its own project.")
+              }
               selected={selectedMode === option.mode}
               separated={index > 0}
               disabled={!preferencesReady}

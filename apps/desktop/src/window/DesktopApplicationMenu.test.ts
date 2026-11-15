@@ -3,6 +3,8 @@ import { assert, describe, it } from "@effect/vitest";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
+import { ClientSettingsSchema } from "@t3tools/contracts";
 
 import * as Electron from "electron";
 import { vi } from "vite-plus/test";
@@ -19,6 +21,9 @@ import * as DesktopConfig from "../app/DesktopConfig.ts";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopUpdates from "../updates/DesktopUpdates.ts";
 import * as DesktopWindow from "./DesktopWindow.ts";
+import * as DesktopClientSettings from "../settings/DesktopClientSettings.ts";
+
+const decodeClientSettings = Schema.decodeSync(ClientSettingsSchema);
 
 const environmentInput = {
   dirname: "/repo/apps/desktop/dist-electron",
@@ -113,6 +118,7 @@ const configureMenu = (
   selectedAction: Deferred.Deferred<string>,
   applicationMenuTemplate: Deferred.Deferred<readonly Electron.MenuItemConstructorOptions[]>,
   environment: Partial<DesktopEnvironment.MakeDesktopEnvironmentInput> = {},
+  language = "en",
 ) =>
   Effect.gen(function* () {
     const menu = yield* DesktopApplicationMenu.DesktopApplicationMenu;
@@ -126,6 +132,12 @@ const configureMenu = (
         Layer.provideMerge(layerElectronDialog),
         Layer.provideMerge(layerElectronApp),
         Layer.provideMerge(
+          Layer.succeed(DesktopClientSettings.DesktopClientSettings, {
+            get: Effect.succeedSome(decodeClientSettings({ language })),
+            set: () => Effect.void,
+          }),
+        ),
+        Layer.provideMerge(
           DesktopEnvironment.layer({ ...environmentInput, ...environment }).pipe(
             Layer.provide(Layer.mergeAll(NodeServices.layer, DesktopConfig.layerTest({}))),
           ),
@@ -135,6 +147,39 @@ const configureMenu = (
   );
 
 describe("DesktopApplicationMenu", () => {
+  it.effect("uses the selected language for the macOS and Windows menus", () =>
+    Effect.gen(function* () {
+      for (const platform of ["darwin", "win32"] as const) {
+        const template = yield* Deferred.make<readonly Electron.MenuItemConstructorOptions[]>();
+        yield* configureMenu(yield* Deferred.make<string>(), template, { platform }, "zh-TW");
+        const items = yield* Deferred.await(template);
+        assert.isDefined(items.find((item) => item.label === "檔案"));
+        assert.isDefined(items.find((item) => item.label === "編輯"));
+      }
+    }),
+  );
+  it("translates menu labels and roles while preserving accelerators and actions", () => {
+    const click = vi.fn();
+    const translated = DesktopApplicationMenu.translateDesktopMenu(
+      [
+        {
+          label: "Edit",
+          submenu: [
+            { role: "copy" },
+            { label: "Paste as Text", accelerator: "CmdOrCtrl+Shift+V", click },
+          ],
+        },
+      ],
+      "T3 Code",
+    );
+    assert.equal(translated[0]?.label, "編輯");
+    const submenu = translated[0]?.submenu;
+    if (!Array.isArray(submenu)) throw new Error("Expected submenu.");
+    assert.equal(submenu[0]?.label, "拷貝");
+    assert.equal(submenu[1]?.label, "以純文字貼上");
+    assert.equal(submenu[1]?.accelerator, "CmdOrCtrl+Shift+V");
+    assert.strictEqual(submenu[1]?.click, click);
+  });
   it.effect("leaves the accelerator to Chromium instead of injecting a paste", () =>
     Effect.gen(function* () {
       const selectedAction = yield* Deferred.make<string>();

@@ -1,0 +1,75 @@
+name: Build Traditional Chinese desktop installers
+
+on:
+  push:
+    branches: [feat/mobile-zh-tw]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-26
+            platform: mac
+            arch: arm64
+            target: dmg
+          - runner: macos-26-intel
+            platform: mac
+            arch: x64
+            target: dmg
+          - runner: windows-2025
+            platform: win
+            arch: x64
+            target: nsis
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout source
+        shell: bash
+        run: |
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git sparse-checkout set --no-cone '/*' '!/.repos/'
+          git -c checkout.workers=0 checkout --detach FETCH_HEAD
+      - uses: ./.github/actions/setup-ci-deps
+        with:
+          install-args: --filter=@t3tools/desktop... --filter=t3... --filter=@t3tools/scripts...
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build unsigned installer
+        shell: bash
+        run: vp run dist:desktop:artifact --platform "${{ matrix.platform }}" --target "${{ matrix.target }}" --arch "${{ matrix.arch }}" --output-dir release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zh-tw-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            release/*.dmg
+            release/*.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: installers
+          merge-multiple: true
+      - name: Publish downloadable preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          tag="zh-tw-preview-${COMMIT_SHA:0:12}"
+          gh release create "$tag" installers/* --target "$COMMIT_SHA" --prerelease \
+            --title "繁體中文版預覽 ${COMMIT_SHA:0:12}" \
+            --notes "繁體中文化仍在進行中，部分畫面保留英文。此預覽版本未簽署；macOS 與 Windows 可能要求確認才能開啟。"

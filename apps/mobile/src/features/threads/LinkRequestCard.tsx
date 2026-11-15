@@ -1,4 +1,6 @@
 import { pipe } from "effect/Function";
+import "../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 import { useAtomValue } from "@effect/atom-react";
 import {
   ANOTHER_ADDRESS,
@@ -103,6 +105,7 @@ function PendingLinkRequest(props: {
   readonly environmentId: EnvironmentId;
   readonly item: LinkRequestItem;
 }) {
+  const gt = useGT();
   const { item } = props;
   const [open, setOpen] = useState(false);
   const [declining, setDeclining] = useState(false);
@@ -135,8 +138,8 @@ function PendingLinkRequest(props: {
       <View className="gap-1">
         <Text className="font-t3-bold text-base text-foreground">
           {picksMachine(item)
-            ? "Link a machine to this environment"
-            : `Link ${target} to this environment`}
+            ? gt("Link a machine to this environment")
+            : gt("Link {target} to this environment", { target })}
         </Text>
         {item.reason.trim() ? (
           <Text className="font-sans text-sm leading-5 text-foreground-muted">{item.reason}</Text>
@@ -154,7 +157,7 @@ function PendingLinkRequest(props: {
       {canAnswer ? (
         <>
           <Button
-            label={picksMachine(item) ? "Choose machine…" : "Review link…"}
+            label={picksMachine(item) ? gt("Choose machine…") : gt("Review link…")}
             disabled={declining}
             onPress={() => setOpen(true)}
             tone="primary"
@@ -169,13 +172,13 @@ function PendingLinkRequest(props: {
               className="px-1 py-1 active:opacity-60 disabled:opacity-50"
               onPress={() => void decline()}
             >
-              <Text className="font-sans text-xs text-foreground-muted">Decline</Text>
+              <Text className="font-sans text-xs text-foreground-muted">{gt("Decline")}</Text>
             </Pressable>
           </View>
         </>
       ) : (
         <Text className="font-sans text-xs text-foreground-muted">
-          Only a session that manages access here can answer this.
+          {gt("Only a session that manages access here can answer this.")}
         </Text>
       )}
       {open ? (
@@ -194,6 +197,29 @@ function LinkRequestSheet(props: {
   readonly item: LinkRequestItem;
   readonly onClose: () => void;
 }) {
+  const gt = useGT();
+  const choices: Record<AuthMcpClientAccess, { label: string; description: string }> = {
+    "read-only": {
+      label: gt("Read only"),
+      description: gt("Read projects and threads. Cannot start, message or change anything."),
+    },
+    "approval-required": {
+      label: gt("Supervised"),
+      description: gt("Ask before commands and file changes."),
+    },
+    "auto-accept-edits": {
+      label: gt("Auto-accept edits"),
+      description: gt("Auto-approve edits, ask before other actions."),
+    },
+    auto: {
+      label: gt("Auto"),
+      description: gt("Supported providers approve routine actions; others still ask."),
+    },
+    "full-access": {
+      label: gt("Full access"),
+      description: gt("Allow commands and edits without prompts."),
+    },
+  };
   const { item } = props;
   const insets = useSafeAreaInsets();
   const pickMachine = picksMachine(item);
@@ -284,7 +310,7 @@ function LinkRequestSheet(props: {
 
   return (
     <Sheet
-      title={pickMachine ? "Link a machine" : `Link ${targetName}`}
+      title={pickMachine ? gt("Link a machine") : gt("Link {target}", { target: targetName })}
       onClose={props.onClose}
       // An answer that lands after a close would still link, and would close a reopened sheet.
       dismissDisabled={busy}
@@ -299,8 +325,9 @@ function LinkRequestSheet(props: {
       >
         <View className="gap-1">
           <Text className="font-sans text-sm leading-5 text-foreground-muted">
-            Agents here can then launch, message and wait on threads there. It appears under
-            Authorized clients in that machine's Sharing & access, where it can be revoked.
+            {gt(
+              "Agents here can then launch, message and wait on threads there. It appears under Authorized clients in that machine's Sharing & access, where it can be revoked.",
+            )}
           </Text>
           {item.url !== undefined && target.kind === "machine" ? (
             <Text className="font-sans text-xs text-foreground-muted" numberOfLines={1}>
@@ -313,10 +340,13 @@ function LinkRequestSheet(props: {
             accessibilityRole="alert"
             className="gap-1 rounded-xl border border-warning-border bg-warning p-3"
           >
-            <Text className="font-t3-bold text-sm text-warning-foreground">Check this address</Text>
+            <Text className="font-t3-bold text-sm text-warning-foreground">
+              {gt("Check this address")}
+            </Text>
             <Text className="font-sans text-xs leading-snug text-warning-foreground">
-              This app cannot confirm it is one of your machines. The pairing code you paste is sent
-              there.
+              {gt(
+                "This app cannot confirm it is one of your machines. The pairing code you paste is sent there.",
+              )}
             </Text>
             <Text selectable className="font-sans text-xs leading-snug text-warning-foreground">
               {linkDestination(address)}
@@ -324,7 +354,7 @@ function LinkRequestSheet(props: {
           </View>
         ) : null}
         {pickMachine ? (
-          <SettingsSection title="Machine">
+          <SettingsSection title={gt("Machine")}>
             {machines.map((machine, index) => (
               <MachineRow
                 key={machine.environmentId}
@@ -339,8 +369,10 @@ function LinkRequestSheet(props: {
               />
             ))}
             <SettingsChoiceRow
-              label="Another address…"
-              description="Link a machine this app does not know, by its https or Tailscale address."
+              label={gt("Another address…")}
+              description={gt(
+                "Link a machine this app does not know, by its https or Tailscale address.",
+              )}
               selected={selected === ANOTHER_ADDRESS}
               separated={machines.length > 0}
               disabled={busy}
@@ -354,7 +386,7 @@ function LinkRequestSheet(props: {
         {needsAddress && item.url === undefined ? (
           <View className="gap-2">
             <TextInput
-              accessibilityLabel="Address"
+              accessibilityLabel={gt("Address")}
               placeholder="https://machine.tailnet.ts.net"
               value={address}
               onChangeText={setAddress}
@@ -366,24 +398,28 @@ function LinkRequestSheet(props: {
             />
             {target.kind === "machine" ? (
               <Text className="font-sans text-xs text-foreground-muted">
-                This app has no address for {target.label} that another machine can reach. Enter its
-                https or Tailscale address.
+                {gt(
+                  "This app has no address for {target} that another machine can reach. Enter its https or Tailscale address.",
+                  { target: target.label },
+                )}
               </Text>
             ) : null}
           </View>
         ) : null}
         {useExisting ? (
           <Text className="font-sans text-sm leading-5 text-foreground-muted">
-            This environment is already linked to {targetName}. The agent can use that link as it
-            is; change its access in Settings → Environments.
+            {gt(
+              "This environment is already linked to {target}. The agent can use that link as it is; change its access in Settings → Environments.",
+              { target: targetName },
+            )}
           </Text>
         ) : target.kind === "none" ? null : (
           <>
             {canMint ? null : (
               <View className="gap-2">
                 <TextInput
-                  accessibilityLabel="Pairing code"
-                  placeholder="Paste the code"
+                  accessibilityLabel={gt("Pairing code")}
+                  placeholder={gt("Paste the code")}
                   value={pairingCode}
                   onChangeText={setPairingCode}
                   editable={!busy}
@@ -394,17 +430,19 @@ function LinkRequestSheet(props: {
                   spellCheck={false}
                 />
                 <Text className="font-sans text-xs text-foreground-muted">
-                  Create a link on {targetName}: Settings → Sharing & access → Authorized clients →
-                  Create link, then paste its code here.
+                  {gt(
+                    "Create a link on {target}: Settings → Sharing & access → Authorized clients → Create link, then paste its code here.",
+                    { target: targetName },
+                  )}
                 </Text>
               </View>
             )}
-            <SettingsSection title="What agents here may do there">
+            <SettingsSection title={gt("What agents here may do there")}>
               {ACCESS_CHOICES.map((choice, index) => (
                 <SettingsChoiceRow
                   key={choice.access}
-                  label={choice.label}
-                  description={choice.description}
+                  label={choices[choice.access].label}
+                  description={choices[choice.access].description}
                   selected={choice.access === access}
                   separated={index > 0}
                   disabled={busy}
@@ -413,8 +451,9 @@ function LinkRequestSheet(props: {
               ))}
             </SettingsSection>
             <Text className="font-sans text-xs text-foreground-muted">
-              An agent here never gets more there than its own mode here either. Threads it starts
-              there cannot change that environment's own threads, projects or settings.
+              {gt(
+                "An agent here never gets more there than its own mode here either. Threads it starts there cannot change that environment's own threads, projects or settings.",
+              )}
             </Text>
           </>
         )}
@@ -428,13 +467,19 @@ function LinkRequestSheet(props: {
           </Text>
         ) : null}
         <Button
-          label={busy ? "Linking…" : useExisting ? "Use this link" : "Link"}
+          label={busy ? gt("Linking…") : useExisting ? gt("Use this link") : gt("Link")}
           disabled={busy || !ready}
           onPress={() => void submit()}
           tone="primary"
           fullWidth
         />
-        <Button label="Cancel" tone="secondary" disabled={busy} onPress={props.onClose} fullWidth />
+        <Button
+          label={gt("Cancel")}
+          tone="secondary"
+          disabled={busy}
+          onPress={props.onClose}
+          fullWidth
+        />
       </ScrollView>
     </Sheet>
   );
@@ -448,14 +493,15 @@ function MachineRow(props: {
   readonly disabled: boolean;
   readonly onPress: () => void;
 }) {
+  const gt = useGT();
   const { machine } = props;
   const status = machine.linked
-    ? "Linked"
+    ? gt("Linked")
     : machine.connected
       ? null
       : machine.connectOnly
         ? "T3 Connect"
-        : "Not connected";
+        : gt("Not connected");
   return (
     <Pressable
       accessibilityRole="radio"

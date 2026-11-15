@@ -4,15 +4,13 @@ import type {
   ProviderApprovalOption,
   RuntimeRequestId,
 } from "@t3tools/contracts";
-import {
-  FULL_ACCESS_OVERRIDE_QUESTION,
-  fullAccessOverrideExplanation,
-} from "@t3tools/client-runtime/state/thread-requests";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { AppText as Text } from "../../components/ui/AppText";
 import type { PendingApproval } from "../../lib/threadActivity";
+import "../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 
 export interface PendingApprovalCardProps {
   readonly canOperateThread: boolean;
@@ -31,6 +29,17 @@ const DEFAULT_APPROVAL_OPTIONS: ReadonlyArray<ProviderApprovalOption> = [
 ];
 
 export function PendingApprovalCard(props: PendingApprovalCardProps) {
+  const gt = useGT();
+  const translatedLabels: Record<string, string> = {
+    "Allow once": gt("Allow once"),
+    "Allow session": gt("Allow session"),
+    "Allow for this session": gt("Allow for this session"),
+    "Allow for this thread": gt("Allow for this thread"),
+    "Allow all edits this session": gt("Allow all edits this session"),
+    Approve: gt("Approve"),
+    Decline: gt("Decline"),
+    Deny: gt("Deny"),
+  };
   const options: ReadonlyArray<ProviderApprovalOption> =
     props.approval.options ?? DEFAULT_APPROVAL_OPTIONS;
   const warning = options.find((option) => option.warning)?.warning;
@@ -40,7 +49,7 @@ export function PendingApprovalCard(props: PendingApprovalCardProps) {
   return (
     <View className="gap-2.5 rounded-[20px] border border-border bg-card-alt p-4">
       <Text className="font-t3-bold text-2xs uppercase tracking-[1.1px] text-foreground-secondary">
-        Approval needed
+        {gt("Approval needed")}
       </Text>
       <Text className="font-t3-bold text-lg text-foreground">
         {props.approval.appName ?? props.approval.requestKind}
@@ -62,19 +71,26 @@ export function PendingApprovalCard(props: PendingApprovalCardProps) {
           onPress={() => setExplanationOpen((open) => !open)}
         >
           <Text className="font-t3-bold text-xs text-foreground-secondary underline">
-            {FULL_ACCESS_OVERRIDE_QUESTION}
+            {gt("Why am I being asked this?")}
           </Text>
           {explanationOpen ? (
             <Text className="mt-1 font-sans text-xs leading-normal text-foreground-muted">
-              {fullAccessOverrideExplanation(props.approval.fullAccessOverride)}
+              {props.approval.fullAccessOverride === "ask_rule"
+                ? gt(
+                    "Full access skips approvals, but an ask rule in the agent's own settings matches this action, so it still asks. Remove or narrow that rule to stop these prompts.",
+                  )
+                : gt(
+                    "Full access skips approvals, but the agent still stops for a few safety checks of its own that no setting can skip, such as a delete whose path it can't verify. T3 Code can't turn these off, so check the request and approve it if it's what you expect.",
+                  )}
             </Text>
           ) : null}
         </Pressable>
       ) : null}
       {!canRespond ? (
         <Text className="font-sans text-sm leading-5 text-foreground-muted">
-          The provider process for this request is no longer available. Interrupt or restart the run
-          to continue.
+          {gt(
+            "The provider process for this request is no longer available. Interrupt or restart the run to continue.",
+          )}
         </Text>
       ) : null}
       {warning ? (
@@ -84,7 +100,7 @@ export function PendingApprovalCard(props: PendingApprovalCardProps) {
         {options.map((option) => (
           <Button
             key={option.decision}
-            label={option.label}
+            label={translatedLabels[option.label] ?? option.label}
             tone={
               option.decision === "accept"
                 ? "primary"
@@ -100,7 +116,7 @@ export function PendingApprovalCard(props: PendingApprovalCardProps) {
       </View>
       {!props.canOperateThread ? (
         <Text className="font-sans text-xs text-foreground-muted">
-          This connection cannot respond to approvals.
+          {gt("This connection cannot respond to approvals.")}
         </Text>
       ) : null}
     </View>

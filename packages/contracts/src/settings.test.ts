@@ -317,6 +317,13 @@ describe("resolveIdleCompaction", () => {
   });
 });
 
+describe("ClientSettings language", () => {
+  it("follows the system unless a language was selected", () => {
+    expect(decodeClientSettings({}).language).toBe("system");
+    expect(decodeClientSettings({ language: "en" }).language).toBe("en");
+  });
+});
+
 describe("ClientSettings notifications", () => {
   it("requires opt-in when existing settings omit notification preferences", () => {
     expect(decodeClientSettings({}).notificationMode).toBe("off");

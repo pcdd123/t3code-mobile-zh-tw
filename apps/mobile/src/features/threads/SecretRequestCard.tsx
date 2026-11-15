@@ -1,11 +1,11 @@
 import { pipe } from "effect/Function";
+import "../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 import {
-  SECRET_REQUEST_DEFAULT_PLACEHOLDER,
   secretRequestAnswerInput,
   secretRequestDisplay,
   secretRequestFailureMessage,
   secretRequestLink,
-  secretRequestPrivacyNote,
   secretRequestReference,
   secretRequestSources,
   type SecretRequestItem,
@@ -74,6 +74,7 @@ function PendingSecretRequestForm(props: {
   readonly item: SecretRequestItem;
   readonly iconColor: ColorValue;
 }) {
+  const gt = useGT();
   const { item } = props;
   const answer = useAtomCommand(serverEnvironment.answerSecretRequest, {
     label: "answer secret request",
@@ -136,7 +137,7 @@ function PendingSecretRequestForm(props: {
       {link !== null ? (
         <View className="gap-1.5">
           <Button
-            label={`Open ${link.host}`}
+            label={gt("Open {host}", { host: link.host })}
             tone="secondary"
             fullWidth
             onPress={() => void tryOpenExternalUrl(link.href, "secret-request")}
@@ -152,7 +153,7 @@ function PendingSecretRequestForm(props: {
       {sources.length > 0 ? (
         <View className="flex-row flex-wrap gap-2">
           <Chip
-            label="Value"
+            label={gt("Value")}
             size="small"
             selected={source === null}
             disabled={submitting}
@@ -179,7 +180,7 @@ function PendingSecretRequestForm(props: {
       {source === null ? (
         <SecretTextInput
           accessibilityLabel={item.label}
-          placeholder={item.placeholder ?? SECRET_REQUEST_DEFAULT_PLACEHOLDER}
+          placeholder={item.placeholder ?? gt("Paste the secret")}
           value={secret}
           onChangeText={setSecret}
           editable={!submitting}
@@ -216,7 +217,7 @@ function PendingSecretRequestForm(props: {
         </Text>
       ) : null}
       <Button
-        label="Save securely"
+        label={gt("Save securely")}
         tone="primary"
         fullWidth
         disabled={submitting || draft.trim().length === 0}
@@ -231,11 +232,15 @@ function PendingSecretRequestForm(props: {
             type="monochrome"
           />
           <Text className="flex-1 font-sans text-xs text-foreground-muted">
-            {secretRequestPrivacyNote(item)}
+            {item.delivery === "file"
+              ? gt(
+                  "Kept out of chat, in a private file this agent's commands can read for 24 hours",
+                )
+              : gt("Stored securely, never shown to the agent")}
           </Text>
         </View>
         <Button
-          label="Decline"
+          label={gt("Decline")}
           tone="text"
           disabled={submitting}
           onPress={() => void send({ type: "decline" })}

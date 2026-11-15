@@ -1,4 +1,6 @@
 import { useContentTopInset } from "../../components/ui/useBarInset";
+import "../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 import { usePaneRole } from "../../components/ui/Pane";
 import { ScreenContent } from "../../components/ui/ScreenContent";
 import { useActiveNewTask } from "../../state/active-new-task";
@@ -191,6 +193,7 @@ function renderHomeScrollView(props: ScrollViewProps) {
 }
 
 export function HomeScreen(props: HomeScreenProps) {
+  const gt = useGT();
   const usesNativeWorkspaceColumns = useNativeWorkspaceColumnsSupported();
   const workspace = useWorkspaceTabs();
   const [initialScrollOffset] = useState(() => workspace?.getScrollOffset("threads") ?? 0);
@@ -621,6 +624,34 @@ export function HomeScreen(props: HomeScreenProps) {
       : (props.savedConnectionsById[props.selectedEnvironmentId]?.environmentLabel ??
         "this environment");
   const emptyState = deriveHomeEmptyState(props.catalogState, props.projects.length);
+  const emptyStateLabels: Record<string, string> = {
+    "Loading environments": gt("Loading environments"),
+    "Checking saved environments on this device.": gt(
+      "Checking saved environments on this device.",
+    ),
+    "No environments connected": gt("No environments connected"),
+    "Add an environment to load projects and start coding sessions.": gt(
+      "Add an environment to load projects and start coding sessions.",
+    ),
+    "Client not supported": gt("Client not supported"),
+    "Environment unavailable": gt("Environment unavailable"),
+    "The saved environment is offline. Check the URL or start the environment, then retry.": gt(
+      "The saved environment is offline. Check the URL or start the environment, then retry.",
+    ),
+    "Loading threads": gt("Loading threads"),
+    "Connecting to environment": gt("Connecting to environment"),
+    "Loading projects and threads from the saved environment.": gt(
+      "Loading projects and threads from the saved environment.",
+    ),
+    "No projects found": gt("No projects found"),
+    "The connected environment did not report any projects.": gt(
+      "The connected environment did not report any projects.",
+    ),
+    "No threads yet": gt("No threads yet"),
+    "Create a task to start a new coding runtime in one of your connected projects.": gt(
+      "Create a task to start a new coding runtime in one of your connected projects.",
+    ),
+  };
 
   if (!hasAnyThreads) {
     return (
@@ -641,14 +672,14 @@ export function HomeScreen(props: HomeScreenProps) {
           >
             <View className="w-full max-w-[430px]">
               <EmptyState
-                title={emptyState.title}
-                detail={emptyState.detail}
-                actionLabel={emptyState.showsAddEnvironment ? "Add environment" : undefined}
+                title={emptyStateLabels[emptyState.title] ?? emptyState.title}
+                detail={emptyStateLabels[emptyState.detail] ?? emptyState.detail}
+                actionLabel={emptyState.showsAddEnvironment ? gt("Add environment") : undefined}
                 onAction={emptyState.showsAddEnvironment ? props.onAddConnection : undefined}
                 action={
                   Platform.OS === "android" && emptyState.showsAddEnvironment ? (
                     <FloatingActionButton
-                      label="Add environment"
+                      label={gt("Add environment")}
                       icon="plus"
                       variant="extended"
                       tone="primary"
@@ -702,32 +733,32 @@ export function HomeScreen(props: HomeScreenProps) {
   const v2ListEmpty =
     hasSearchQuery && threadSearch.isPending ? (
       <EmptyState
-        title="Searching thread messages…"
-        detail={`Looking for "${props.searchQuery}" in messages.`}
+        title={gt("Searching thread messages…")}
+        detail={gt("Looking for “{query}” in messages.", { query: props.searchQuery })}
         variant={Platform.OS === "android" ? "plain" : undefined}
       />
     ) : hasSearchQuery ? (
       <EmptyState
-        title="No results"
-        detail={`No threads matching "${props.searchQuery}".`}
+        title={gt("No results")}
+        detail={gt("No threads matching “{query}”.", { query: props.searchQuery })}
         variant={Platform.OS === "android" ? "plain" : undefined}
       />
     ) : v2ScopedProjectGroup !== null ? (
       <EmptyState
-        title={`No threads in ${v2ScopedProjectGroup.title}`}
-        detail="Choose another project or create a new task."
+        title={gt("No threads in {name}", { name: v2ScopedProjectGroup.title })}
+        detail={gt("Choose another project or create a new task.")}
         variant={Platform.OS === "android" ? "plain" : undefined}
       />
     ) : selectedEnvironmentLabel ? (
       <EmptyState
-        title={`No threads in ${selectedEnvironmentLabel}`}
-        detail="Choose another environment or create a new task."
+        title={gt("No threads in {name}", { name: selectedEnvironmentLabel })}
+        detail={gt("Choose another environment or create a new task.")}
         variant={Platform.OS === "android" ? "plain" : undefined}
       />
     ) : (
       <EmptyState
-        title="No threads yet"
-        detail="Create a task to start a new coding session."
+        title={gt("No threads yet")}
+        detail={gt("Create a task to start a new coding session.")}
         variant={Platform.OS === "android" ? "plain" : undefined}
       />
     );

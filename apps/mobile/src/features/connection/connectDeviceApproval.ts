@@ -4,6 +4,8 @@ export interface ConnectDeviceApprovalPrompt {
   readonly pairingLinkId: string;
   readonly title: string;
   readonly message: string;
+  readonly deviceName: string;
+  readonly verificationCode: string;
 }
 
 export function describeConnectDevice(device: AuthClientMetadata | undefined): string {
@@ -32,6 +34,8 @@ export function connectDeviceApprovalPrompts(input: {
     .map(({ link, verificationCode, client: device }) => ({
       pairingLinkId: link.id,
       title: "Approve this device?",
+      deviceName: describeConnectDevice(device),
+      verificationCode,
       message: `${describeConnectDevice(device)} wants to connect to ${input.environmentLabel} through T3 Connect. It shows code ${verificationCode}. Approve it only if that code matches.`,
     }));
 }

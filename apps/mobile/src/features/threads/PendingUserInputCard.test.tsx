@@ -4,6 +4,8 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vite-plus/test";
 
+vi.mock("gt-react-native", () => ({ useGT: () => (message: string) => message }));
+
 import type { PendingUserInput } from "../../lib/threadActivity";
 
 const harness = vi.hoisted(() => ({

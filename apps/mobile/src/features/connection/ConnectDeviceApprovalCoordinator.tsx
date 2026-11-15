@@ -1,5 +1,7 @@
 import { AuthAccessWriteScope, type AuthPairingLink, type EnvironmentId } from "@t3tools/contracts";
 import { useEffect, useEffectEvent } from "react";
+import "../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 
 import * as Dialog from "../../components/ui/Dialog";
 import { authEnvironment } from "../../state/auth";
@@ -44,6 +46,16 @@ interface QueuedApprovalPrompt extends ConnectDeviceApprovalPrompt {
   readonly environmentId: EnvironmentId;
   readonly approve: () => Promise<ApprovalAnswer>;
   readonly deny: () => Promise<ApprovalAnswer>;
+  readonly labels: {
+    readonly goneTitle: string;
+    readonly goneMessage: string;
+    readonly ok: string;
+    readonly waiting: string;
+    readonly deny: string;
+    readonly approve: string;
+    readonly denyFailed: string;
+    readonly approveFailed: string;
+  };
 }
 
 const watchedEnvironments = new Set<EnvironmentId>();
@@ -58,9 +70,9 @@ const approvalPrompts = createApprovalPromptQueue<QueuedApprovalPrompt>((prompt,
       }
       if (outcome === "gone") {
         return Dialog.alert(
-          "Request no longer waiting",
-          "It expired or was answered elsewhere.",
-          [{ text: "OK", onPress: () => answer("done") }],
+          prompt.labels.goneTitle,
+          prompt.labels.goneMessage,
+          [{ text: prompt.labels.ok, onPress: () => answer("done") }],
           { onDismiss: () => answer("done") },
         );
       }
@@ -68,8 +80,8 @@ const approvalPrompts = createApprovalPromptQueue<QueuedApprovalPrompt>((prompt,
         answer(watchedEnvironments.has(prompt.environmentId) ? "retry" : "done");
       Dialog.alert(
         failure,
-        "The request is still waiting. Try again.",
-        [{ text: "OK", onPress: retryIfWatched }],
+        prompt.labels.waiting,
+        [{ text: prompt.labels.ok, onPress: retryIfWatched }],
         // Another dialog took the screen; offer the request again on the next update.
         { onDismiss: () => answer("later") },
       );
@@ -78,8 +90,11 @@ const approvalPrompts = createApprovalPromptQueue<QueuedApprovalPrompt>((prompt,
     prompt.title,
     prompt.message,
     [
-      { text: "Deny", onPress: respond(prompt.deny, "Could not deny the device") },
-      { text: "Approve", onPress: respond(prompt.approve, "Could not approve the device") },
+      { text: prompt.labels.deny, onPress: respond(prompt.deny, prompt.labels.denyFailed) },
+      {
+        text: prompt.labels.approve,
+        onPress: respond(prompt.approve, prompt.labels.approveFailed),
+      },
     ],
     // Another dialog took the screen; offer the request again on the next update.
     { cancelable: false, onDismiss: () => answer("later") },
@@ -90,6 +105,7 @@ function EnvironmentApprovalWatcher(props: {
   readonly environmentId: EnvironmentId;
   readonly environmentLabel: string;
 }) {
+  const gt = useGT();
   const access = useEnvironmentQuery(
     authEnvironment.accessChanges({ environmentId: props.environmentId, input: null }),
   );
@@ -107,6 +123,25 @@ function EnvironmentApprovalWatcher(props: {
     approvalPrompts.offer(
       prompts.map((prompt) => ({
         ...prompt,
+        title: gt("Approve this device?"),
+        message: gt(
+          "{device} wants to connect to {environment} through T3 Connect. It shows code {code}. Approve it only if that code matches.",
+          {
+            device: prompt.deviceName,
+            environment: props.environmentLabel,
+            code: prompt.verificationCode,
+          },
+        ),
+        labels: {
+          goneTitle: gt("Request no longer waiting"),
+          goneMessage: gt("It expired or was answered elsewhere."),
+          ok: gt("OK"),
+          waiting: gt("The request is still waiting. Try again."),
+          deny: gt("Deny"),
+          approve: gt("Approve"),
+          denyFailed: gt("Could not deny the device"),
+          approveFailed: gt("Could not approve the device"),
+        },
         environmentId: props.environmentId,
         approve: () =>
           approve({

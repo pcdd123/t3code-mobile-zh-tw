@@ -7,6 +7,7 @@ import {
 import { AuthAccessWriteScope, type EnvironmentId } from "@t3tools/contracts";
 import * as DateTime from "effect/DateTime";
 import { useEffect, useRef, useState } from "react";
+import { useGT } from "gt-react";
 
 import { authEnvironment } from "../state/auth";
 import { useEnvironments } from "../state/environments";
@@ -44,6 +45,7 @@ function EnvironmentConnectDeviceRequests(props: {
 async function reportFailure(
   title: string,
   action: () => Promise<AtomCommandResult<unknown, unknown>>,
+  fallback: string,
 ): Promise<boolean> {
   const result = await action();
   if (result._tag !== "Failure") return false;
@@ -53,7 +55,7 @@ async function reportFailure(
       stackedThreadToast({
         type: "error",
         title,
-        description: error instanceof Error ? error.message : "An error occurred.",
+        description: error instanceof Error ? error.message : fallback,
       }),
     );
   }
@@ -67,6 +69,7 @@ function ConnectDeviceRequestToasts({
   readonly environmentId: EnvironmentId;
   readonly environmentLabel: string;
 }) {
+  const gt = useGT();
   const navigate = useNavigate();
   const access = useEnvironmentQuery(authEnvironment.accessChanges({ environmentId, input: null }));
   const approve = useAtomCommand(authEnvironment.approveConnectDevice, { reportFailure: false });
@@ -106,7 +109,10 @@ function ConnectDeviceRequestToasts({
     }
     for (const { id, request, remainingMs } of live) {
       const device = describeConnectDeviceClient(request);
-      const renderedKey = `${request.verificationCode}:${device}`;
+      const title = gt("A device wants to connect to {environment}", {
+        environment: environmentLabel,
+      });
+      const renderedKey = `${request.verificationCode}:${device}:${title}`;
       const tracked = toasts.current.get(id);
       if (tracked?.renderedKey === renderedKey) continue;
       const close = () => {
@@ -115,17 +121,22 @@ function ConnectDeviceRequestToasts({
       };
       const options = stackedThreadToast({
         type: "info",
-        title: `A device wants to connect to ${environmentLabel}`,
-        description: `${device}. Approve only if it shows code ${request.verificationCode}.`,
+        title,
+        description: gt("{device}. Approve only if it shows code {code}.", {
+          device,
+          code: request.verificationCode,
+        }),
         timeout: remainingMs,
         actionProps: {
-          children: "Approve",
+          children: gt("Approve"),
           onClick: () => {
             close();
             void settle(
               id,
-              reportFailure("Could not approve the device", () =>
-                approve({ environmentId, input: { pairingLinkId: id } }),
+              reportFailure(
+                gt("Could not approve the device"),
+                () => approve({ environmentId, input: { pairingLinkId: id } }),
+                gt("An error occurred."),
               ),
             );
           },
@@ -133,13 +144,15 @@ function ConnectDeviceRequestToasts({
         data: {
           hideCopyButton: true,
           secondaryActionProps: {
-            children: "Deny",
+            children: gt("Deny"),
             onClick: () => {
               close();
               void settle(
                 id,
-                reportFailure("Could not deny the device", () =>
-                  deny({ environmentId, input: { id } }),
+                reportFailure(
+                  gt("Could not deny the device"),
+                  () => deny({ environmentId, input: { id } }),
+                  gt("An error occurred."),
                 ),
               );
             },
@@ -148,7 +161,7 @@ function ConnectDeviceRequestToasts({
             {
               id: "review",
               props: {
-                children: "Review",
+                children: gt("Review"),
                 onClick: () =>
                   void navigate({ to: "/settings/access", search: { machine: environmentId } }),
               },

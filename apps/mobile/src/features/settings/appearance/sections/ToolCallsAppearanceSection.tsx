@@ -2,6 +2,8 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { ToolCallVisibility } from "@t3tools/contracts/settings";
 import { AsyncResult } from "effect/reactivity";
 import { View } from "react-native";
+import "../../../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 
 import { AppText as Text } from "../../../../components/ui/AppText";
 import { ListChoiceRow } from "../../../../components/ui/ListChoiceRow";
@@ -19,6 +21,13 @@ const TOOL_CALL_VISIBILITY_OPTIONS: ReadonlyArray<{
 ];
 
 export function ToolCallsAppearanceSection() {
+  const gt = useGT();
+  const labels: Record<ToolCallVisibility, string> = {
+    showAll: gt("Show all"),
+    hideSuccessful: gt("Hide successful"),
+    hideAll: gt("Hide all"),
+    zen: gt("Zen"),
+  };
   const savePreferences = useAtomSet(updateMobilePreferencesAtom);
   const preferences = useAtomValue(mobilePreferencesAtom);
   const selected = AsyncResult.isSuccess(preferences)
@@ -27,11 +36,11 @@ export function ToolCallsAppearanceSection() {
 
   return (
     <View className="gap-3">
-      <SettingsSection title="Tool calls in chat">
+      <SettingsSection title={gt("Tool calls in chat")}>
         {TOOL_CALL_VISIBILITY_OPTIONS.map((option, index) => (
           <ListChoiceRow
             key={option.value}
-            label={option.label}
+            label={labels[option.value]}
             selected={selected === option.value}
             separated={index > 0}
             disabled={selected === null}
@@ -40,8 +49,9 @@ export function ToolCallsAppearanceSection() {
         ))}
       </SettingsSection>
       <Text className="px-2 text-sm text-foreground-muted">
-        Hide the commands, edits, and searches agents run. Hide successful keeps failures. Zen shows
-        only final answers. Approvals, questions, and errors always show.
+        {gt(
+          "Hide the commands, edits, and searches agents run. Hide successful keeps failures. Zen shows only final answers. Approvals, questions, and errors always show.",
+        )}
       </Text>
     </View>
   );

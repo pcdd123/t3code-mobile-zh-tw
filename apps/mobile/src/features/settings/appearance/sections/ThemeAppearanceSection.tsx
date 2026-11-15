@@ -1,4 +1,6 @@
 import { memo, useId } from "react";
+import "../../../../i18n/intl-polyfills";
+import { useGT } from "gt-react-native";
 import { Pressable, View } from "react-native";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 import { ScopedTheme, ScopedVariables } from "uniwind";
@@ -285,6 +287,7 @@ function SectionLabel({ children }: { readonly children: string }) {
 }
 
 export function ThemeAppearanceSection() {
+  const gt = useGT();
   const {
     isReady,
     setThemeIdForAppearance,
@@ -298,13 +301,15 @@ export function ThemeAppearanceSection() {
   return (
     <View className="gap-6">
       <View className="gap-2">
-        <SectionLabel>Color scheme</SectionLabel>
+        <SectionLabel>{gt("Color scheme")}</SectionLabel>
         <View accessibilityRole="radiogroup" className="flex-row gap-2">
           {APPEARANCE_MODES.map((mode) => (
             <ModeCard
               disabled={!isReady}
               key={mode.id}
-              label={mode.label}
+              label={
+                mode.id === "system" ? gt("System") : mode.id === "light" ? gt("Light") : gt("Dark")
+              }
               mode={mode.id}
               onPress={() => setThemeMode(mode.id)}
               selected={mode.id === themeMode}
@@ -315,7 +320,7 @@ export function ThemeAppearanceSection() {
       </View>
 
       <View className="gap-3">
-        <SectionLabel>Themes</SectionLabel>
+        <SectionLabel>{gt("Themes")}</SectionLabel>
         <View className="flex-row flex-wrap gap-3">
           {MOBILE_THEME_OPTIONS.filter(
             (theme) => theme.id !== "material-you" || systemColorsAvailable,
